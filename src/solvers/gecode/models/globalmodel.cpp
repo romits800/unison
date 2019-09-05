@@ -205,6 +205,10 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
                          IntPropLevel p_ipl) :
   CompleteModel(p_input, p_options, p_ipl)
 {
+
+  div_r.seed(p_options->seed());
+  div_p = p_options->relax();
+
   v_pal  = bool_var_array(P().size() * input->RS.size(), 0, 1);
   v_pals = set_var_array(input->G.size(), IntSet::empty,
                          IntSet(0, input->RS.size() - 1));
@@ -238,7 +242,9 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
 GlobalModel::GlobalModel(GlobalModel& cg) :
   CompleteModel(cg),
   af(cg.af),
-  cf(cg.cf)
+  cf(cg.cf),
+  div_p(cg.div_p),
+  div_r(cg.div_r)
 {
   v_pal.update(*this, cg.v_pal);
   v_pals.update(*this, cg.v_pals);
@@ -715,6 +721,31 @@ void GlobalModel::post_complete_branchers(unsigned int s) {
 
 }
 
+void GlobalModel::constrain(const Space & _b) {
+
+  const GlobalModel& b = static_cast<const GlobalModel&>(_b);
+
+  BoolVarArgs bh;
+
+  // Add constraint restrict the instructions.
+  for (operation o : input -> O) {
+    bh << var (a(o) != b.a(o).val());
+    if (b.a(o).val()) { // if activated
+      BoolVarArgs temp;
+      temp << var (c(o) != b.c(o).val());
+      temp << var (a(o) == b.a(o).val());
+      bh << var (sum(temp) == 2);
+    }
+
+  }
+
+  if (bh.size() >0)
+    constraint(sum(bh) >= 1); // hamming distance
+
+  return;
+
+}
+
 bool GlobalModel::master(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
@@ -733,9 +764,40 @@ bool GlobalModel::slave(const MetaInfo& mi) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    return true; // the search space in the slave space is complete
+    if (mi.restart() == 0) {
+      return true; // the search space in the slave space is complete
+    } else {
+      const GlobalModel& l = static_cast<const GlobalModel&> (*mi.last());
+      cout << "slave" << endl;
+      next(l); // Relaxing variables for LNS
+      return false;
+    }
   }
   GECODE_NEVER;
+}
+
+void GlobalModel::next(const GlobalModel& l) {
+  // cout << "next" << endl;
+  if (!options->disable_relax_a())
+    relax(*this, v_a, l.v_a, div_r, div_p);
+  if (!options->disable_relax_i())
+    relax(*this, v_i, l.v_i, div_r, div_p);
+  if (!options->disable_relax_y())
+    relax(*this, v_y, l.v_y, div_r, div_p);
+
+  if (!options->disable_relax_c()) {
+    IntVarArgs cycles, lcycles;
+    for (operation o : input -> O) {
+      if (l.a(o).val()) { // if activated
+        cycles << c(o);
+        lcycles << l.c(o);
+      }
+    }
+    relax(*this, cycles, lcycles, div_r, div_p);
+  }
+
+  if (!options->disable_relax_r())
+    relax(*this, v_r, l.v_r, div_r, div_p);
 }
 
 void GlobalModel::compare(const Space& sp, std::ostream& pOs) const {

@@ -75,6 +75,17 @@ public:
 
   void set_connect_first(bool cf1) {cf = cf1;};
 
+
+  // p: relax parameter for LNS
+  double div_p;
+  // r: random number for LNS
+  Rnd div_r;
+
+  void set_random(Rnd r) {div_r = r;};
+
+  void set_relax(double p) {div_p = p;};
+
+
   // Variable accessors
 
   BoolVar pal(operand p, register_space rs) const {
@@ -173,10 +184,18 @@ public:
   void post_callee_saved_branchers(void);
   void post_complete_branchers(unsigned int s);
 
+  // Constrain function
+
+  void constrain(const Space & _b);
+
   // Master and slave configuration
 
   bool master(const MetaInfo& mi);
   bool slave(const MetaInfo& mi);
+
+  // Next for relaxing variable for LNS
+
+  void next(const GlobalModel& l);
 
   // Other methods
 

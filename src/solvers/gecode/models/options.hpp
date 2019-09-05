@@ -132,6 +132,14 @@ protected:
   Driver::BoolOption _disable_across_call_disjoint_temporary_set_constraints; // Disable across call disjoint temporary set constraints
   Driver::BoolOption _disable_temporary_symmetry_breaking_constraints; // Disable temporary symmetry breaking constraints
   Driver::BoolOption _disable_infinite_register_dominance_constraints; // Disable infinite register dominance constraints
+  Driver::BoolOption _disable_lns_div; // Disable LNS search for  diversification
+  Driver::BoolOption _disable_relax_a; //
+  Driver::BoolOption _disable_relax_i; //
+  Driver::BoolOption _disable_relax_y; //
+  Driver::BoolOption _disable_relax_c; //
+  Driver::BoolOption _disable_relax_r; //
+
+  Driver::IntOption _number_divs; //
 
 public:
 
@@ -212,6 +220,15 @@ public:
   bool disable_across_call_disjoint_temporary_set_constraints(void) const {return _disable_across_call_disjoint_temporary_set_constraints.value();}
   bool disable_temporary_symmetry_breaking_constraints(void) const {return _disable_temporary_symmetry_breaking_constraints.value();}
   bool disable_infinite_register_dominance_constraints(void) const {return _disable_infinite_register_dominance_constraints.value();}
+  /* Diversification flags */
+  bool disable_lns_div(void) const {return _disable_lns_div.value();}
+  bool disable_relax_a(void) const {return _disable_relax_a.value();}
+  bool disable_relax_i(void) const {return _disable_relax_i.value();}
+  bool disable_relax_y(void) const {return _disable_relax_y.value();}
+  bool disable_relax_c(void) const {return _disable_relax_c.value();}
+  bool disable_relax_r(void) const {return _disable_relax_r.value();}
+
+  int number_divs(void) const {return _number_divs.value();}
 
 };
 

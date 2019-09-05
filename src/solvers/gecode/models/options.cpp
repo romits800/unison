@@ -114,7 +114,15 @@ ModelOptions::ModelOptions(void)
     _disable_across_call_disjoint_temporary_constraints("disable-across-call-disjoint-temporary-constraints", "disable across call disjoint temporary constraints", false),
     _disable_across_call_disjoint_temporary_set_constraints("disable-across-call-disjoint-temporary-set-constraints", "disable across call disjoint temporary set constraints", false),
     _disable_temporary_symmetry_breaking_constraints("disable-temporary-symmetry-breaking-constraints", "disable temporary symmetry breaking constraints", false),
-    _disable_infinite_register_dominance_constraints("disable-infinite-register-dominance-constraints", "disable infinite register dominance constraints", false)
+    _disable_infinite_register_dominance_constraints("disable-infinite-register-dominance-constraints", "disable infinite register dominance constraints", false),
+    _disable_lns_div("disable-lns-div", "disable LNS for diversification", false),
+    _disable_relax_a("disable-relax-a", "disable relaxing variable a for diversification", false),
+    _disable_relax_i("disable-relax-i", "disable relaxing variable i for diversification", false),
+    _disable_relax_y("disable-relax-y", "disable relaxing variable y for diversification", false),
+    _disable_relax_c("disable-relax-c", "disable relaxing variable c for diversification", false),
+    _disable_relax_r("disable-relax-r", "disable relaxing variable r for diversification", false),
+
+    _number_divs("number-divs", "Number of generated diversified programs", 100)
 
 {
   add(_output_file);
@@ -192,4 +200,13 @@ ModelOptions::ModelOptions(void)
   add(_disable_across_call_disjoint_temporary_set_constraints);
   add(_disable_temporary_symmetry_breaking_constraints);
   add(_disable_infinite_register_dominance_constraints);
+
+  add(_disable_lns_div);
+  add(_disable_relax_a);
+  add(_disable_relax_i);
+  add(_disable_relax_y);
+  add(_disable_relax_c);
+  add(_disable_relax_r);
+
+  add(_number_divs);
 }

@@ -406,6 +406,12 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < argc; i++) argv0.push_back(argv[i]);
 
   ModelOptions options;
+  // options for LNS
+  options.iterations(10);
+  options.relax(0.7);
+  options.seed(3);
+  options.time(10*1000);
+
   options.parse(argc, argv);
 
   if (argc < 2) {
@@ -857,306 +863,436 @@ int main(int argc, char* argv[]) {
   if (t.stop() > options.timeout())
     timeout_exit(base, results, gd, go, t.stop());
 
-  Support::Timer t_solver;
-  t_solver.start();
+  // Support::Timer t_solver;
+  // t_solver.start();
 
-  if (options.decomposition()) {
+  // if (options.decomposition()) {
 
-    unsigned long int iteration = 0;
+  //   unsigned long int iteration = 0;
 
-    // Whether the current iteration is a "deactivation iteration"
-    bool deactivation = false;
-    // Activation classes to be deactivated
-    vector<activation_class> acs;
+  //   // Whether the current iteration is a "deactivation iteration"
+  //   bool deactivation = false;
+  //   // Activation classes to be deactivated
+  //   vector<activation_class> acs;
 
-    // Latest result of solving each local problem
-    map<block, SolverResult> latest_result;
-    for (block b : base->input->B) latest_result[b] = UNKNOWN;
+  //   // Latest result of solving each local problem
+  //   map<block, SolverResult> latest_result;
+  //   for (block b : base->input->B) latest_result[b] = UNKNOWN;
 
-    while(!proven && (options.complete() || !state.stop(&options))) {
-      Support::Timer t_it;
+  //   while(!proven && (options.complete() || !state.stop(&options))) {
+  //     Support::Timer t_it;
+  //     t_it.start();
+
+  //     // Failure and node count for the iteration
+  //     long long int iteration_failed = 0;
+  //     long long int iteration_nodes = 0;
+
+  //     if (options.verbose()) {
+  //       if (deactivation) {
+  //         cerr << global() << "deactivation of unnecessary operations" << endl;
+  //       } else {
+  //         cerr << global()
+  //              << "solving problem (i: " << iteration << ", state: " << state
+  //              << ", cost: " << base->cost() << ")" << endl;
+  //       }
+  //     }
+
+  //     // If we are in a deactivation iteration, a solution from the previous
+  //     // iteration must be available
+  //     assert(!deactivation || results.back().solution);
+
+  //     // Solve the global problem
+  //     Solution<GlobalModel> gs =
+  //       deactivation ?
+  //       deactivate(base, results.back().solution, acs) :
+  //       solve_global(base, state, best_cost, go, iteration);
+  //     iteration_failed += gs.failures;
+  //     iteration_nodes += gs.nodes;
+
+  //     if (gs.result == SOME_SOLUTION) {
+
+  //       if (options.verbose()) {
+  //         cerr << global() << "found solution (failures: " << gs.failures
+  //              << ", nodes: " << gs.nodes << ")" << endl;
+  //       }
+
+  //       if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
+
+  //       if (t.stop() > options.timeout())
+  //         timeout_exit(base, results, gd, go, t.stop());
+
+  //       // Sort the local problems lexicographically in descending
+  //       // <solution score, block frequency>. The idea is to solve the
+  //       // hardest problems first.
+  //       vector<block> blocks = sorted_blocks(base->input, latest_result);
+
+  //       map<block, Solution<LocalModel> > latest_local_solutions;
+  //       set<block> solved_blocks;
+  //       LocalJobs ljs(gs, lo, iteration, &local_solutions, blocks);
+  //       bool found_all_local = true, unsat = false;
+  //       unsigned int top_threads =
+  //         options.total_threads() / options.portfolio_threads();
+
+  //       // Solve the local problems
+  //       Support::RunJobs<LocalJobs, Solution<LocalModel> > p(ljs, top_threads);
+  //       Solution<LocalModel> ls;
+  //       while (p.run(ls)) {
+  //         int i;
+  //         Solution<LocalModel> fls;
+  //         if (p.stopped(i, fls)) { // job stopped
+  //           block b = fls.solution->b;
+  //           latest_local_solutions[b] = fls;
+  //           solved_blocks.insert(b);
+  //           break;
+  //         } else { // job finished
+  //           block b = ls.solution->b;
+  //           latest_local_solutions[b] = ls;
+  //           solved_blocks.insert(b);
+  //         }
+  //       }
+
+  //       if (t.stop() > options.timeout())
+  //         timeout_exit(base, results, gd, go, t.stop());
+
+  //       // Process the local solutions
+  //       for (block b : solved_blocks) {
+  //         Solution<LocalModel> ls = latest_local_solutions[b];
+  //         iteration_failed += ls.failures;
+  //         iteration_nodes += ls.nodes;
+  //         // Store the result of solving the local problem
+  //         latest_result[b] = ls.result;
+
+  //         if (ls.result == LIMIT) {
+  //           found_all_local = false;
+  //           break;
+  //         } else if (ls.result == UNSATISFIABLE) {
+  //           found_all_local = false;
+  //           unsat = true;
+  //           break;
+  //         } else { // a solution is found
+  //           // Extend the global solution with the newly found local solution
+  //           GECODE_NOT_NULL(ls.solution);
+  //           gs.solution->apply_solution(ls.solution);
+  //           if (ls.result == OPTIMAL_SOLUTION) {
+  //             local_solutions[b].push_back(ls.solution);
+  //             base->post_local_solution_cost(ls.solution);
+  //           }
+  //           // Propagate the cost of the found local solution in the global problem
+  //           SpaceStatus status = gs.solution->status();
+  //           if (status == Gecode::SS_FAILED) {
+  //             found_all_local = false;
+  //             unsat = true;
+  //             if (options.verbose())
+  //               cerr << local(b)
+  //                    << "could not extend global solution: too costly" << endl;
+  //             break;
+  //           }
+  //         }
+
+  //       }
+
+  //       // Forbid the current global solution
+  //       base->post_different_solution(gs.solution, unsat);
+  //       status_lb(base);
+
+  //       // All local solutions could be found, combine them and tighten
+  //       // the objective function
+  //       if (found_all_local && gs.solution->status() != SS_FAILED) {
+
+  //         // Update best found cost
+  //         vector<int> new_best_cost = var_vector(gs.solution->cost());
+  //         assert((best_cost == new_best_cost) ||
+  //                std::lexicographical_compare(
+  //                  &new_best_cost, &new_best_cost + input.N,
+  //                  &best_cost,     &best_cost     + input.N));
+  //         best_cost = new_best_cost;
+
+  //         if (options.verbose()) {
+  //           cerr << global() << "found full solution "
+  //                << "(" << cost_status_report(base, gs.solution) << ")" << endl;
+  //         }
+
+  //         // Store the newly found solution
+  //         if (deactivation) {
+  //           results.pop_back();
+  //           deactivation = false;
+  //         }
+  //         results.push_back(ResultData(gs.solution, false, iteration_failed,
+  //                                      iteration_nodes, presolver_time,
+  //                                      presolving_time, t_solver.stop(),
+  //                                      t_it.stop()));
+
+  //         // Tighten the objective function
+  //         best_cost.back()--;
+  //         base->post_upper_bound(best_cost);
+  //         status_lb(base);
+
+  //         acs = gs.solution->unnecessary_activation_classes();
+  //         if (!acs.empty()) deactivation = true;
+
+  //       } else {
+  //         if (options.verbose())
+  //           cerr << global() << "could not find a full solution" << endl;
+  //         delete gs.solution;
+  //         results.push_back(ResultData(NULL, false, iteration_failed,
+  //                                      iteration_nodes, presolver_time,
+  //                                      presolving_time, t_solver.stop(),
+  //                                      t_it.stop()));
+  //         deactivation = false;
+  //       }
+
+  //     } else if (gs.result == LIMIT) {
+  //       if (options.verbose())
+  //         cerr << global() << "limit" << endl;
+  //       results.push_back(ResultData(NULL, false, iteration_failed,
+  //                                    iteration_nodes, presolver_time,
+  //                                    presolving_time, t_solver.stop(),
+  //                                    t_it.stop()));
+  //       deactivation = false;
+  //     } else {
+  //       if (options.verbose())
+  //         cerr << global() << "failure" << endl;
+  //       results.push_back(ResultData(NULL, false, iteration_failed,
+  //                                    iteration_nodes, presolver_time,
+  //                                    presolving_time, t_solver.stop(),
+  //                                    t_it.stop()));
+  //       deactivation = false;
+  //     }
+
+  //     if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
+
+  //     if (gs.result == UNSATISFIABLE || status_lb(base) == SS_FAILED) {
+  //       // If the global problem is unsatisfiable and there is some solution we
+  //       // have found the optimal one
+  //       if (has_solution(results)) {
+  //         if (options.verbose())
+  //           cerr << global() << "found optimal solution" << endl;
+  //         // Remove results from the back until a solution is found
+  //         while (!results.back().solution) results.pop_back();
+  //         assert(results.back().solution);
+  //         delete base;
+  //         base = (GlobalModel*) results.back().solution->clone();
+  //       } else {
+  //         if (options.verbose()) {
+  //           cerr << global() << unsat_report(base) << endl;
+  //         }
+  //       }
+  //       proven = true;
+  //       results.back().proven = true;
+  //     }
+
+  //     total_failed += iteration_failed;
+  //     total_nodes += iteration_nodes;
+
+  //     if (has_solution(results) && !proven) {
+  //       if (options.all_solutions()) emit_output_exit(base, results, gd, go);
+  //       if (options.first_solution()) break;
+  //     }
+
+  //     ResultData best = results.back();
+  //     for (ResultData rd : results)
+  //       if (rd.solution) best = rd;
+  //     if (!proven &&
+  //         best.solution &&
+  //         optimality_gap(base, best.solution, 0) <=
+  //         base->options->acceptable_gap() &&
+  //         base->options->acceptable_gap() > 0) {
+  //       if (options.verbose())
+  //         cerr << global() << "reached acceptable optimality gap" << endl;
+  //       break;
+  //     }
+
+  //     if (t.stop() > options.timeout())
+  //       timeout_exit(base, results, gd, go, t.stop());
+
+  //     IterationState next_state(state);
+  //     next_state.next(&options);
+  //     if (!proven &&
+  //         next_state.stop(&options) &&
+  //         options.monolithic() &&
+  //         input.O.size() <= options.monolithic_threshold()) { // Run monolithic solver
+  //       if (options.verbose())
+  //         cerr << monolithic() << "running monolithic solver..." << endl;
+  //       Solution<GlobalModel> ms = solve_monolithic(base, go);
+  //       double solving_time = t.stop();
+  //       total_failed += ms.failures;
+  //       total_nodes += ms.nodes;
+  //       if (ms.result == OPTIMAL_SOLUTION) {
+  //         vector<int> ms_sol = var_vector(ms.solution->cost());
+  //         base->post_lower_bound(ms_sol);
+  //         base->post_upper_bound(ms_sol);
+  //         status_lb(base);
+  //         if (options.verbose())
+  //           cerr << monolithic() << "found optimal solution "
+  //                << "(" << cost_status_report(base, ms.solution) << ")" << endl;
+  //         results.push_back(ResultData(ms.solution, true, ms.failures, ms.nodes,
+  //                                      presolver_time, presolving_time,
+  //                                      solving_time, solving_time));
+  //         proven = true;
+  //       } else if (ms.result == UNSATISFIABLE) {
+  //         // If the global problem is unsatisfiable and there is some solution we
+  //         // have found the optimal one
+  //         if (has_solution(results)) {
+  //           if (options.verbose())
+  //             cerr << monolithic() << "proven optimality" << endl;
+  //           // Remove results from the back until a solution is found
+  //           while (!results.back().solution) results.pop_back();
+  //           assert(results.back().solution);
+  //           vector<int> opt_cost(var_vector(results.back().solution->cost()));
+  //           base->post_lower_bound(opt_cost);
+  //           base->post_upper_bound(opt_cost);
+  //           status_lb(base);
+  //         } else {
+  //           if (options.verbose()) {
+  //             cerr << monolithic() << unsat_report(base) << endl;
+  //           }
+  //         }
+  //         proven = true;
+  //         results.back().proven = true;
+  //       }
+  //     }
+
+  //     if (!deactivation) { // Update aggressiveness
+  //       state.next(&options);
+  //       if (!proven && options.complete() && state.stop(&options)) {
+  //         state = IterationState(options.initial_aggressiveness(), false);
+  //       }
+  //       iteration++;
+  //     }
+  //   }
+  // }
+
+  // Code for diversification
+
+  // cout << "Acceptable gap" << base->options->acceptable_gap() << endl;
+
+  GlobalModel *g = (GlobalModel *)base->clone();
+  g->post_complete_branchers(0);
+
+  int count = 0;
+  int maxcount = options.number_divs();
+
+  if (options.disable_lns_div()) {
+    BAB<GlobalModel> e(g);
+
+
+    Support::Timer t_it;
+    Support::Timer t_solver;
+
+    t_solver.start();
+    t_it.start();
+
+    while (GlobalModel *nextg = e.next()) {
+
+      if (count >= maxcount) break;
+      ResultData rd = ResultData(nextg,
+                                 proven, // false, /*proven*/
+                                 0,
+                                 count,
+                                 presolver_time,
+                                 presolving_time,
+                                 t_solver.stop(),
+                                 t_it.stop());
+
+      ofstream fout;
+      fout.open(to_string(count) + "." + base->options->output_file());
+      fout << produce_json(rd, gd, nextg->input->N, 0);
+      fout.close();
+
+      if (optimality_gap(base, nextg, 0) > nextg->options->acceptable_gap() ||
+          base->options->acceptable_gap() <= 0) {
+
+        // Update best found cost
+        vector<int> new_best_cost = var_vector(nextg->cost());
+
+        assert((best_cost == new_best_cost) ||
+               std::lexicographical_compare(&new_best_cost, &new_best_cost + input.N,
+                                            &best_cost,     &best_cost     + input.N));
+        best_cost = new_best_cost;
+        // Post constraint
+        nextg -> post_upper_bound(best_cost);
+
+        // optimality gap measures the gap between the minimum and the
+        // maximum cost
+      }
+
+
+      GlobalModel *tmpg = g;
+      g = nextg;
+      delete tmpg;
+
+      count++;
       t_it.start();
 
-      // Failure and node count for the iteration
-      long long int iteration_failed = 0;
-      long long int iteration_nodes = 0;
-
-      if (options.verbose()) {
-        if (deactivation) {
-          cerr << global() << "deactivation of unnecessary operations" << endl;
-        } else {
-          cerr << global()
-               << "solving problem (i: " << iteration << ", state: " << state
-               << ", cost: " << base->cost() << ")" << endl;
-        }
-      }
-
-      // If we are in a deactivation iteration, a solution from the previous
-      // iteration must be available
-      assert(!deactivation || results.back().solution);
-
-      // Solve the global problem
-      Solution<GlobalModel> gs =
-        deactivation ?
-        deactivate(base, results.back().solution, acs) :
-        solve_global(base, state, best_cost, go, iteration);
-      iteration_failed += gs.failures;
-      iteration_nodes += gs.nodes;
-
-      if (gs.result == SOME_SOLUTION) {
-
-        if (options.verbose()) {
-          cerr << global() << "found solution (failures: " << gs.failures
-               << ", nodes: " << gs.nodes << ")" << endl;
-        }
-
-        if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
-
-        if (t.stop() > options.timeout())
-          timeout_exit(base, results, gd, go, t.stop());
-
-        // Sort the local problems lexicographically in descending
-        // <solution score, block frequency>. The idea is to solve the
-        // hardest problems first.
-        vector<block> blocks = sorted_blocks(base->input, latest_result);
-
-        map<block, Solution<LocalModel> > latest_local_solutions;
-        set<block> solved_blocks;
-        LocalJobs ljs(gs, lo, iteration, &local_solutions, blocks);
-        bool found_all_local = true, unsat = false;
-        unsigned int top_threads =
-          options.total_threads() / options.portfolio_threads();
-
-        // Solve the local problems
-        Support::RunJobs<LocalJobs, Solution<LocalModel> > p(ljs, top_threads);
-        Solution<LocalModel> ls;
-        while (p.run(ls)) {
-          int i;
-          Solution<LocalModel> fls;
-          if (p.stopped(i, fls)) { // job stopped
-            block b = fls.solution->b;
-            latest_local_solutions[b] = fls;
-            solved_blocks.insert(b);
-            break;
-          } else { // job finished
-            block b = ls.solution->b;
-            latest_local_solutions[b] = ls;
-            solved_blocks.insert(b);
-          }
-        }
-
-        if (t.stop() > options.timeout())
-          timeout_exit(base, results, gd, go, t.stop());
-
-        // Process the local solutions
-        for (block b : solved_blocks) {
-          Solution<LocalModel> ls = latest_local_solutions[b];
-          iteration_failed += ls.failures;
-          iteration_nodes += ls.nodes;
-          // Store the result of solving the local problem
-          latest_result[b] = ls.result;
-
-          if (ls.result == LIMIT) {
-            found_all_local = false;
-            break;
-          } else if (ls.result == UNSATISFIABLE) {
-            found_all_local = false;
-            unsat = true;
-            break;
-          } else { // a solution is found
-            // Extend the global solution with the newly found local solution
-            GECODE_NOT_NULL(ls.solution);
-            gs.solution->apply_solution(ls.solution);
-            if (ls.result == OPTIMAL_SOLUTION) {
-              local_solutions[b].push_back(ls.solution);
-              base->post_local_solution_cost(ls.solution);
-            }
-            // Propagate the cost of the found local solution in the global problem
-            SpaceStatus status = gs.solution->status();
-            if (status == Gecode::SS_FAILED) {
-              found_all_local = false;
-              unsat = true;
-              if (options.verbose())
-                cerr << local(b)
-                     << "could not extend global solution: too costly" << endl;
-              break;
-            }
-          }
-
-        }
-
-        // Forbid the current global solution
-        base->post_different_solution(gs.solution, unsat);
-        status_lb(base);
-
-        // All local solutions could be found, combine them and tighten
-        // the objective function
-        if (found_all_local && gs.solution->status() != SS_FAILED) {
-
-          // Update best found cost
-          vector<int> new_best_cost = var_vector(gs.solution->cost());
-          assert((best_cost == new_best_cost) ||
-                 std::lexicographical_compare(
-                   &new_best_cost, &new_best_cost + input.N,
-                   &best_cost,     &best_cost     + input.N));
-          best_cost = new_best_cost;
-
-          if (options.verbose()) {
-            cerr << global() << "found full solution "
-                 << "(" << cost_status_report(base, gs.solution) << ")" << endl;
-          }
-
-          // Store the newly found solution
-          if (deactivation) {
-            results.pop_back();
-            deactivation = false;
-          }
-          results.push_back(ResultData(gs.solution, false, iteration_failed,
-                                       iteration_nodes, presolver_time,
-                                       presolving_time, t_solver.stop(),
-                                       t_it.stop()));
-
-          // Tighten the objective function
-          best_cost.back()--;
-          base->post_upper_bound(best_cost);
-          status_lb(base);
-
-          acs = gs.solution->unnecessary_activation_classes();
-          if (!acs.empty()) deactivation = true;
-
-        } else {
-          if (options.verbose())
-            cerr << global() << "could not find a full solution" << endl;
-          delete gs.solution;
-          results.push_back(ResultData(NULL, false, iteration_failed,
-                                       iteration_nodes, presolver_time,
-                                       presolving_time, t_solver.stop(),
-                                       t_it.stop()));
-          deactivation = false;
-        }
-
-      } else if (gs.result == LIMIT) {
-        if (options.verbose())
-          cerr << global() << "limit" << endl;
-        results.push_back(ResultData(NULL, false, iteration_failed,
-                                     iteration_nodes, presolver_time,
-                                     presolving_time, t_solver.stop(),
-                                     t_it.stop()));
-        deactivation = false;
-      } else {
-        if (options.verbose())
-          cerr << global() << "failure" << endl;
-        results.push_back(ResultData(NULL, false, iteration_failed,
-                                     iteration_nodes, presolver_time,
-                                     presolving_time, t_solver.stop(),
-                                     t_it.stop()));
-        deactivation = false;
-      }
-
-      if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
-
-      if (gs.result == UNSATISFIABLE || status_lb(base) == SS_FAILED) {
-        // If the global problem is unsatisfiable and there is some solution we
-        // have found the optimal one
-        if (has_solution(results)) {
-          if (options.verbose())
-            cerr << global() << "found optimal solution" << endl;
-          // Remove results from the back until a solution is found
-          while (!results.back().solution) results.pop_back();
-          assert(results.back().solution);
-          delete base;
-          base = (GlobalModel*) results.back().solution->clone();
-        } else {
-          if (options.verbose()) {
-            cerr << global() << unsat_report(base) << endl;
-          }
-        }
-        proven = true;
-        results.back().proven = true;
-      }
-
-      total_failed += iteration_failed;
-      total_nodes += iteration_nodes;
-
-      if (has_solution(results) && !proven) {
-        if (options.all_solutions()) emit_output_exit(base, results, gd, go);
-        if (options.first_solution()) break;
-      }
-
-      ResultData best = results.back();
-      for (ResultData rd : results)
-        if (rd.solution) best = rd;
-      if (!proven &&
-          best.solution &&
-          optimality_gap(base, best.solution, 0) <=
-          base->options->acceptable_gap() &&
-          base->options->acceptable_gap() > 0) {
-        if (options.verbose())
-          cerr << global() << "reached acceptable optimality gap" << endl;
-        break;
-      }
-
-      if (t.stop() > options.timeout())
-        timeout_exit(base, results, gd, go, t.stop());
-
-      IterationState next_state(state);
-      next_state.next(&options);
-      if (!proven &&
-          next_state.stop(&options) &&
-          options.monolithic() &&
-          input.O.size() <= options.monolithic_threshold()) { // Run monolithic solver
-        if (options.verbose())
-          cerr << monolithic() << "running monolithic solver..." << endl;
-        Solution<GlobalModel> ms = solve_monolithic(base, go);
-        double solving_time = t.stop();
-        total_failed += ms.failures;
-        total_nodes += ms.nodes;
-        if (ms.result == OPTIMAL_SOLUTION) {
-          vector<int> ms_sol = var_vector(ms.solution->cost());
-          base->post_lower_bound(ms_sol);
-          base->post_upper_bound(ms_sol);
-          status_lb(base);
-          if (options.verbose())
-            cerr << monolithic() << "found optimal solution "
-                 << "(" << cost_status_report(base, ms.solution) << ")" << endl;
-          results.push_back(ResultData(ms.solution, true, ms.failures, ms.nodes,
-                                       presolver_time, presolving_time,
-                                       solving_time, solving_time));
-          proven = true;
-        } else if (ms.result == UNSATISFIABLE) {
-          // If the global problem is unsatisfiable and there is some solution we
-          // have found the optimal one
-          if (has_solution(results)) {
-            if (options.verbose())
-              cerr << monolithic() << "proven optimality" << endl;
-            // Remove results from the back until a solution is found
-            while (!results.back().solution) results.pop_back();
-            assert(results.back().solution);
-            vector<int> opt_cost(var_vector(results.back().solution->cost()));
-            base->post_lower_bound(opt_cost);
-            base->post_upper_bound(opt_cost);
-            status_lb(base);
-          } else {
-            if (options.verbose()) {
-              cerr << monolithic() << unsat_report(base) << endl;
-            }
-          }
-          proven = true;
-          results.back().proven = true;
-        }
-      }
-
-      if (!deactivation) { // Update aggressiveness
-        state.next(&options);
-        if (!proven && options.complete() && state.stop(&options)) {
-          state = IterationState(options.initial_aggressiveness(), false);
-        }
-        iteration++;
-      }
     }
-  }
 
-  execution_time = t.stop();
+    execution_time = t.stop();
+
+  } else {
+
+    unsigned long int s_const = 10000;
+    Search::Options o;
+    Search::Cutoff* c = Search::Cutoff::luby(s_const);
+    o.cutoff = c;
+    RBS<GlobalModel,BAB> e(g, o);
+  // }
+
+    Support::Timer t_it;
+    Support::Timer t_solver;
+
+    t_solver.start();
+    t_it.start();
+
+    while (GlobalModel *nextg = e.next()) {
+
+      if (count >= maxcount) break;
+      ResultData rd = ResultData(nextg,
+                                 proven, // false, /*proven*/
+                                 0,
+                                 count,
+                                 presolver_time,
+                                 presolving_time,
+                                 t_solver.stop(),
+                                 t_it.stop());
+
+      ofstream fout;
+      fout.open(to_string(count) + "." + base->options->output_file());
+      fout << produce_json(rd, gd, nextg->input->N, 0);
+      fout.close();
+
+
+      if (optimality_gap(base, nextg, 0) > nextg->options->acceptable_gap() ||
+          base->options->acceptable_gap() <= 0) {
+
+        // Update best found cost
+        vector<int> new_best_cost = var_vector(nextg->cost());
+
+        assert((best_cost == new_best_cost) ||
+               std::lexicographical_compare(&new_best_cost, &new_best_cost + input.N,
+                                            &best_cost,     &best_cost     + input.N));
+        best_cost = new_best_cost;
+        // Post constraint
+        nextg -> post_upper_bound(best_cost);
+
+        // optimality gap measures the gap between the minimum and the
+        // maximum cost
+      }
+
+
+      GlobalModel *tmpg = g;
+      g = nextg;
+      delete tmpg;
+
+      count++;
+      t_it.start();
+
+    }
+
+    execution_time = t.stop();
+  }
+  if (g!=NULL) delete g;
+
+
 
   if (options.verbose()) {
     cerr << "execution time: " << execution_time << " ms" << endl;
