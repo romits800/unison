@@ -759,33 +759,36 @@ bool GlobalModel::master(const MetaInfo& mi) {
   GECODE_NEVER;
 }
 
+
+
 bool GlobalModel::slave(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if (mi.restart() == 0) {
-      return true; // the search space in the slave space is complete
-    } else {
-      const GlobalModel& l = static_cast<const GlobalModel&> (*mi.last());
-      cout << "slave" << endl;
-      next(l); // Relaxing variables for LNS
+    if ((mi.restart() > 0) && (div_p > 0.0)) {
+      if (mi.last() != NULL)// {
+        next(static_cast<const GlobalModel&>(*mi.last()));
       return false;
+      // } else
+        // return true;
+    } else {
+      return true;
     }
+
   }
   GECODE_NEVER;
 }
 
 void GlobalModel::next(const GlobalModel& l) {
-  // cout << "next" << endl;
-  if (!options->disable_relax_a())
-    relax(*this, v_a, l.v_a, div_r, div_p);
+
   if (!options->disable_relax_i())
     relax(*this, v_i, l.v_i, div_r, div_p);
   if (!options->disable_relax_y())
     relax(*this, v_y, l.v_y, div_r, div_p);
 
   if (!options->disable_relax_c()) {
+    relax(*this, v_a, l.v_a, div_r, div_p);
     IntVarArgs cycles, lcycles;
     for (operation o : input -> O) {
       if (l.a(o).val()) { // if activated
@@ -796,8 +799,17 @@ void GlobalModel::next(const GlobalModel& l) {
     relax(*this, cycles, lcycles, div_r, div_p);
   }
 
-  if (!options->disable_relax_r())
+  if (!options->disable_relax_r()) {
+    IntVarArgs lregs, regs;
+    for (temporary t : input->T) {
+        if (l.l(t).val()) {
+          lregs << l.r(t);
+          regs << r(t);
+        }
+    }
     relax(*this, v_r, l.v_r, div_r, div_p);
+  }
+
 }
 
 void GlobalModel::compare(const Space& sp, std::ostream& pOs) const {

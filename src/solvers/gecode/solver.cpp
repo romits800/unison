@@ -676,12 +676,12 @@ int main(int argc, char* argv[]) {
   if (options.verbose())
     cerr << global() << cost_status_report(base, base) << endl;
 
-  if (optimality_gap(base, base, 0) <= base->options->acceptable_gap() &&
-      base->options->acceptable_gap() > 0) {
-    if (options.verbose())
-      cerr << global() << "reached acceptable optimality gap" << endl;
-    emit_output_exit(base, results, gd, go);
-  }
+  // if (optimality_gap(base, base, 0) <= base->options->acceptable_gap() &&
+  //     base->options->acceptable_gap() > 0) {
+  //   if (options.verbose())
+  //     cerr << global() << "reached acceptable optimality gap" << endl;
+  //   emit_output_exit(base, results, gd, go);
+  // }
 
   if (t.stop() > options.timeout())
     timeout_exit(base, results, gd, go, t.stop());
@@ -853,12 +853,12 @@ int main(int argc, char* argv[]) {
     cerr << pre() << "presolving time: " << presolving_time << " ms" << endl;
   }
 
-  if (optimality_gap(base, base, 0) <= base->options->acceptable_gap() &&
-      base->options->acceptable_gap() > 0) {
-    if (options.verbose())
-      cerr << global() << "reached acceptable optimality gap" << endl;
-    emit_output_exit(base, results, gd, go);
-  }
+  // if (optimality_gap(base, base, 0) <= base->options->acceptable_gap() &&
+  //     base->options->acceptable_gap() > 0) {
+  //   if (options.verbose())
+  //     cerr << global() << "reached acceptable optimality gap" << endl;
+  //   emit_output_exit(base, results, gd, go);
+  // }
 
   if (t.stop() > options.timeout())
     timeout_exit(base, results, gd, go, t.stop());
@@ -1164,24 +1164,36 @@ int main(int argc, char* argv[]) {
 
   // Code for diversification
 
-  // cout << "Acceptable gap" << base->options->acceptable_gap() << endl;
-
   GlobalModel *g = (GlobalModel *)base->clone();
   g->post_complete_branchers(0);
 
   int count = 0;
   int maxcount = options.number_divs();
 
+  Support::Timer t_it;
+  Support::Timer t_solver;
+
+
+  if (optimality_gap(base, base, 0) > g->options->acceptable_gap()) {
+
+    // Update best found cost
+    vector<int> ag_best_cost;
+    ag_best_cost.push_back(base->cost()[0].min()*(100. + g->options->acceptable_gap())/100);
+    for (uint i=1; i < input.N; i++) {
+      ag_best_cost.push_back(base->cost()[i].max());
+    }
+    g -> post_upper_bound(ag_best_cost);
+  }
+
+
+
   if (options.disable_lns_div()) {
+
     BAB<GlobalModel> e(g);
 
 
-    Support::Timer t_it;
-    Support::Timer t_solver;
-
     t_solver.start();
     t_it.start();
-
     while (GlobalModel *nextg = e.next()) {
 
       if (count >= maxcount) break;
@@ -1198,23 +1210,6 @@ int main(int argc, char* argv[]) {
       fout.open(to_string(count) + "." + base->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
       fout.close();
-
-      if (optimality_gap(base, nextg, 0) > nextg->options->acceptable_gap() ||
-          base->options->acceptable_gap() <= 0) {
-
-        // Update best found cost
-        vector<int> new_best_cost = var_vector(nextg->cost());
-
-        assert((best_cost == new_best_cost) ||
-               std::lexicographical_compare(&new_best_cost, &new_best_cost + input.N,
-                                            &best_cost,     &best_cost     + input.N));
-        best_cost = new_best_cost;
-        // Post constraint
-        nextg -> post_upper_bound(best_cost);
-
-        // optimality gap measures the gap between the minimum and the
-        // maximum cost
-      }
 
 
       GlobalModel *tmpg = g;
@@ -1230,15 +1225,11 @@ int main(int argc, char* argv[]) {
 
   } else {
 
-    unsigned long int s_const = 10000;
+    unsigned long int s_const = options.luby_param();
     Search::Options o;
     Search::Cutoff* c = Search::Cutoff::luby(s_const);
     o.cutoff = c;
     RBS<GlobalModel,BAB> e(g, o);
-  // }
-
-    Support::Timer t_it;
-    Support::Timer t_solver;
 
     t_solver.start();
     t_it.start();
@@ -1259,25 +1250,6 @@ int main(int argc, char* argv[]) {
       fout.open(to_string(count) + "." + base->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
       fout.close();
-
-
-      if (optimality_gap(base, nextg, 0) > nextg->options->acceptable_gap() ||
-          base->options->acceptable_gap() <= 0) {
-
-        // Update best found cost
-        vector<int> new_best_cost = var_vector(nextg->cost());
-
-        assert((best_cost == new_best_cost) ||
-               std::lexicographical_compare(&new_best_cost, &new_best_cost + input.N,
-                                            &best_cost,     &best_cost     + input.N));
-        best_cost = new_best_cost;
-        // Post constraint
-        nextg -> post_upper_bound(best_cost);
-
-        // optimality gap measures the gap between the minimum and the
-        // maximum cost
-      }
-
 
       GlobalModel *tmpg = g;
       g = nextg;
@@ -1300,6 +1272,6 @@ int main(int argc, char* argv[]) {
     cerr << "total searched nodes in all problems: " << total_nodes << endl;
   }
 
-  emit_output_exit(base, results, gd, go);
+  // emit_output_exit(base, results, gd, go);
 
 }
