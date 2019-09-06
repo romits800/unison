@@ -141,6 +141,8 @@ protected:
 
   Driver::IntOption _number_divs; //
 
+  Driver::IntOption _luby_param; // luby parameter
+
 public:
 
   ModelOptions(void);
@@ -229,6 +231,8 @@ public:
   bool disable_relax_r(void) const {return _disable_relax_r.value();}
 
   int number_divs(void) const {return _number_divs.value();}
+
+  int luby_param(void) const {return _luby_param.value();}
 
 };
 

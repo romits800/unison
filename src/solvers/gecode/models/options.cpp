@@ -122,7 +122,8 @@ ModelOptions::ModelOptions(void)
     _disable_relax_c("disable-relax-c", "disable relaxing variable c for diversification", false),
     _disable_relax_r("disable-relax-r", "disable relaxing variable r for diversification", false),
 
-    _number_divs("number-divs", "Number of generated diversified programs", 100)
+    _number_divs("number-divs", "Number of generated diversified programs", 100),
+    _luby_param("luby-param", "Luby parameter for LNS", 1000)
 
 {
   add(_output_file);
@@ -209,4 +210,6 @@ ModelOptions::ModelOptions(void)
   add(_disable_relax_r);
 
   add(_number_divs);
+
+  add(_luby_param);
 }
