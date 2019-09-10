@@ -1195,8 +1195,13 @@ int main(int argc, char* argv[]) {
     t_solver.start();
     t_it.start();
     while (GlobalModel *nextg = e.next()) {
+      
+      if (t.stop() > options.timeout())
+	timeout_exit(base, results, gd, go, t.stop());
+
 
       if (count >= maxcount) break;
+
       ResultData rd = ResultData(nextg,
                                  proven, // false, /*proven*/
                                  0,
@@ -1235,8 +1240,13 @@ int main(int argc, char* argv[]) {
     t_it.start();
 
     while (GlobalModel *nextg = e.next()) {
+      
+      if (t.stop() > options.timeout())
+	timeout_exit(base, results, gd, go, t.stop());
+
 
       if (count >= maxcount) break;
+      
       ResultData rd = ResultData(nextg,
                                  proven, // false, /*proven*/
                                  0,

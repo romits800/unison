@@ -782,10 +782,25 @@ bool GlobalModel::slave(const MetaInfo& mi) {
 
 void GlobalModel::next(const GlobalModel& l) {
 
-  if (!options->disable_relax_i())
-    relax(*this, v_i, l.v_i, div_r, div_p);
-  if (!options->disable_relax_y())
-    relax(*this, v_y, l.v_y, div_r, div_p);
+
+  if (!options->disable_relax_i()) {
+    IntVarArgs instr, linstr;
+    for (operation o: input -> O) {
+      instr << i(o);
+      linstr << l.i(o);
+    }
+    relax(*this, instr, linstr, div_r, div_p);
+  }
+
+  if (!options->disable_relax_y()) {
+    IntVarArgs temp, ltemp;
+    for (operand p : input -> P) {
+      temp << y(p);
+      ltemp << l.y(p);
+    }
+    relax(*this,temp, ltemp, div_r, div_p);
+  }
+
 
   if (!options->disable_relax_c()) {
     relax(*this, v_a, l.v_a, div_r, div_p);
@@ -802,12 +817,12 @@ void GlobalModel::next(const GlobalModel& l) {
   if (!options->disable_relax_r()) {
     IntVarArgs lregs, regs;
     for (temporary t : input->T) {
-        if (l.l(t).val()) {
-          lregs << l.r(t);
-          regs << r(t);
-        }
+      if (l.l(t).assigned() && l.l(t).val()) { // if the tempoorary is assigned
+        lregs << l.r(t);
+        regs << r(t);
+      }
     }
-    relax(*this, v_r, l.v_r, div_r, div_p);
+    relax(*this, regs, lregs, div_r, div_p);
   }
 
 }
