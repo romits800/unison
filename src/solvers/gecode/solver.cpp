@@ -1191,13 +1191,12 @@ int main(int argc, char* argv[]) {
 
     BAB<GlobalModel> e(g);
 
-
     t_solver.start();
     t_it.start();
     while (GlobalModel *nextg = e.next()) {
-      
+
       if (t.stop() > options.timeout())
-	timeout_exit(base, results, gd, go, t.stop());
+        timeout_exit(base, results, gd, go, t.stop());
 
 
       if (count >= maxcount) break;
@@ -1230,9 +1229,18 @@ int main(int argc, char* argv[]) {
 
   } else {
 
-    unsigned long int s_const = options.luby_param();
+    Gecode::RestartMode restart = options.restart();
+    Search::Cutoff* c;
     Search::Options o;
-    Search::Cutoff* c = Search::Cutoff::luby(s_const);
+    unsigned long int s_const = options.restart_base();
+
+    if (restart == RM_LUBY ){
+      c = Search::Cutoff::luby(s_const);
+    } else if (restart == RM_CONSTANT) {
+      c = Search::Cutoff::constant(s_const);
+    } else
+      GECODE_NEVER;
+
     o.cutoff = c;
     RBS<GlobalModel,BAB> e(g, o);
 
@@ -1240,13 +1248,13 @@ int main(int argc, char* argv[]) {
     t_it.start();
 
     while (GlobalModel *nextg = e.next()) {
-      
+
       if (t.stop() > options.timeout())
-	timeout_exit(base, results, gd, go, t.stop());
+        timeout_exit(base, results, gd, go, t.stop());
 
 
       if (count >= maxcount) break;
-      
+
       ResultData rd = ResultData(nextg,
                                  proven, // false, /*proven*/
                                  0,

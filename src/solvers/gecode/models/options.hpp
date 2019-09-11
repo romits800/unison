@@ -132,6 +132,9 @@ protected:
   Driver::BoolOption _disable_across_call_disjoint_temporary_set_constraints; // Disable across call disjoint temporary set constraints
   Driver::BoolOption _disable_temporary_symmetry_breaking_constraints; // Disable temporary symmetry breaking constraints
   Driver::BoolOption _disable_infinite_register_dominance_constraints; // Disable infinite register dominance constraints
+
+  // Diversification specific options
+
   Driver::BoolOption _disable_lns_div; // Disable LNS search for  diversification
   Driver::BoolOption _disable_relax_a; //
   Driver::BoolOption _disable_relax_i; //
@@ -141,7 +144,7 @@ protected:
 
   Driver::IntOption _number_divs; //
 
-  Driver::IntOption _luby_param; // luby parameter
+  Driver::StringOption _distance; // Unit of limits (time, fails)
 
 public:
 
@@ -232,8 +235,17 @@ public:
 
   int number_divs(void) const {return _number_divs.value();}
 
-  int luby_param(void) const {return _luby_param.value();}
 
+  DivDistance dist_metric(void) const {
+    // std::string str (_distance.value());
+    // if (!str.compare("hamming"))
+    //   return HAMMING_DIST;
+    // else if (!str.compare("diff_hamming"))
+    //   return DIFF_HAMMING_DIST;
+    // else // Default
+    //   return HAMMING_DIST;
+    return static_cast <DivDistance>( _distance.value());
+  }
 };
 
 #endif

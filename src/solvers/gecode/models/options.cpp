@@ -123,8 +123,8 @@ ModelOptions::ModelOptions(void)
     _disable_relax_r("disable-relax-r", "disable relaxing variable r for diversification", false),
 
     _number_divs("number-divs", "Number of generated diversified programs", 100),
-    _luby_param("luby-param", "Luby parameter for LNS", 1000)
 
+    _distance("distance", "Distance Metrics", DIST_HAMMING)
 {
   add(_output_file);
   add(_dzn_file);
@@ -211,5 +211,8 @@ ModelOptions::ModelOptions(void)
 
   add(_number_divs);
 
-  add(_luby_param);
+  _distance.add(DIST_HAMMING, "hamming");
+  _distance.add(DIST_HAMMING_DIFF, "diff_hamming");
+
+  add(_distance);
 }

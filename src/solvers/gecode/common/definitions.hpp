@@ -107,6 +107,11 @@ enum UnisonConstraintExprId
     ALIGNED_EXPR
   };
 
+// Diversification distance
+typedef enum divdistance
+  { DIST_HAMMING,
+    DIST_HAMMING_DIFF
+  } DivDistance;
 
 // Unison constraint expression
 

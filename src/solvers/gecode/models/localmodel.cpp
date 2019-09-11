@@ -119,7 +119,7 @@ LocalModel::LocalModel(Parameters * p_input, ModelOptions * p_options,
                          input->mandatory[b].size(), 0, 1);
   }
 
-  c_activity = IntAction(*this, v_c, 0.99);
+  c_activity = BoolAction(*this, v_a, 0.99);
 
   // Apply solution from the global model
   apply_solution(gs);
@@ -294,9 +294,6 @@ void LocalModel::post_trivial_branchers(void) {
   branch(*this, v_a, BOOL_VAR_ACTION_MAX(c_activity), BOOL_VAL_MIN(),
          NULL, &print_inactive_decision);
 
-  branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_instruction_decision);
-
   IntVarArgs ts;
   for (operand p : input->groupcopyrel[b]) ts << y(p);
   branch(*this, ts, INT_VAR_NONE(), INT_VAL_MIN(),
@@ -341,6 +338,9 @@ void LocalModel::post_minimum_cost_branchers(void) {
 void LocalModel::post_fail_first_branchers(void) {
 
   branch(*this, v_a, BOOL_VAR_ACTION_MAX(c_activity), BOOL_VAL_MIN(),
+         NULL, &print_inactive_decision);
+
+  branch(*this, v_a, BOOL_VAR_ACTION_MAX(0.3), BOOL_VAL_MIN(),
          NULL, &print_inactive_decision);
 
   branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MAX(),

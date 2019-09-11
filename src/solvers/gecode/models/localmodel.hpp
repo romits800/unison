@@ -42,6 +42,8 @@
 #include "branchers/routingbrancher.hpp"
 #include "branchers/pressureschedulingbrancher.hpp"
 
+// #include <gecode/int.hh>
+
 using namespace Gecode;
 using namespace std;
 
@@ -88,7 +90,7 @@ public:
 
   // Gecode objects
 
-  IntAction c_activity;
+  BoolAction c_activity;
 
   // Auxiliary methods
 
