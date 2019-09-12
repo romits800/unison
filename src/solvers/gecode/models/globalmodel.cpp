@@ -209,6 +209,10 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
   div_r.seed(p_options->seed());
   div_p = p_options->relax();
 
+  int op_size = O().size();
+  int maxval = max_of(input->maxc);
+  v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
+
   v_pal  = bool_var_array(P().size() * input->RS.size(), 0, 1);
   v_pals = set_var_array(input->G.size(), IntSet::empty,
                          IntSet(0, input->RS.size() - 1));
@@ -237,6 +241,9 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
   // Cost of each block
   CompleteModel::post_cost_definition();
 
+  if (options->dist_metric() == DIST_HAMMING_DIFF) {
+    post_diversification_diffs();
+  }
 }
 
 GlobalModel::GlobalModel(GlobalModel& cg) :
@@ -250,10 +257,26 @@ GlobalModel::GlobalModel(GlobalModel& cg) :
   v_pals.update(*this, cg.v_pals);
   v_oa.update(*this, cg.v_oa);
   v_ali.update(*this, cg.v_ali);
+  v_diff.update(*this, cg.v_diff);
 }
 
 GlobalModel* GlobalModel::copy(void) {
   return new GlobalModel(*this);
+}
+
+void GlobalModel::post_diversification_diffs(void) {
+  cout << "post_diversification_diffs" << endl;
+  int k=0;
+  int maxval = max_of(input->maxc);
+  for (uint i = 0; i < input->O.size(); i++)
+    for (uint j = i+1; j< input->O.size(); j++) {
+      // If then else constraint
+      BoolVar ifb = var ((a(i) == 1) && (a(j) == 1));
+      IntVar elseb = var (maxval) ;
+      IntVar thenb =  var (c(i) - c(j));
+      ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
+      k++;
+    }
 }
 
 void GlobalModel::post_secondary_variable_definitions(void) {
@@ -744,34 +767,34 @@ void GlobalModel::constrain(const Space & _b) {
       constraint(sum(bh) >= 1); // hamming distance
     break;
   case DIST_HAMMING_DIFF:
-    IntVarArgs bb, bn;
-    int maxval = max_of(input->maxc);
-    // Distance difference between the different operations
-    // if some is inactive, we get maxc
-    for (uint i = 0; i < input -> O.size(); i++)
-      for (uint j = i+1; j< input -> O.size(); j++) {
+    // IntVarArgs bb, bn;
+    // int maxval = max_of(input->maxc);
+    // // Distance difference between the different operations
+    // // if some is inactive, we get maxc
+    // for (uint i = 0; i < input -> O.size(); i++)
+    //   for (uint j = i+1; j< input -> O.size(); j++) {
 
-        if ((b.a(i).val() == 1) && (b.a(j).val() == 1)) {
-          int val = b.c(i).val() - b.c(j).val();
-          bb << IntVar(*this, val, val);
-        }
-        else {
-          bb << IntVar(*this, maxval, maxval);
-        }
-         // If then else constraint
-        BoolVar ifb = var ((a(i) == 1) && (a(j)==1));
-        IntVar elseb = var (maxval) ;
-        IntVar resb = IntVar(*this, -maxval, maxval);
-        IntVar thenb =  expr(*this, c(i) - c(j));
-        ite(*this, ifb,  thenb, elseb, resb, IPL_DOM);
+    //     if ((b.a(i).val() == 1) && (b.a(j).val() == 1)) {
+    //       int val = b.c(i).val() - b.c(j).val();
+    //       bb << IntVar(*this, val, val);
+    //     }
+    //     else {
+    //       bb << IntVar(*this, maxval, maxval);
+    //     }
+    //      // If then else constraint
+    //     BoolVar ifb = var ((a(i) == 1) && (a(j)==1));
+    //     IntVar elseb = var (maxval) ;
+    //     IntVar resb = IntVar(*this, -maxval, maxval);
+    //     IntVar thenb =  expr(*this, c(i) - c(j));
+    //     ite(*this, ifb,  thenb, elseb, resb, IPL_DOM);
 
-        bn << resb;
-      }
+    //     bn << resb;
+    //   }
 
-    assert(bn.size() == bb.size());
+    // assert(bn.size() == bb.size());
 
-    for (int i = 0; i < bn.size(); i++) {
-      bh << var (bn[i] != bb[i]);
+    for (int i = 0; i < v_diff.size(); i++) {
+      bh << var (diff(i) != b.diff(i));
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance

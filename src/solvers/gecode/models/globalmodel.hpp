@@ -63,6 +63,8 @@ public:
   // ali[g]: set of global congruences that are aligned with g
   SetVarArray v_ali;
 
+  // Diff array
+  IntVarArray v_diff;
   // Parameters
 
   // af: aggressiveness factor in allocation branching
@@ -91,6 +93,8 @@ public:
   BoolVar pal(operand p, register_space rs) const {
     return v_pal[opr(p) * input->RS.size() + rs];
   }
+
+  IntVar diff(operation o) const {return v_diff[o]; }
 
   SetVar pals(global_congruence g) const { return v_pals[g]; }
 
@@ -149,6 +153,7 @@ public:
   GlobalModel* copy(void);
 
   // Constraints
+  void post_diversification_diffs(void); // Diversification constraints
 
   void post_secondary_variable_definitions(void);
   void post_operand_allocation_definition(void);
