@@ -1178,14 +1178,15 @@ int main(int argc, char* argv[]) {
 
     // Update best found cost
     vector<int> ag_best_cost;
-    ag_best_cost.push_back(base->cost()[0].min()*(100. + g->options->acceptable_gap())/100);
+    ag_best_cost.push_back(base->cost()[0].max()*(100. - g->options->acceptable_gap())/100);
     for (uint i=1; i < input.N; i++) {
       ag_best_cost.push_back(base->cost()[i].max());
     }
-    g -> post_upper_bound(ag_best_cost);
+    g -> post_lower_bound(ag_best_cost);
   }
 
 
+  // cout << "Starting" << endl;
 
   if (options.disable_lns_div()) {
 
@@ -1210,6 +1211,7 @@ int main(int argc, char* argv[]) {
                                  t_solver.stop(),
                                  t_it.stop());
 
+      // cout << "Clone" << endl;
       ofstream fout;
       fout.open(to_string(count) + "." + base->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
@@ -1238,8 +1240,9 @@ int main(int argc, char* argv[]) {
       c = Search::Cutoff::luby(s_const);
     } else if (restart == RM_CONSTANT) {
       c = Search::Cutoff::constant(s_const);
-    } else
-      GECODE_NEVER;
+    } else {
+      c = Search::Cutoff::constant(1000);
+    }
 
     o.cutoff = c;
     RBS<GlobalModel,BAB> e(g, o);
@@ -1263,6 +1266,8 @@ int main(int argc, char* argv[]) {
                                  presolving_time,
                                  t_solver.stop(),
                                  t_it.stop());
+
+      // cout << "Clone" << endl;
 
       ofstream fout;
       fout.open(to_string(count) + "." + base->options->output_file());
