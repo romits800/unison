@@ -43,17 +43,23 @@ PRESOLVERBIN := $(PRESOLVERDIR)/gecode-presolver
 SOLVERDIR := solvers/gecode
 SOLVERBIN := $(SOLVERDIR)/gecode-solver
 
+DIVERSIFIERDIR := solvers/gecode
+DIVERSIFIERBIN := $(DIVERSIFIERDIR)/gecode-diversify
+
+
 UNISON_SHOW_DETAILS ?= always
 
 UNISON_GHC_CONFIG := -O2
 
 build:
 	$(MAKE) build-unison
-	$(MAKE) build-presolver build-solver
+	$(MAKE) build-presolver build-solver build-diversifier
 
 build-solver: $(SOLVERBIN)
 
 build-presolver: $(PRESOLVERBIN)
+
+build-diversifier: $(DIVERSIFIERBIN)
 
 build-unison: prepare-unison
 	cd $(UNISONDIR); $(CABALBIN) build --ghc-options="$(UNISON_GHC_CONFIG)"
@@ -79,7 +85,7 @@ test:
 	--test-option=--solver=$(CURDIR)/$(SOLVERBIN) \
 	--test-option=--showprogress
 
-install: install-unison install-solver install-presolver
+install: install-unison install-diversifier install-solver install-presolver
 
 install-unison:
 	cp $(UNISONDIR)/dist/build/uni/uni $(BINDIR)
@@ -87,16 +93,21 @@ install-unison:
 install-solver:
 	cp $(SOLVERBIN) $(BINDIR)
 
+install-diversifier:
+	cp $(DIVERSIFIERBIN) $(BINDIR)
+
+
 install-presolver:
 	cp $(PRESOLVERBIN) $(BINDIR)
 
 include $(PRESOLVERDIR)/presolver.mk
 include $(SOLVERDIR)/solver.mk
+include $(SOLVERDIR)/diversifier.mk
 
 clean:
 	cd $(UNISONDIR); $(CABALBIN) clean
 	cd $(UNISONSPECSGENDIR); $(CABALBIN) clean
-	$(MAKE) veryclean-solver veryclean-presolver
+	$(MAKE) veryclean-diversifier veryclean-solver veryclean-presolver
 
 doc: doc-unison doc-specsgen
 

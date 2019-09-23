@@ -740,4 +740,6 @@ string global() { return "[global] "; }
 
 string pre() { return "[pre]\t "; }
 
+string div() { return "[div]\t "; }
+
 string monolithic() { return "[mthic]\t "; }

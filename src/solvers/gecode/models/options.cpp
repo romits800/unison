@@ -115,6 +115,7 @@ ModelOptions::ModelOptions(void)
     _disable_across_call_disjoint_temporary_set_constraints("disable-across-call-disjoint-temporary-set-constraints", "disable across call disjoint temporary set constraints", false),
     _disable_temporary_symmetry_breaking_constraints("disable-temporary-symmetry-breaking-constraints", "disable temporary symmetry breaking constraints", false),
     _disable_infinite_register_dominance_constraints("disable-infinite-register-dominance-constraints", "disable infinite register dominance constraints", false),
+    // // Diversification options
     _disable_lns_div("disable-lns-div", "disable LNS for diversification", false),
     _disable_relax_a("disable-relax-a", "disable relaxing variable a for diversification", false),
     _disable_relax_i("disable-relax-i", "disable relaxing variable i for diversification", false),
@@ -124,7 +125,11 @@ ModelOptions::ModelOptions(void)
 
     _number_divs("number-divs", "Number of generated diversified programs", 100),
 
-    _distance("distance", "Distance Metrics", DIST_HAMMING)
+    _use_optimal_for_diversification("use-optimal-for-diversification", "Use optimal solution for constraining the diversification", false),
+
+    _distance("distance", "Distance Metrics", DIST_HAMMING),
+    _solver_file("solver-file", "solver json file file", "")
+
 {
   add(_output_file);
   add(_dzn_file);
@@ -211,8 +216,11 @@ ModelOptions::ModelOptions(void)
 
   add(_number_divs);
 
+  add(_use_optimal_for_diversification);
+
   _distance.add(DIST_HAMMING, "hamming");
   _distance.add(DIST_HAMMING_DIFF, "diff_hamming");
 
   add(_distance);
+  add(_solver_file);
 }

@@ -144,7 +144,11 @@ protected:
 
   Driver::IntOption _number_divs; //
 
+  Driver::BoolOption _use_optimal_for_diversification; // not implemented
+
   Driver::StringOption _distance; // Unit of limits (time, fails)
+
+  Driver::StringValueOption _solver_file; // Solver file for best solution (if available)
 
 public:
 
@@ -235,17 +239,12 @@ public:
 
   int number_divs(void) const {return _number_divs.value();}
 
+  bool use_optimal_for_diversification(void) const {return _use_optimal_for_diversification.value();}
 
-  DivDistance dist_metric(void) const {
-    // std::string str (_distance.value());
-    // if (!str.compare("hamming"))
-    //   return HAMMING_DIST;
-    // else if (!str.compare("diff_hamming"))
-    //   return DIFF_HAMMING_DIST;
-    // else // Default
-    //   return HAMMING_DIST;
-    return static_cast <DivDistance>( _distance.value());
-  }
+  DivDistance dist_metric(void) const { return static_cast <DivDistance>( _distance.value());}
+
+  string solver_file(void) const {return _solver_file.value();}
+
 };
 
 #endif
