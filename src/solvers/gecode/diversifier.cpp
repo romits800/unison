@@ -695,16 +695,29 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
     }
 #endif
+    cout << div() << "Before solverParams" << endl;
     SolverParameters solver(root);
+    cout << div() << "After solverParams" << endl;
 
 
     // if (options.use_optimal_for_diversification()) {
 
     bestcost = solver.cost[0];
-    cout << div() << "Best cost " << bestcost << endl;
-    ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-    for (uint i=1; i < input.N; i++) {
-      ag_best_cost.push_back(solver.cost[i]);
+    if (bestcost < 0) {
+      cout << div() <<"Falling back to llvm best solution" << endl;
+
+      bestcost = input.maxf[0];
+      ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
+      for (uint i=1; i < input.N; i++) {
+        ag_best_cost.push_back(input.maxf[i]);
+      }
+
+    } else {
+      cout << div() << "Best cost " << bestcost << endl;
+      ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
+      for (uint i=1; i < input.N; i++) {
+        ag_best_cost.push_back(solver.cost[i]);
+      }
     }
 
     // }
