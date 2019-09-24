@@ -65,10 +65,10 @@
 #include "procedures/globalprocedures.hpp"
 #include "procedures/localprocedures.hpp"
 
-// #ifndef GRAPHICS
+#ifndef GRAPHICS
 #include "third-party/jsoncpp/json/value.h"
 #include "third-party/jsoncpp/json/reader.h"
-// #endif
+#endif
 
 #ifdef GRAPHICS
 #include "inspectors/registerarrayinspector.hpp"
@@ -94,83 +94,7 @@
 using namespace Gecode;
 using namespace std;
 
-class LocalJob : public Support::Job<Solution<LocalModel> > {
-protected:
-  // Base local space to accumulate bounds while the portfolio is applied
-  Solution<LocalModel> ls;
-  // visualization options (if any)
-  GIST_OPTIONS * lo;
-  // current iteration
-  int iteration;
-  // local solutions in earlier iterations
-  vector<vector<LocalModel *> > * local_solutions;
-public:
-  LocalJob(Solution<LocalModel> ls0, GIST_OPTIONS * lo0, int iteration0,
-           vector<vector<LocalModel *> > * local_solutions0) :
-    ls(ls0), lo(lo0), iteration(iteration0),
-    local_solutions(local_solutions0) {}
-  virtual Solution<LocalModel> run(int) {
-    block b = ls.solution->b;
-    if (ls.result != UNSATISFIABLE) {
-      LocalModel * base_local = ls.solution;
-      Gecode::SpaceStatus lss = base_local->status();
-      assert(lss != SS_FAILED);
-      bool single_block = base_local->input->B.size() == 1;
-      ls = solved(base_local, (*local_solutions)[b]) && !single_block ?
-        // if the local problem is already solved, fetch the cached solution
-        fetch_solution(base_local, (*local_solutions)[b]) :
-        // otherwise solve
-        solve_local_portfolio(base_local, lo, iteration);
-      delete base_local;
-    }
-    if (ls.solution->options->verbose()) {
-      if (ls.result == LIMIT) {
-        cerr << local(b) << "could not find solution" << endl;
-      } else if (ls.result == UNSATISFIABLE) {
-        cerr << local(b) << "could not find solution (unsatisfiable)" << endl;
-      } else if (ls.result == CACHED_SOLUTION) {
-        cerr << local(b) << "repeated solution" << endl;
-      }
-    }
-    if (ls.result == LIMIT || ls.result == UNSATISFIABLE) {
-      throw Support::JobStop<Solution<LocalModel> >(ls);
-    }
-    return ls;
-  }
-};
 
-class LocalJobs {
-protected:
-  // global solution from which the local problems are generated
-  Solution<GlobalModel> gs;
-  // visualization options (if any)
-  GIST_OPTIONS * lo;
-  // current iteration
-  int iteration;
-  // local solutions in earlier iterations
-  vector<vector<LocalModel *> > * local_solutions;
-  // blocks sorted in descending priority
-  vector<block> blocks;
-  // current block index
-  unsigned int k;
-public:
-  LocalJobs(Solution<GlobalModel> gs0, GIST_OPTIONS * lo0, int iteration0,
-            vector<vector<LocalModel *> > * local_solutions0,
-            vector<block> blocks0) :
-    gs(gs0), lo(lo0), iteration(iteration0), local_solutions(local_solutions0),
-    blocks(blocks0), k(0) {}
-  bool operator ()(void) const {
-    return k < blocks.size();
-  }
-  LocalJob * job(void) {
-    // FIXME: fork jobs in the order of blocks[b], use blocks[k] instead of k
-    block b = k;
-    // Base local space to accumulate bounds while the portfolio is applied
-    Solution<LocalModel> ls = local_problem(gs.solution, b);
-    k++;
-    return new LocalJob(ls, lo, iteration, local_solutions);
-  }
-};
 
 class ResultData {
 
@@ -269,26 +193,6 @@ string produce_json(const ResultData& rd,
     return json;
 }
 
-// void emit_local(LocalModel * local, unsigned long int iteration, string prefix) {
-//   block b = local->b;
-//   ofstream fout;
-//   fout.open(
-//     (prefix + ".i" + to_string(iteration) + ".b" + to_string(b) + ".json")
-//     .c_str());
-//   fout << "{" << endl;
-//   Parameters binput = local->input->make_local(b);
-//   fout << binput.emit_json();
-//   fout << init(init(local->emit_json()));
-//   fout << endl << "}" << endl;
-//   fout.close();
-// }
-
-string unsat_report(const GlobalModel * base) {
-  stringstream ss;
-  ss << "proven absence of solutions with cost less or equal than "
-     << show(base->input->maxf, ", ", "", "{}");
-  return ss.str();
-}
 
 string cost_status_report(GlobalModel * base, const GlobalModel * sol) {
   vector<double> imps, ogs;
@@ -327,79 +231,7 @@ string cost_status_report(GlobalModel * base, const GlobalModel * sol) {
   return ss.str();
 }
 
-void emit_output_exit(GlobalModel * base, const vector<ResultData> & results,
-                      const GlobalData & gd, GIST_OPTIONS * go) {
-  (void)go;
 
-  assert(!results.empty());
-
-  ResultData best_rd = results.back();
-  // The last result with solution is always the best
-  for (ResultData rd : results)
-    if (rd.solution) best_rd = rd;
-
-  // Accumulated statistics for the best ResultData
-  best_rd.fail = 0;
-  best_rd.node = 0;
-  for (ResultData rd : results) {
-    best_rd.fail += rd.it_fail;
-    best_rd.node += rd.it_node;
-  }
-  best_rd.it_fail = -1;
-  best_rd.it_node = -1;
-
-  for (ResultData rd : results) {
-    if (rd.solving_time > best_rd.solving_time)
-      best_rd.solving_time = rd.solving_time;
-  }
-  best_rd.it_solving_time = -1;
-
-  if (best_rd.solution) {
-
-#ifdef GRAPHICS
-    if (base->options->gist_solution()) Gist::dfs(best_rd.solution, *go);
-#endif
-
-    if (base->options->verbose()) {
-      cerr << (best_rd.proven ? "optimal" : "best found") << " solution has "
-           << cost_status_report(base, best_rd.solution) << endl;
-    }
-    if (base->options->emit_improvement()) {
-      cerr << fixed << setprecision(2);
-      cerr << cost_status_report(base, best_rd.solution) << endl;
-    }
-  }
-
-  emit_lower_bound(base, best_rd.proven);
-
-  if (base->options->output_file() == "") {
-    cout << produce_json(best_rd, gd, base->input->N, 0) << endl;
-  } else {
-    ofstream fout;
-    fout.open(base->options->output_file());
-    fout << produce_json(best_rd, gd, base->input->N, 0);
-    fout.close();
-  }
-
-  if (!(base->options->all_solutions() && !best_rd.proven)) exit(EXIT_SUCCESS);
-
-}
-
-void timeout_exit(GlobalModel * base, const vector<ResultData> & results,
-                  const GlobalData & gd, GIST_OPTIONS * go, double time) {
-  if (base->options->verbose())
-    cerr << global() << "timeout (" << time << " ms)" << endl;
-  emit_output_exit(base, results, gd, go);
-}
-
-bool has_solution(vector<ResultData> & results) {
-  for (ResultData rd : results) {
-    if (rd.solution) {
-      return true;
-    }
-  }
-  return false;
-}
 
 int main(int argc, char* argv[]) {
 
@@ -409,11 +241,12 @@ int main(int argc, char* argv[]) {
 
   ModelOptions options;
   // options for LNS
-  options.iterations(10);
-  options.relax(0.7);
-  options.seed(3);
-  options.time(10*1000);
-
+  if (!options.disable_lns_div()) {
+    options.iterations(10);
+    options.relax(0.7);
+    options.seed(3);
+    options.time(10*1000);
+  }
   options.parse(argc, argv);
 
   if (argc < 2) {
@@ -641,6 +474,7 @@ int main(int argc, char* argv[]) {
 
 
   vector<int> ag_best_cost;
+  vector<int> best_cost;
   int bestcost;
 
   cout << div() << "Before us optimal for div" << endl;
@@ -707,31 +541,52 @@ int main(int argc, char* argv[]) {
       cout << div() <<"Falling back to llvm best solution" << endl;
 
       bestcost = input.maxf[0];
+
+      // Best cost upper bound
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-      for (uint i=1; i < input.N; i++) {
+      for (uint i = 1; i < input.N; i++) {
         ag_best_cost.push_back(input.maxf[i]);
       }
 
+      // Best cost lower bound
+      for (uint i = 0; i < input.N; i++) {
+        best_cost.push_back(d->cost()[i].min()); //input.maxf[i]);
+      }
+
     } else {
-      cout << div() << "Best cost " << bestcost << endl;
+      cout << div() << "Using optimal cost " << bestcost << endl;
+
+      // Best cost upper bound
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-      for (uint i=1; i < input.N; i++) {
+      for (uint i = 1; i < input.N; i++) {
         ag_best_cost.push_back(solver.cost[i]);
       }
+      // Best cost lower bound
+      best_cost.push_back(bestcost);
+      for (uint i = 1; i < input.N; i++) {
+        best_cost.push_back(solver.cost[i]);
+      }
+
     }
 
     // }
 
   } else {
 
+    // Best cost upper bound
     bestcost = input.maxf[0];
     ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-    for (uint i=1; i < input.N; i++) {
+    for (uint i = 1; i < input.N; i++) {
       ag_best_cost.push_back(input.maxf[i]);
+    }
+    // Best cost lower bound
+    for (uint i = 1; i < input.N; i++) {
+      best_cost.push_back(d->cost()[i].min());
     }
   }
 
 
+  d -> post_lower_bound(best_cost);
   d -> post_upper_bound(ag_best_cost);
 
   if (options.verbose())
@@ -833,10 +688,5 @@ int main(int argc, char* argv[]) {
     // execution_time = t.stop();
   }
   if (d!=NULL) delete d;
-
-
-
-
-  // emit_output_exit(base, results, gd, go);
 
 }
