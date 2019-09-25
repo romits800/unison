@@ -205,17 +205,6 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
                          IntPropLevel p_ipl) :
   CompleteModel(p_input, p_options, p_ipl)
 {
-
-  div_r.seed(p_options->seed());
-  div_p = p_options->relax();
-
-  int op_size = O().size();
-  int maxval = max_of(input->maxc);
-  // difference between operators
-  v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
-  // Hamming distance between operators
-  v_hamm  = int_var_array(op_size, -1, maxval);
-
   v_pal  = bool_var_array(P().size() * input->RS.size(), 0, 1);
   v_pals = set_var_array(input->G.size(), IntSet::empty,
                          IntSet(0, input->RS.size() - 1));
@@ -244,62 +233,22 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
   // Cost of each block
   CompleteModel::post_cost_definition();
 
-
 }
 
 GlobalModel::GlobalModel(GlobalModel& cg) :
   CompleteModel(cg),
   af(cg.af),
-  cf(cg.cf),
-  div_p(cg.div_p),
-  div_r(cg.div_r)
+  cf(cg.cf)
 {
   v_pal.update(*this, cg.v_pal);
   v_pals.update(*this, cg.v_pals);
   v_oa.update(*this, cg.v_oa);
   v_ali.update(*this, cg.v_ali);
-  v_diff.update(*this, cg.v_diff);
-  v_hamm.update(*this, cg.v_hamm);
 }
 
 GlobalModel* GlobalModel::copy(void) {
   return new GlobalModel(*this);
 }
-
-
- void GlobalModel::post_diversification_constraints(void) {
-   post_diversification_hamming();
-   if (options->dist_metric() == DIST_HAMMING_DIFF) {
-     post_diversification_diffs();
-   }
- }
-
- void GlobalModel::post_diversification_diffs(void) {
-  cout << "post_diversification_diffs" << endl;
-  int k=0;
-  int maxval = max_of(input->maxc);
-  for (uint i = 0; i < input->O.size(); i++)
-    for (uint j = i+1; j< input->O.size(); j++) {
-      // If then else constraint
-      BoolVar ifb = var ((a(i) == 1) && (a(j) == 1));
-      IntVar elseb = var (maxval) ;
-      IntVar thenb =  var (c(i) - c(j));
-      ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
-      k++;
-    }
-}
-
-
- void GlobalModel::post_diversification_hamming(void) {
-   cout << "post_diversification_hamming" << endl;
-
-   for (operation i : input -> O) {
-     BoolVar ifb = var (a(i) == 1);
-     IntVar thenb = var ( c(i) );
-     IntVar elseb = var ( -1 );
-     ite(*this, ifb,  thenb, elseb, hamm(i), IPL_DOM);
-   }
- }
 
 void GlobalModel::post_secondary_variable_definitions(void) {
   CompleteModel::post_secondary_variable_definitions();
@@ -766,53 +715,6 @@ void GlobalModel::post_complete_branchers(unsigned int s) {
 
 }
 
-void GlobalModel::constrain(const Space & _b) {
-
-  const GlobalModel& b = static_cast<const GlobalModel&>(_b);
-
-  BoolVarArgs bh;
-
-  switch (options->dist_metric()) {
-  case DIST_HAMMING:
-    // Add constraint to restrict the instructions.
-    // Hamming distance on the cycles array
-    // for (operation o : input -> O) {
-    //   bh << var (a(o) != b.a(o).val());
-    //   if (b.a(o).val()) { // if activated
-    //     BoolVarArgs temp;
-    //     temp << var (c(o) != b.c(o).val());
-    //     temp << var (a(o) == b.a(o).val());
-    //     bh << var (sum(temp) == 2);
-    //   }
-    // }
-    for (operation o: input -> O) {
-      bh << var (hamm(o) != b.hamm(o));
-    }
-    if (bh.size() >0)           //
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_DIFF:
-
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_BR:
-    for (operation o : input -> O) {
-      if (input->type[o] == BRANCH)
-        bh << var (hamm(o) != b.hamm(o));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  }
-
-  return;
-
-}
-
 bool GlobalModel::master(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
@@ -826,72 +728,14 @@ bool GlobalModel::master(const MetaInfo& mi) {
   GECODE_NEVER;
 }
 
-
-
 bool GlobalModel::slave(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if ((mi.restart() > 0) && (div_p > 0.0)) {
-      if (mi.last() != NULL)// {
-        next(static_cast<const GlobalModel&>(*mi.last()));
-      return false;
-      // } else
-        // return true;
-    } else {
-      return true;
-    }
-
+    return true; // the search space in the slave space is complete
   }
   GECODE_NEVER;
-}
-
-void GlobalModel::next(const GlobalModel& l) {
-
-
-  if (!options->disable_relax_i()) {
-    IntVarArgs instr, linstr;
-    for (operation o: input -> O) {
-      instr << i(o);
-      linstr << l.i(o);
-    }
-    relax(*this, instr, linstr, div_r, div_p);
-  }
-
-  if (!options->disable_relax_y()) {
-    IntVarArgs temp, ltemp;
-    for (operand p : input -> P) {
-      temp << y(p);
-      ltemp << l.y(p);
-    }
-    relax(*this,temp, ltemp, div_r, div_p);
-  }
-
-
-  if (!options->disable_relax_c()) {
-    relax(*this, v_a, l.v_a, div_r, div_p);
-    IntVarArgs cycles, lcycles;
-    for (operation o : input -> O) {
-      if (l.a(o).val()) { // if activated
-        cycles << c(o);
-        lcycles << l.c(o);
-      }
-    }
-    relax(*this, cycles, lcycles, div_r, div_p);
-  }
-
-  if (!options->disable_relax_r()) {
-    IntVarArgs lregs, regs;
-    for (temporary t : input->T) {
-      if (l.l(t).assigned() && l.l(t).val()) { // if the tempoorary is assigned
-        lregs << l.r(t);
-        regs << r(t);
-      }
-    }
-    relax(*this, regs, lregs, div_r, div_p);
-  }
-
 }
 
 void GlobalModel::compare(const Space& sp, std::ostream& pOs) const {

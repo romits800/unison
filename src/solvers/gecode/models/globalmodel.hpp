@@ -63,13 +63,6 @@ public:
   // ali[g]: set of global congruences that are aligned with g
   SetVarArray v_ali;
 
-  // Diff array
-  IntVarArray v_diff;
-
-  // Hamming distance between operations
-  IntVarArray v_hamm;
-
-
   // Parameters
 
   // af: aggressiveness factor in allocation branching
@@ -82,26 +75,11 @@ public:
 
   void set_connect_first(bool cf1) {cf = cf1;};
 
-
-  // p: relax parameter for LNS
-  double div_p;
-  // r: random number for LNS
-  Rnd div_r;
-
-  void set_random(Rnd r) {div_r = r;};
-
-  void set_relax(double p) {div_p = p;};
-
-
   // Variable accessors
 
   BoolVar pal(operand p, register_space rs) const {
     return v_pal[opr(p) * input->RS.size() + rs];
   }
-
-  IntVar diff(operation o) const {return v_diff[o]; }
-
-  IntVar hamm(operation o) const {return v_hamm[o]; }
 
   SetVar pals(global_congruence g) const { return v_pals[g]; }
 
@@ -160,9 +138,6 @@ public:
   GlobalModel* copy(void);
 
   // Constraints
-  void post_diversification_constraints(void); // Diversification constraints
-  void post_diversification_diffs(void); // Diversification constraints
-  void post_diversification_hamming(void); // Diversification constraints
 
   void post_secondary_variable_definitions(void);
   void post_operand_allocation_definition(void);
@@ -198,18 +173,10 @@ public:
   void post_callee_saved_branchers(void);
   void post_complete_branchers(unsigned int s);
 
-  // Constrain function
-
-  void constrain(const Space & _b);
-
   // Master and slave configuration
 
   bool master(const MetaInfo& mi);
   bool slave(const MetaInfo& mi);
-
-  // Next for relaxing variable for LNS
-
-  void next(const GlobalModel& l);
 
   // Other methods
 

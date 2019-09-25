@@ -166,7 +166,7 @@ string produce_json(const ResultData& rd,
     for (operand o : rd.solution->input->O)
       ts.push_back(rd.solution->input->type[o]);
 
-    ss << "\"type\":" << to_json(ts);
+    ss << ", \"type\":" << to_json(ts);
     //
 
     ss << ", \"cost\": "
