@@ -61,6 +61,7 @@
 #include "models/options.hpp"
 #include "models/simplemodel.hpp"
 #include "models/globalmodel.hpp"
+#include "models/divmodel.hpp"
 #include "models/localmodel.hpp"
 #include "procedures/globalprocedures.hpp"
 #include "procedures/localprocedures.hpp"
@@ -100,7 +101,7 @@ class ResultData {
 
 public:
 
-  GlobalModel * solution;
+  DivModel * solution;
   bool proven;
   long long int fail;
   long long int it_fail;
@@ -111,7 +112,7 @@ public:
   int solving_time;
   int it_solving_time;
 
-  ResultData(GlobalModel * solution, bool proven, long long int it_fail,
+  ResultData(DivModel * solution, bool proven, long long int it_fail,
              long long int it_node, int presolver_time, int presolving_time,
              int solving_time, int it_solving_time) {
     this->solution = solution;
@@ -159,6 +160,15 @@ string produce_json(const ResultData& rd,
     ss << ", \"proven\": " << (rd.proven ? "true" : "false");
     vector<int> ones;
     init_vector(ones, N, -1);
+
+    // Added types to json output
+    vector<temporary> ts; //types
+    for (operand o : rd.solution->input->O)
+      ts.push_back(rd.solution->input->type[o]);
+
+    ss << "\"type\":" << to_json(ts);
+    //
+
     ss << ", \"cost\": "
        << (rd.solution ? show(var_vector(rd.solution->cost())) : show(ones));
     if (rd.fail >= 0) {
@@ -194,7 +204,7 @@ string produce_json(const ResultData& rd,
 }
 
 
-string cost_status_report(GlobalModel * base, const GlobalModel * sol) {
+string cost_status_report(DivModel * base, const DivModel * sol) {
   vector<double> imps, ogs;
   for (unsigned int n = 0; n < base->input->N; n++) {
     int cost_ub  = base->input->maxf[n] + (n == (base->input->N - 1) ? 1 : 0),
@@ -458,10 +468,11 @@ int main(int argc, char* argv[]) {
 
 
   // Code for diversification
-  GlobalModel *d = new GlobalModel(&input, &options, IPL_DOM);
-  GlobalData gd(d->n_int_vars, d->n_bool_vars, d->n_set_vars);
+  DivModel *d = new DivModel(&input, &options, IPL_DOM);
 
-  // GlobalModel *d = (GlobalModel *)base->clone();
+  d->post_diversification_constraints(); // Diversification constraints
+  GlobalData gd(d->n_int_vars, d->n_bool_vars, d->n_set_vars);
+  // DivModel *d = (DivModel *)base->clone();
   d->post_complete_branchers(0);
 
   // double execution_time = t.stop();
@@ -596,11 +607,11 @@ int main(int argc, char* argv[]) {
 
   if (options.disable_lns_div()) {
 
-    BAB<GlobalModel> e(d);
+    BAB<DivModel> e(d);
 
     t_solver.start();
     t_it.start();
-    while (GlobalModel *nextg = e.next()) {
+    while (DivModel *nextg = e.next()) {
 
       // if (t.stop() > options.timeout())
       //   timeout_exit(base, results, gd, go, t.stop());
@@ -622,7 +633,7 @@ int main(int argc, char* argv[]) {
       fout.close();
 
 
-      GlobalModel *tmpg = d;
+      DivModel *tmpg = d;
       d = nextg;
       delete tmpg;
 
@@ -649,12 +660,12 @@ int main(int argc, char* argv[]) {
     }
 
     o.cutoff = c;
-    RBS<GlobalModel,BAB> e(d, o);
+    RBS<DivModel,BAB> e(d, o);
 
     t_solver.start();
     t_it.start();
 
-    while (GlobalModel *nextg = e.next()) {
+    while (DivModel *nextg = e.next()) {
 
       // if (t.stop() > options.timeout())
       //   timeout_exit(base, results, gd, go, t.stop());
@@ -676,7 +687,7 @@ int main(int argc, char* argv[]) {
       fout << produce_json(rd, gd, nextg->input->N, 0);
       fout.close();
 
-      GlobalModel *tmpg = d;
+      DivModel *tmpg = d;
       d = nextg;
       delete tmpg;
 

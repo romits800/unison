@@ -41,6 +41,7 @@ HEADERS += common/definitions.hpp \
            models/localmodel.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
+           models/divmodel.hpp \
            models/simplemodel.hpp \
            models/relaxedmodel.hpp \
            branchers/filters.hpp \
@@ -67,6 +68,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            models/localmodel.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
+           models/divmodel.cpp \
            models/simplemodel.cpp \
            models/relaxedmodel.cpp \
            branchers/filters.cpp \

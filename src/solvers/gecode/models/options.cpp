@@ -220,6 +220,7 @@ ModelOptions::ModelOptions(void)
 
   _distance.add(DIST_HAMMING, "hamming");
   _distance.add(DIST_HAMMING_DIFF, "diff_hamming");
+  _distance.add(DIST_HAMMING_BR, "br_hamming");
 
   add(_distance);
   add(_solver_file);

@@ -42,7 +42,7 @@ DIVERSIFIERMAIN = $(DIVERSIFIERDIR)/diversifier
 
 DIVERSIFIERCOMMON := definitions util jsonutil
 DIVERSIFIERMODELS := parameters solver-parameters options model localmodel completemodel globalmodel	\
-simplemodel relaxedmodel
+simplemodel relaxedmodel divmodel
 DIVERSIFIERBRANCHERS := filters merit value printers pressureschedulingbrancher	\
 routingbrancher
 DIVERSIFIERPROCEDURES := commonprocedures globalprocedures localprocedures

@@ -110,7 +110,8 @@ enum UnisonConstraintExprId
 // Diversification distance
 typedef enum divdistance
   { DIST_HAMMING,
-    DIST_HAMMING_DIFF
+    DIST_HAMMING_DIFF,
+    DIST_HAMMING_BR
   } DivDistance;
 
 // Unison constraint expression

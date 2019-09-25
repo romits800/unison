@@ -65,6 +65,11 @@ public:
 
   // Diff array
   IntVarArray v_diff;
+
+  // Hamming distance between operations
+  IntVarArray v_hamm;
+
+
   // Parameters
 
   // af: aggressiveness factor in allocation branching
@@ -95,6 +100,8 @@ public:
   }
 
   IntVar diff(operation o) const {return v_diff[o]; }
+
+  IntVar hamm(operation o) const {return v_hamm[o]; }
 
   SetVar pals(global_congruence g) const { return v_pals[g]; }
 
@@ -153,7 +160,9 @@ public:
   GlobalModel* copy(void);
 
   // Constraints
+  void post_diversification_constraints(void); // Diversification constraints
   void post_diversification_diffs(void); // Diversification constraints
+  void post_diversification_hamming(void); // Diversification constraints
 
   void post_secondary_variable_definitions(void);
   void post_operand_allocation_definition(void);

@@ -211,7 +211,10 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
 
   int op_size = O().size();
   int maxval = max_of(input->maxc);
+  // difference between operators
   v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
+  // Hamming distance between operators
+  v_hamm  = int_var_array(op_size, -1, maxval);
 
   v_pal  = bool_var_array(P().size() * input->RS.size(), 0, 1);
   v_pals = set_var_array(input->G.size(), IntSet::empty,
@@ -241,9 +244,7 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
   // Cost of each block
   CompleteModel::post_cost_definition();
 
-  if (options->dist_metric() == DIST_HAMMING_DIFF) {
-    post_diversification_diffs();
-  }
+
 }
 
 GlobalModel::GlobalModel(GlobalModel& cg) :
@@ -258,13 +259,22 @@ GlobalModel::GlobalModel(GlobalModel& cg) :
   v_oa.update(*this, cg.v_oa);
   v_ali.update(*this, cg.v_ali);
   v_diff.update(*this, cg.v_diff);
+  v_hamm.update(*this, cg.v_hamm);
 }
 
 GlobalModel* GlobalModel::copy(void) {
   return new GlobalModel(*this);
 }
 
-void GlobalModel::post_diversification_diffs(void) {
+
+ void GlobalModel::post_diversification_constraints(void) {
+   post_diversification_hamming();
+   if (options->dist_metric() == DIST_HAMMING_DIFF) {
+     post_diversification_diffs();
+   }
+ }
+
+ void GlobalModel::post_diversification_diffs(void) {
   cout << "post_diversification_diffs" << endl;
   int k=0;
   int maxval = max_of(input->maxc);
@@ -278,6 +288,18 @@ void GlobalModel::post_diversification_diffs(void) {
       k++;
     }
 }
+
+
+ void GlobalModel::post_diversification_hamming(void) {
+   cout << "post_diversification_hamming" << endl;
+
+   for (operation i : input -> O) {
+     BoolVar ifb = var (a(i) == 1);
+     IntVar thenb = var ( c(i) );
+     IntVar elseb = var ( -1 );
+     ite(*this, ifb,  thenb, elseb, hamm(i), IPL_DOM);
+   }
+ }
 
 void GlobalModel::post_secondary_variable_definitions(void) {
   CompleteModel::post_secondary_variable_definitions();
@@ -754,47 +776,33 @@ void GlobalModel::constrain(const Space & _b) {
   case DIST_HAMMING:
     // Add constraint to restrict the instructions.
     // Hamming distance on the cycles array
-    for (operation o : input -> O) {
-      bh << var (a(o) != b.a(o).val());
-      if (b.a(o).val()) { // if activated
-        BoolVarArgs temp;
-        temp << var (c(o) != b.c(o).val());
-        temp << var (a(o) == b.a(o).val());
-        bh << var (sum(temp) == 2);
-      }
+    // for (operation o : input -> O) {
+    //   bh << var (a(o) != b.a(o).val());
+    //   if (b.a(o).val()) { // if activated
+    //     BoolVarArgs temp;
+    //     temp << var (c(o) != b.c(o).val());
+    //     temp << var (a(o) == b.a(o).val());
+    //     bh << var (sum(temp) == 2);
+    //   }
+    // }
+    for (operation o: input -> O) {
+      bh << var (hamm(o) != b.hamm(o));
+    }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+  case DIST_HAMMING_DIFF:
+
+    for (int i = 0; i < v_diff.size(); i++) {
+      bh << var (diff(i) != b.diff(i));
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
     break;
-  case DIST_HAMMING_DIFF:
-    // IntVarArgs bb, bn;
-    // int maxval = max_of(input->maxc);
-    // // Distance difference between the different operations
-    // // if some is inactive, we get maxc
-    // for (uint i = 0; i < input -> O.size(); i++)
-    //   for (uint j = i+1; j< input -> O.size(); j++) {
-
-    //     if ((b.a(i).val() == 1) && (b.a(j).val() == 1)) {
-    //       int val = b.c(i).val() - b.c(j).val();
-    //       bb << IntVar(*this, val, val);
-    //     }
-    //     else {
-    //       bb << IntVar(*this, maxval, maxval);
-    //     }
-    //      // If then else constraint
-    //     BoolVar ifb = var ((a(i) == 1) && (a(j)==1));
-    //     IntVar elseb = var (maxval) ;
-    //     IntVar resb = IntVar(*this, -maxval, maxval);
-    //     IntVar thenb =  expr(*this, c(i) - c(j));
-    //     ite(*this, ifb,  thenb, elseb, resb, IPL_DOM);
-
-    //     bn << resb;
-    //   }
-
-    // assert(bn.size() == bb.size());
-
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
+  case DIST_HAMMING_BR:
+    for (operation o : input -> O) {
+      if (input->type[o] == BRANCH)
+        bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
