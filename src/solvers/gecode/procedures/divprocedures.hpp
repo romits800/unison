@@ -32,79 +32,23 @@
  */
 
 
-#ifndef __DIV_MODEL__
-#define __DIV_MODEL__
+#ifndef __DIV_PROCEDURES__
+#define __DIV_PROCEDURES__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
-#include "localdivmodel.hpp"
-#include "branchers/merit.hpp"
-#include "branchers/value.hpp"
+#include "models/divmodel.hpp"
+#include "procedures/commonprocedures.hpp"
 
-using namespace Gecode;
 using namespace std;
-
-class LocalDivModel;
-
-class DivModel : public GlobalModel {
-
-public:
-
-  // Diff array
-  IntVarArray v_diff;
-
-  // Hamming distance between operations
-  IntVarArray v_hamm;
+using namespace Gecode;
 
 
-  // p: relax parameter for LNS
-  double div_p;
-  // r: random number for LNS
-  Rnd div_r;
-
-  void set_random(Rnd r) {div_r = r;};
-
-  void set_relax(double p) {div_p = p;};
+// Gives a global solution
+Solution<DivModel>
+solve_global(DivModel * base, IterationState & state, vector<int> & best,
+             GIST_OPTIONS * go, int iteration);
 
 
-  // Variable accessors
-
-  IntVar diff(operation o) const {return v_diff[o]; }
-
-  IntVar hamm(operation o) const {return v_hamm[o]; }
-
-
-
-  // Gecode space methods
-
-  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
-
-  DivModel(DivModel& cg);
-
-  DivModel* copy(void);
-
-  // Constraints
-  void post_diversification_constraints(void); // Diversification constraints
-  void post_diversification_diffs(void); // Diversification constraints
-  void post_diversification_hamming(void); // Diversification constraints
-
-
-  // Constrain function
-
-  void constrain(const Space & _b);
-  // The same constraints as the constrain function
-  void post_constrain(DivModel* b);
-
-  // Master and slave configuration
-
-  bool master(const MetaInfo& mi);
-  bool slave(const MetaInfo& mi);
-
-  // Next for relaxing variable for LNS
-
-  void next(const DivModel& l);
-
-
-};
+// Prefix for debug output
+string div();
 
 #endif

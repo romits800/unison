@@ -41,7 +41,7 @@
 
 
 DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
-                         IntPropLevel p_ipl) :
+                   IntPropLevel p_ipl) :
   GlobalModel(p_input, p_options, p_ipl)
 {
 
@@ -55,28 +55,6 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
   // Hamming distance between operators
   v_hamm  = int_var_array(op_size, -1, maxval);
-
-  // // Individual domains of problem variables
-  // CompleteModel::post_decision_variable_domain_definitions();
-
-  // // Secondary variable definitions
-  // GlobalModel::post_secondary_variable_definitions();
-
-  // // Basic model
-  // CompleteModel::post_basic_model_constraints();
-
-  // // Improved model
-  // GlobalModel::post_improved_model_constraints();
-
-  // // Presolved model
-  // CompleteModel::post_presolver_constraints();
-
-  // // Global cost
-  // CompleteModel::post_global_cost_definition();
-
-  // // Cost of each block
-  // CompleteModel::post_cost_definition();
-
 
 }
 
@@ -102,7 +80,6 @@ void DivModel::post_diversification_constraints(void) {
 }
 
 void DivModel::post_diversification_diffs(void) {
-  cout << "post_diversification_diffs" << endl;
   int k=0;
   int maxval = max_of(input->maxc);
   for (uint i = 0; i < input->O.size(); i++)
@@ -118,8 +95,6 @@ void DivModel::post_diversification_diffs(void) {
 
 
 void DivModel::post_diversification_hamming(void) {
-  cout << "post_diversification_hamming" << endl;
-
   for (operation i : input -> O) {
     BoolVar ifb = var (a(i) == 1);
     IntVar thenb = var ( c(i) );
@@ -138,17 +113,43 @@ void DivModel::constrain(const Space & _b) {
 
   switch (options->dist_metric()) {
   case DIST_HAMMING:
-    // Add constraint to restrict the instructions.
-    // Hamming distance on the cycles array
-    // for (operation o : input -> O) {
-    //   bh << var (a(o) != b.a(o).val());
-    //   if (b.a(o).val()) { // if activated
-    //     BoolVarArgs temp;
-    //     temp << var (c(o) != b.c(o).val());
-    //     temp << var (a(o) == b.a(o).val());
-    //     bh << var (sum(temp) == 2);
-    //   }
-    // }
+    for (operation o: input -> O) {
+      bh << var (hamm(o) != b.hamm(o));
+    }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+  case DIST_HAMMING_DIFF:
+
+    for (int i = 0; i < v_diff.size(); i++) {
+      bh << var (diff(i) != b.diff(i));
+    }
+    if (bh.size() >0)
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+  case DIST_HAMMING_BR:
+    for (operation o : input -> O) {
+      if (input->type[o] == BRANCH)
+        bh << var (hamm(o) != b.hamm(o));
+    }
+    if (bh.size() >0)
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+  }
+
+  return;
+
+}
+
+
+void DivModel::post_constrain(DivModel* _b) {
+
+  const DivModel& b = static_cast<const DivModel&>(*_b);
+
+  BoolVarArgs bh;
+
+  switch (options->dist_metric()) {
+  case DIST_HAMMING:
     for (operation o: input -> O) {
       bh << var (hamm(o) != b.hamm(o));
     }

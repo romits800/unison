@@ -146,7 +146,9 @@ protected:
 
   Driver::BoolOption _use_optimal_for_diversification; // not implemented
 
-  Driver::StringOption _distance; // Unit of limits (time, fails)
+  Driver::StringOption _distance; // distance (hamming, branch)
+
+  Driver::StringOption _div_method; //
 
   Driver::StringValueOption _solver_file; // Solver file for best solution (if available)
 
@@ -242,6 +244,8 @@ public:
   bool use_optimal_for_diversification(void) const {return _use_optimal_for_diversification.value();}
 
   DivDistance dist_metric(void) const { return static_cast <DivDistance>( _distance.value());}
+
+  DivMethod div_method(void) const { return static_cast <DivMethod>( _div_method.value());}
 
   string solver_file(void) const {return _solver_file.value();}
 

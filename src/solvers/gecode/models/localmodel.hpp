@@ -144,8 +144,8 @@ public:
 
   // Master and slave configuration
 
-  bool master(const MetaInfo& mi);
-  bool slave(const MetaInfo& mi);
+  virtual bool master(const MetaInfo& mi);
+  virtual bool slave(const MetaInfo& mi);
 
   // Other methods
 

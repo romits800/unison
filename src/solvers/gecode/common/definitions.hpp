@@ -114,6 +114,13 @@ typedef enum divdistance
     DIST_HAMMING_BR
   } DivDistance;
 
+// Diversification method
+typedef enum divmethod
+  {
+   DIV_DECOMPOSITION_LNS,
+   DIV_MONOLITHIC_LNS,
+   DIV_MONOLITHIC_DFS
+  } DivMethod;
 // Unison constraint expression
 
 class UnisonConstraintExpr {

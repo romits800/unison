@@ -69,7 +69,7 @@ ModelOptions::ModelOptions(void)
     _total_threads("total-threads", "total number of threads", 5),
     _portfolio_threads("portfolio-threads", "threads for each portfolio", 5),
     _complete("complete", "run to completeness", false),
-    _decomposition("decomposition", "run decomposition", true),
+    _decomposition("decomposition", "run decomposition", false),
     _monolithic("monolithic", "run monolithic solver", true),
     _initial_aggressiveness("initial-aggressiveness", "initial aggressiveness", 0.0),
     _step_aggressiveness("step-aggressiveness", "aggressiveness step", 1.0 / 9 - 0.0000001),
@@ -128,6 +128,7 @@ ModelOptions::ModelOptions(void)
     _use_optimal_for_diversification("use-optimal-for-diversification", "Use optimal solution for constraining the diversification", false),
 
     _distance("distance", "Distance Metrics", DIST_HAMMING),
+    _div_method("div-method", "Disversification Method", DIV_MONOLITHIC_LNS),
     _solver_file("solver-file", "solver json file file", "")
 
 {
@@ -223,5 +224,13 @@ ModelOptions::ModelOptions(void)
   _distance.add(DIST_HAMMING_BR, "br_hamming");
 
   add(_distance);
+
+  _div_method.add(DIV_DECOMPOSITION_LNS, "decomposition_lns");
+  _div_method.add(DIV_MONOLITHIC_LNS, "monolithic_lns");
+  _div_method.add(DIV_MONOLITHIC_DFS, "monolithic_dfs");
+
+
+  add(_div_method);
+
   add(_solver_file);
 }

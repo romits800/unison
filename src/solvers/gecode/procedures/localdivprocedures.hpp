@@ -32,79 +32,39 @@
  */
 
 
-#ifndef __DIV_MODEL__
-#define __DIV_MODEL__
+#ifndef __LOCAL_DIV_PROCEDURES__
+#define __LOCAL_DIV_PROCEDURES__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
-#include "localdivmodel.hpp"
-#include "branchers/merit.hpp"
-#include "branchers/value.hpp"
+#include "models/localdivmodel.hpp"
+#include "procedures/commonprocedures.hpp"
 
-using namespace Gecode;
 using namespace std;
+using namespace Gecode;
 
-class LocalDivModel;
+// Creates a local problem for block b out of the global solution g1
+Solution<LocalDivModel> local_problem(DivModel * g1, block b);
 
-class DivModel : public GlobalModel {
+// Gives a local solution by running the local solver portfolio
+Solution<LocalDivModel>
+solve_local_div(LocalDivModel * base, GIST_OPTIONS * lo, int iteration);
 
-public:
+// Gives a local solution by running the generic local solver portfolio
+Solution<LocalDivModel>
+solve_generic_div(LocalDivModel * base, GIST_OPTIONS * lo, int iteration);
 
-  // Diff array
-  IntVarArray v_diff;
+LocalDivModel * make_div_local(const DivModel * gs, block b);
 
-  // Hamming distance between operations
-  IntVarArray v_hamm;
+LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl);
 
+// // Gives a local solution by running the custom local solver portfolio
+// Solution<LocalModel>
+// solve_custom_portfolio(LocalModel * base, GIST_OPTIONS * lo, int iteration);
 
-  // p: relax parameter for LNS
-  double div_p;
-  // r: random number for LNS
-  Rnd div_r;
+// // Gives a local solution applying a certain search strategy
+// Solution<LocalModel>
+// solve_local(LocalModel * base, char search, GIST_OPTIONS * lo, int iteration);
 
-  void set_random(Rnd r) {div_r = r;};
-
-  void set_relax(double p) {div_p = p;};
-
-
-  // Variable accessors
-
-  IntVar diff(operation o) const {return v_diff[o]; }
-
-  IntVar hamm(operation o) const {return v_hamm[o]; }
-
-
-
-  // Gecode space methods
-
-  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
-
-  DivModel(DivModel& cg);
-
-  DivModel* copy(void);
-
-  // Constraints
-  void post_diversification_constraints(void); // Diversification constraints
-  void post_diversification_diffs(void); // Diversification constraints
-  void post_diversification_hamming(void); // Diversification constraints
-
-
-  // Constrain function
-
-  void constrain(const Space & _b);
-  // The same constraints as the constrain function
-  void post_constrain(DivModel* b);
-
-  // Master and slave configuration
-
-  bool master(const MetaInfo& mi);
-  bool slave(const MetaInfo& mi);
-
-  // Next for relaxing variable for LNS
-
-  void next(const DivModel& l);
-
-
-};
+// Prefix for debug output
+string local(block b);
 
 #endif

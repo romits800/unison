@@ -44,7 +44,10 @@
 #include "models/options.hpp"
 #include "models/parameters.hpp"
 #include "models/model.hpp"
+// #include "models/divmodel.hpp"
+#include "models/globalmodel.hpp"
 #include "models/localmodel.hpp"
+// #include "models/localdivmodel.hpp"
 
 using namespace std;
 using namespace Gecode;
@@ -133,6 +136,7 @@ void emit_initial_gap(GlobalModel * base, const GlobalModel * sol);
 // Makes a new local space out of a global one
 LocalModel * make_local(const GlobalModel * gs, block b);
 LocalModel * make_local(const GlobalModel * gs, block b, IntPropLevel p_ipl);
+
 
 // register symmetry breaking
 vector<PresolverValuePrecedeChain>

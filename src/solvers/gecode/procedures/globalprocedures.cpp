@@ -528,14 +528,13 @@ Solution<GlobalModel>
 solve_global(GlobalModel * base, IterationState & state, vector<int> & best,
              GIST_OPTIONS * go, int iteration) {
   (void)go; (void)iteration;
-
   // Create global problem with aggressiveness a
-  GlobalModel * g = (GlobalModel*) base->clone();
+  GlobalModel * g = base; //(GlobalModel*) base->clone();
   g->set_aggressiveness(state.a);
   g->set_connect_first(state.cf);
   g->post_branchers();
-  if (base->input->B.size() == 1) g->post_callee_saved_branchers();
 
+  if (base->input->B.size() == 1) g->post_callee_saved_branchers();
 #ifdef GRAPHICS
   if (base->options->gist_global() &&
      (base->options->gist_iteration() == -1 ||
@@ -546,7 +545,7 @@ solve_global(GlobalModel * base, IterationState & state, vector<int> & best,
   Search::Stop * globalStop =
     new_stop(global_limit(base->input, base->options, best[0]), base->options);
   Search::Options globalOptions;
-  globalOptions.stop = globalStop;
+  // globalOptions.stop = globalStop;
 
   // Global search engine
   DFS<GlobalModel> e(g, globalOptions);
@@ -558,9 +557,9 @@ solve_global(GlobalModel * base, IterationState & state, vector<int> & best,
   SolverResult r;
   if (g1 == NULL)
     r = globalStop->stop(e.statistics(), globalOptions) ? LIMIT : UNSATISFIABLE;
-  else
+  else {
     r = SOME_SOLUTION;
-
+  }
   delete globalStop;
 
   if (!base->options->disable_global_shaving() && r == SOME_SOLUTION)
