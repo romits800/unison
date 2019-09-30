@@ -206,55 +206,34 @@ string produce_json(const ResultData& rd,
 }
 
 
-class LocalJob2 : public Support::Job<Solution<LocalDivModel> > {
+class LocalJob : public Support::Job<LocalDivModel * > {
 protected:
 
   LocalDivModel * l;
   RBS<LocalDivModel,BAB> * e;
 
 public:
-  LocalJob2(LocalDivModel *l0,
-           RBS<LocalDivModel,BAB> * e0):
+  LocalJob(LocalDivModel *l0,
+            RBS<LocalDivModel,BAB> * e0):
     l(l0), e(e0){}
-    // local_solutions(local_solutions0) {}
-  virtual int  run(int) {
-    return 3;
-    // return e->next();
-    // if (LocalDivModel* nextl = e->next()) {
+  virtual LocalDivModel * run(int) {
+    // return 3;
+    LocalDivModel * nextl = e->next();
 
-    //   LocalDivModel * oldl = l;
-    //   l = nextl;
-    //   // g1->apply_solution(local_problems[b]);
-
-    //   delete oldl;
-    // }
-
+    return nextl;
 
   }
-  //   if (ls.solution->options->verbose()) {
-  //     if (ls.result == LIMIT) {
-  //       cerr << local(b) << "could not find solution" << endl;
-  //     } else if (ls.result == UNSATISFIABLE) {
-  //       cerr << local(b) << "could not find solution (unsatisfiable)" << endl;
-  //     } else if (ls.result == CACHED_SOLUTION) {
-  //       cerr << local(b) << "repeated solution" << endl;
-  //     }
-  //   }
-  //   if (ls.result == LIMIT || ls.result == UNSATISFIABLE) {
-  //     throw Support::JobStop<Solution<LocalDivModel> >(ls);
-  //   }
 
-  //   return ls;
 };
 
-class LocalJobs2 {
+class LocalJobs {
 protected:
   map<block, LocalDivModel*> l;
   map<block, RBS<LocalDivModel,BAB> *> e;
   vector<block> blocks;
   unsigned int k;
 public:
-  LocalJobs2(map<block, LocalDivModel*> l0,
+  LocalJobs(map<block, LocalDivModel*> l0,
             map<block, RBS<LocalDivModel,BAB> *> e0,
             vector<block> blocks0) :
     l(l0), e(e0),
@@ -262,7 +241,7 @@ public:
   bool operator ()(void) const {
     return k < blocks.size();
   }
-  LocalJob2 * job(void) {
+  LocalJob * job(void) {
     // FIXME: fork jobs in the order of blocks[b], use blocks[k] instead of k
     block b = k;
     // Base local space to accumulate bounds while the portfolio is applied
@@ -270,7 +249,7 @@ public:
     LocalDivModel * lb = l[b];
     RBS<LocalDivModel,BAB> * eb = e[b];
     k++;
-    return new LocalJob2(lb, eb); //, local_solutions);
+    return new LocalJob(lb, eb); //, local_solutions);
   }
 };
 
@@ -762,22 +741,32 @@ int main(int argc, char* argv[]) {
       }
 
       delete g2;
+
       bool found_local_solution = true;
+      //Here
+      LocalJobs ljs(local_problems, local_engines, blocks);
+      unsigned int threads = options.total_threads();
+      Support::RunJobs<LocalJobs, LocalDivModel *> js(ljs, threads);
 
-      for (block b: blocks) {
-        if (LocalDivModel* nextl = (local_engines[b])->next()) {
+      LocalDivModel *ls;
+      while(js.run(ls)) {
 
-          LocalDivModel * oldl = local_problems[b];
-          local_problems[b] = nextl;
-          g1->apply_solution(local_problems[b]);
-
-          delete oldl;
-        }
-        else {
+        int i;
+        LocalDivModel *fls;
+        if (js.stopped(i,fls)) {
+          block b = fls->b;
+          local_problems[b] = fls;
           found_local_solution = false;
+          break;
+        } else {
+          block b = ls->b;
+          local_problems[b] = ls;
+          if (ls && ls->status() != SS_FAILED)
+            g1->apply_solution(ls);
         }
 
       }
+
 
       if (!found_local_solution) {
         cerr << div() << "Cannot find more solutions." << endl;
