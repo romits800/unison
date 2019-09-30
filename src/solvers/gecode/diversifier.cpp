@@ -206,88 +206,71 @@ string produce_json(const ResultData& rd,
 }
 
 
-class LocalJob : public Support::Job<Solution<LocalDivModel> > {
+class LocalJob2 : public Support::Job<Solution<LocalDivModel> > {
 protected:
-  // Base local space to accumulate bounds while the portfolio is applied
-  Solution<LocalDivModel> ls;
-  // visualization options (if any)
-  GIST_OPTIONS * lo;
-  // current iteration
-  int iteration;
-  // local solutions in earlier iterations
-  // vector<vector<LocalDivModel *> > * local_solutions;
+
+  LocalDivModel * l;
+  RBS<LocalDivModel,BAB> * e;
+
 public:
-  LocalJob(Solution<LocalDivModel> ls0, GIST_OPTIONS * lo0, int iteration0):
-    ls(ls0), lo(lo0), iteration(iteration0) {}
+  LocalJob2(LocalDivModel *l0,
+           RBS<LocalDivModel,BAB> * e0):
+    l(l0), e(e0){}
     // local_solutions(local_solutions0) {}
-  virtual Solution<LocalDivModel> run(int) {
-    block b = ls.solution->b;
-    if (ls.result != UNSATISFIABLE) {
-      cout << "block " << b << endl;
-      LocalDivModel * base_local = ls.solution;
-      Gecode::SpaceStatus lss = base_local->status();
-      if (lss == SS_FAILED) {
-        cout << "faild " << b << endl;
-        throw Support::JobStop<Solution<LocalDivModel> >(ls);
-      }
+  virtual int  run(int) {
+    return 3;
+    // return e->next();
+    // if (LocalDivModel* nextl = e->next()) {
 
-      assert(lss != SS_FAILED);
-      // bool single_block = base_local->input->B.size() == 1;
-      // cout << "before solve_local_div" << endl;
-      ls = solve_local_div(base_local, lo, iteration);
+    //   LocalDivModel * oldl = l;
+    //   l = nextl;
+    //   // g1->apply_solution(local_problems[b]);
 
-      cout << "result after run >" << b << " " << (ls.solution->status() == SS_FAILED) << endl;
-      // delete base_local;
-    }
-    if (ls.solution->options->verbose()) {
-      if (ls.result == LIMIT) {
-        cerr << local(b) << "could not find solution" << endl;
-      } else if (ls.result == UNSATISFIABLE) {
-        cerr << local(b) << "could not find solution (unsatisfiable)" << endl;
-      } else if (ls.result == CACHED_SOLUTION) {
-        cerr << local(b) << "repeated solution" << endl;
-      }
-    }
-    if (ls.result == LIMIT || ls.result == UNSATISFIABLE) {
-      throw Support::JobStop<Solution<LocalDivModel> >(ls);
-    }
-    cout << "result after run 2 >" << b << " " << (ls.solution->status() == SS_FAILED) << endl;
+    //   delete oldl;
+    // }
 
-    return ls;
+
   }
+  //   if (ls.solution->options->verbose()) {
+  //     if (ls.result == LIMIT) {
+  //       cerr << local(b) << "could not find solution" << endl;
+  //     } else if (ls.result == UNSATISFIABLE) {
+  //       cerr << local(b) << "could not find solution (unsatisfiable)" << endl;
+  //     } else if (ls.result == CACHED_SOLUTION) {
+  //       cerr << local(b) << "repeated solution" << endl;
+  //     }
+  //   }
+  //   if (ls.result == LIMIT || ls.result == UNSATISFIABLE) {
+  //     throw Support::JobStop<Solution<LocalDivModel> >(ls);
+  //   }
+
+  //   return ls;
 };
 
-class LocalJobs {
+class LocalJobs2 {
 protected:
-  // global solution from which the local problems are generated
-  Solution<DivModel> gs;
-  // visualization options (if any)
-  GIST_OPTIONS * lo;
-  // current iteration
-  int iteration;
-  // Local solution to compute
-  map<block, Solution<LocalDivModel>> lsol;
-  // blocks sorted in descending priority
+  map<block, LocalDivModel*> l;
+  map<block, RBS<LocalDivModel,BAB> *> e;
   vector<block> blocks;
-  // current block index
   unsigned int k;
 public:
-  LocalJobs(Solution<DivModel> gs0, GIST_OPTIONS * lo0, int iteration0,
-            map<block, Solution<LocalDivModel>> lsol0,
+  LocalJobs2(map<block, LocalDivModel*> l0,
+            map<block, RBS<LocalDivModel,BAB> *> e0,
             vector<block> blocks0) :
-    gs(gs0), lo(lo0), iteration(iteration0), lsol(lsol0),
+    l(l0), e(e0),
     blocks(blocks0), k(0) {}
   bool operator ()(void) const {
     return k < blocks.size();
   }
-  LocalJob * job(void) {
+  LocalJob2 * job(void) {
     // FIXME: fork jobs in the order of blocks[b], use blocks[k] instead of k
     block b = k;
     // Base local space to accumulate bounds while the portfolio is applied
     // Solution<LocalDivModel> ls = local_problem(gs.solution, b);
-    Solution<LocalDivModel> lso = lsol[b];
+    LocalDivModel * lb = l[b];
+    RBS<LocalDivModel,BAB> * eb = e[b];
     k++;
-    return new LocalJob(lso, lo, iteration); //, local_solutions);
+    return new LocalJob2(lb, eb); //, local_solutions);
   }
 };
 
@@ -569,15 +552,15 @@ int main(int argc, char* argv[]) {
 
   GlobalData gd(d->n_int_vars, d->n_bool_vars, d->n_set_vars);
 
-  map<block, Solution<LocalDivModel>> lsol;
-  // vector<Solution<LocalDivModel> > lsol;
-  for (unsigned int b = 0; b < input.B.size(); b++) {
-    // FIX
-    // Solution<LocalDivModel> ls = local_problem(d, b);
-    lsol[b] = local_problem(d,b); //ls);
-    lsol[b].solution->post_div_branchers();
+  // map<block, Solution<LocalDivModel>> lsol;
+  // // vector<Solution<LocalDivModel> > lsol;
+  // for (unsigned int b = 0; b < input.B.size(); b++) {
+  //   // FIX
+  //   // Solution<LocalDivModel> ls = local_problem(d, b);
+  //   lsol[b] = local_problem(d,b); //ls);
+  //   lsol[b].solution->post_div_branchers();
 
-  }
+  // }
   // double execution_time = t.stop();
 
   int count = 0;
