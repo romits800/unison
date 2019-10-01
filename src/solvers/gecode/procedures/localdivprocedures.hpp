@@ -44,25 +44,9 @@ using namespace Gecode;
 // Creates a local problem for block b out of the global solution g1
 Solution<LocalDivModel> local_problem(DivModel * g1, block b);
 
-// Gives a local solution by running the local solver portfolio
-Solution<LocalDivModel>
-solve_local_div(LocalDivModel * base, GIST_OPTIONS * lo, int iteration);
-
-// Gives a local solution by running the generic local solver portfolio
-Solution<LocalDivModel>
-solve_generic_div(LocalDivModel * base, GIST_OPTIONS * lo, int iteration);
-
 LocalDivModel * make_div_local(const DivModel * gs, block b);
 
 LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl);
-
-// // Gives a local solution by running the custom local solver portfolio
-// Solution<LocalModel>
-// solve_custom_portfolio(LocalModel * base, GIST_OPTIONS * lo, int iteration);
-
-// // Gives a local solution applying a certain search strategy
-// Solution<LocalModel>
-// solve_local(LocalModel * base, char search, GIST_OPTIONS * lo, int iteration);
 
 // Prefix for debug output
 string local(block b);
