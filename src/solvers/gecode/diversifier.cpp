@@ -214,7 +214,7 @@ protected:
 
 public:
   LocalJob(LocalDivModel *l0,
-            RBS<LocalDivModel,BAB> * e0):
+           RBS<LocalDivModel,BAB> * e0):
     l(l0), e(e0){}
   virtual LocalDivModel * run(int) {
     // return 3;
@@ -391,20 +391,6 @@ int main(int argc, char* argv[]) {
 
   Parameters input(root);
 
-  // bool single_block = input.B.size() == 1;
-//   int presolver_time = 0;
-// #ifdef GRAPHICS
-//   {
-//     QScriptValue property = root.property("presolver_time");
-//     if (property.isValid()) {
-//       presolver_time = property.toInt32();
-//     }
-//   }
-// #else
-//   if (root.isMember("presolver_time")) {
-//     presolver_time = root["presolver_time"].asInt();
-//   }
-// #endif
 
   GIST_OPTIONS * go = new GIST_OPTIONS(),
                * lo  = new GIST_OPTIONS();
@@ -510,12 +496,6 @@ int main(int argc, char* argv[]) {
     local_solutions.push_back(vector<LocalDivModel *>());
 
 
-  // Best global cost so far
-  // vector<int> best_cost1;
-  // for (unsigned int n = 0; n < input.N; n++)
-  //   best_cost1.push_back(Int::Limits::max);
-
-
   bool proven = false;
 
   IterationState state(options.initial_aggressiveness(), false);
@@ -524,23 +504,11 @@ int main(int argc, char* argv[]) {
   t.start();
 
 
-
-
   // Code for diversification
   DivModel *d = new DivModel(&input, &options, IPL_DOM);
 
   GlobalData gd(d->n_int_vars, d->n_bool_vars, d->n_set_vars);
 
-  // map<block, Solution<LocalDivModel>> lsol;
-  // // vector<Solution<LocalDivModel> > lsol;
-  // for (unsigned int b = 0; b < input.B.size(); b++) {
-  //   // FIX
-  //   // Solution<LocalDivModel> ls = local_problem(d, b);
-  //   lsol[b] = local_problem(d,b); //ls);
-  //   lsol[b].solution->post_div_branchers();
-
-  // }
-  // double execution_time = t.stop();
 
   int count = 0;
   int maxcount = options.number_divs();
@@ -675,7 +643,6 @@ int main(int argc, char* argv[]) {
 
 
     vector<block> blocks(d->input->B);
-
     map<block, LocalDivModel *> local_problems;
     map<block, RBS<LocalDivModel,BAB> *> local_engines;
     for (block b: blocks) {
@@ -695,7 +662,6 @@ int main(int argc, char* argv[]) {
       }
 
       localOptions.cutoff = c;
-
       local_problems[b] = (LocalDivModel *) make_div_local(d,b);
       local_problems[b]-> post_div_branchers();
       local_problems[b]-> post_diversification_constraints();
@@ -705,7 +671,6 @@ int main(int argc, char* argv[]) {
       // local_engines.push_back(e);
     }
 
-
     DivModel * g = (DivModel*) d -> clone();
     g -> post_branchers();
 
@@ -713,7 +678,6 @@ int main(int argc, char* argv[]) {
 
     DivModel * g1 = NULL;
     vector<DivModel*> solutions;
-
     while(count < maxcount) {
 
 
@@ -766,8 +730,6 @@ int main(int argc, char* argv[]) {
         }
 
       }
-
-
       if (!found_local_solution) {
         cerr << div() << "Cannot find more solutions." << endl;
         return 0;
