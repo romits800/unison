@@ -406,11 +406,6 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < argc; i++) argv0.push_back(argv[i]);
 
   ModelOptions options;
-  // options for LNS
-  options.iterations(10);
-  options.relax(0.7);
-  options.seed(3);
-  options.time(10*1000);
 
   options.parse(argc, argv);
 
