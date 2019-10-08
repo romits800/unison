@@ -116,7 +116,6 @@ ModelOptions::ModelOptions(void)
     _disable_temporary_symmetry_breaking_constraints("disable-temporary-symmetry-breaking-constraints", "disable temporary symmetry breaking constraints", false),
     _disable_infinite_register_dominance_constraints("disable-infinite-register-dominance-constraints", "disable infinite register dominance constraints", false),
     // // Diversification options
-    _disable_lns_div("disable-lns-div", "disable LNS for diversification", false),
     _disable_relax_a("disable-relax-a", "disable relaxing variable a for diversification", false),
     _disable_relax_i("disable-relax-i", "disable relaxing variable i for diversification", false),
     _disable_relax_y("disable-relax-y", "disable relaxing variable y for diversification", false),
@@ -208,7 +207,6 @@ ModelOptions::ModelOptions(void)
   add(_disable_temporary_symmetry_breaking_constraints);
   add(_disable_infinite_register_dominance_constraints);
 
-  add(_disable_lns_div);
   add(_disable_relax_a);
   add(_disable_relax_i);
   add(_disable_relax_y);

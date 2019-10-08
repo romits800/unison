@@ -40,7 +40,7 @@
 
 LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
                        IntPropLevel p_ipl,
-                       const DivModel * gs, block p_b) :
+                       const DecompDivModel * gs, block p_b) :
   LocalModel(p_input, p_options, p_ipl, gs, p_b)
 {
   div_r.seed(p_options->seed());
@@ -120,14 +120,14 @@ void LocalDivModel::constrain(const Space & _b) {
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance
     break;
-  // case DIST_HAMMING_DIFF:
+  case DIST_HAMMING_DIFF:
   //   // for (uint o=0; o< input -> ops[b].size(); o++) {
   //   for (int i = 0; i < v_diff.size(); i++) {
   //     bh << var (diff(i) != bi.diff(i));
   //   }
   //   if (bh.size() >0)
   //     constraint(sum(bh) >= 1); // hamming distance
-  //   break;
+    break;
   case DIST_HAMMING_BR:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
       if (input->type[o] == BRANCH)

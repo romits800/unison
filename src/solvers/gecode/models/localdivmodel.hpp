@@ -36,7 +36,7 @@
 #define __LOCAL_DIV_MODEL__
 
 #include "localmodel.hpp"
-#include "divmodel.hpp"
+#include "decompdivmodel.hpp"
 #include "branchers/filters.hpp"
 #include "branchers/printers.hpp"
 #include "branchers/routingbrancher.hpp"
@@ -48,7 +48,7 @@ using namespace Gecode;
 using namespace std;
 
 // class GlobalModel;
-class DivModel;                 //
+class DecompDivModel;                 //
 
 class LocalDivModel : public LocalModel {
 
@@ -79,7 +79,7 @@ public:
   // Gedode space methods
 
   LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
-                const DivModel * gs, block b);
+                const DecompDivModel * gs, block b);
 
   LocalDivModel(LocalDivModel& cg);
 

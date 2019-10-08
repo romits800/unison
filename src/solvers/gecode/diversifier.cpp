@@ -62,6 +62,7 @@
 #include "models/simplemodel.hpp"
 #include "models/globalmodel.hpp"
 #include "models/divmodel.hpp"
+#include "models/decompdivmodel.hpp"
 #include "models/localdivmodel.hpp"
 #include "models/localmodel.hpp"
 #include "procedures/divprocedures.hpp"
@@ -103,7 +104,7 @@ class ResultData {
 
 public:
 
-  DivModel * solution;
+  GlobalModel * solution;
   bool proven;
   long long int fail;
   long long int it_fail;
@@ -114,7 +115,7 @@ public:
   int solving_time;
   int it_solving_time;
 
-  ResultData(DivModel * solution, bool proven, long long int it_fail,
+  ResultData(GlobalModel * solution, bool proven, long long int it_fail,
              long long int it_node, int presolver_time, int presolving_time,
              int solving_time, int it_solving_time) {
     this->solution = solution;
@@ -308,11 +309,11 @@ int main(int argc, char* argv[]) {
 
   ModelOptions options;
   // options for LNS
-  if (!options.disable_lns_div()) {
+  if (options.div_method() == DIV_MONOLITHIC_LNS || options.div_method() == DIV_DECOMPOSITION_LNS) {
     options.iterations(10);
     options.relax(0.7);
     options.seed(3);
-    options.time(10*1000);
+    // options.time(10*1000);
   }
   options.parse(argc, argv);
 
@@ -521,7 +522,11 @@ int main(int argc, char* argv[]) {
   vector<int> best_cost;
   int bestcost;
 
-  // cout << div() << "Before us optimal for div" << endl;
+  if (options.verbose()) {
+    cerr << div() << "Printing cost status report..." << endl;
+    cerr << div() << cost_status_report(d, d) << endl;
+  }
+
   if (options.use_optimal_for_diversification()) {
 
 #ifdef GRAPHICS
@@ -573,20 +578,16 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
     }
 #endif
-    // cout << div() << "Before solverParams" << endl;
     SolverParameters solver(root);
-    // cout << div() << "After solverParams" << endl;
 
-
-    // if (options.use_optimal_for_diversification()) {
 
     bestcost = solver.cost[0];
     if (bestcost < 0) {
-      cout << div() <<"Falling back to llvm best solution" << endl;
+      cerr << div() << "Falling back to llvm best solution." << endl;
 
-      bestcost = input.maxf[0];
 
       // Best cost upper bound
+      bestcost = input.maxf[0];
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
       for (uint i = 1; i < input.N; i++) {
         ag_best_cost.push_back(input.maxf[i]);
@@ -617,6 +618,8 @@ int main(int argc, char* argv[]) {
 
   } else {
 
+    cerr << div() << "Using llvm best solution" << endl;
+
     // Best cost upper bound
     bestcost = input.maxf[0];
     ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
@@ -632,26 +635,39 @@ int main(int argc, char* argv[]) {
   // d -> post_lower_bound(best_cost);
   d -> post_upper_bound(ag_best_cost);
 
-  if (options.verbose())
-    cerr << div() << cost_status_report(d, d) << endl;
+  if (d->status() == SS_FAILED) {
+    cerr << div() << "No better solution!" << endl;
+    cerr << div() << "ag_best_cost[0]" << ag_best_cost[0] << endl;
+    return -1;
+  }
 
+  if (options.verbose()) {
+    cerr << div() << "Printing cost status report..." << endl;
+    cerr << div() << cost_status_report(d, d) << endl;
+  }
 
   //////////////////////////////// START //////////////////////////////
+  cerr << div() << "Starting..." << endl;
 
 
   if (options.div_method() == DIV_DECOMPOSITION_LNS) {
 
+    DecompDivModel *dd = new DecompDivModel(&input, &options, IPL_DOM);
 
-    vector<block> blocks(d->input->B);
+    GlobalData dgd(dd->n_int_vars, dd->n_bool_vars, dd->n_set_vars);
+
+    dd -> post_upper_bound(ag_best_cost);
+
+    vector<block> blocks(dd->input->B);
     map<block, LocalDivModel *> local_problems;
     map<block, RBS<LocalDivModel,BAB> *> local_engines;
     for (block b: blocks) {
 
       Search::Options localOptions;
 
-      Gecode::RestartMode restart = d->options->restart();
+      Gecode::RestartMode restart = dd->options->restart();
       Search::Cutoff* c;
-      unsigned long int s_const = d->options->restart_base();
+      unsigned long int s_const = dd->options->restart_base();
 
       if (restart == RM_LUBY ){
         c = Search::Cutoff::luby(s_const);
@@ -662,39 +678,62 @@ int main(int argc, char* argv[]) {
       }
 
       localOptions.cutoff = c;
-      local_problems[b] = (LocalDivModel *) make_div_local(d,b);
+      local_problems[b] = (LocalDivModel *) make_div_local(dd, b);
       local_problems[b]-> post_div_branchers();
       local_problems[b]-> post_diversification_constraints();
+      local_problems[b]-> constrain_cost(IRT_LE, ag_best_cost[0]);
 
       // Restart-based meta-engine
       local_engines[b] = new  RBS<LocalDivModel,BAB>(local_problems[b], localOptions);
       // local_engines.push_back(e);
     }
 
-    DivModel * g = (DivModel*) d -> clone();
+
+    if (dd->status() != SS_SOLVED && dd->status() != SS_BRANCH) {
+      cerr << div() << "The status of the model is not ready." << endl;
+    }
+
+    DecompDivModel * g = (DecompDivModel*) dd -> clone();
+
     g -> post_branchers();
 
     g -> post_diversification_constraints(); // Diversification constraints
 
-    DivModel * g1 = NULL;
-    vector<DivModel*> solutions;
+    DecompDivModel * g1 = NULL;
+
+    Search::Options globalOptions;
+
+    Gecode::RestartMode restart = options.restart();
+    Search::Cutoff* c;
+    unsigned long int s_const = options.restart_base();
+
+    if (restart == RM_LUBY ){
+      c = Search::Cutoff::luby(s_const);
+    } else if (restart == RM_CONSTANT) {
+      c = Search::Cutoff::constant(s_const);
+    } else {
+      c = Search::Cutoff::constant(1000);
+    }
+
+    globalOptions.cutoff = c;
+
+    RBS<DecompDivModel,DFS> e(g, globalOptions);
+
+    vector<DecompDivModel*> solutions;
     while(count < maxcount) {
 
 
-      Search::Options globalOptions;
-      DFS<DivModel> e(g, globalOptions);
       g1 = e.next();
 
-
       if (g1 == NULL || g1->status() == SS_FAILED) {
-        cerr << div() << "DivModel e.next() failed." << endl;
+        cerr << div() << "DecompDivModel e.next() failed." << endl;
         return 0;
       }
 
 
-      DivModel * g2 = g;
+      DecompDivModel * g2 = g;
       try {
-        g = (DivModel *)g1->clone();
+        g = (DecompDivModel *)g1->clone();
       }
       catch(Gecode::Exception e) {
         std::cerr  << div()
@@ -703,7 +742,6 @@ int main(int argc, char* argv[]) {
                    << "Stopping..." << std::endl;
         return 0;
       }
-
       delete g2;
 
       bool found_local_solution = true;
@@ -714,7 +752,6 @@ int main(int argc, char* argv[]) {
 
       LocalDivModel *ls;
       while(js.run(ls)) {
-
         int i;
         LocalDivModel *fls;
         if (js.stopped(i,fls)) {
@@ -725,18 +762,20 @@ int main(int argc, char* argv[]) {
         } else {
           block b = ls->b;
           local_problems[b] = ls;
-          if (ls && ls->status() != SS_FAILED)
+          if (ls && ls->status() != SS_FAILED) {
             g1->apply_solution(ls);
+          }
         }
 
       }
+
       if (!found_local_solution) {
         cerr << div() << "Cannot find more solutions." << endl;
         return 0;
       }
 
       if (g1->status() != SS_FAILED) {
-
+        cerr << div() << "Clone" << endl;
         solutions.push_back(g1);
         ResultData rd = ResultData(g1, false, 0,
                                    0, 0,
@@ -745,7 +784,7 @@ int main(int argc, char* argv[]) {
 
         ofstream fout;
         fout.open(to_string(count) + "." + g1->options->output_file());
-        fout << produce_json(rd, gd, g1->input->N, 0);
+        fout << produce_json(rd, dgd, g1->input->N, 0);
         fout.close();
         count++;
         g->post_constrain(g1);
@@ -759,14 +798,12 @@ int main(int argc, char* argv[]) {
     d->post_complete_branchers(0);
     d->post_diversification_constraints(); // Diversification constraint
 
-  // if (options.disable_lns_div()) {
-
     BAB<DivModel> e(d);
 
     t_solver.start();
     t_it.start();
 
-    cout << div() << "Starting" << endl;
+
     while (DivModel *nextg = e.next()) {
       cout << div() << "Clone" << endl;
 

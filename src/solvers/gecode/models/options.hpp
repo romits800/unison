@@ -135,7 +135,6 @@ protected:
 
   // Diversification specific options
 
-  Driver::BoolOption _disable_lns_div; // Disable LNS search for  diversification
   Driver::BoolOption _disable_relax_a; //
   Driver::BoolOption _disable_relax_i; //
   Driver::BoolOption _disable_relax_y; //
@@ -232,7 +231,6 @@ public:
   bool disable_temporary_symmetry_breaking_constraints(void) const {return _disable_temporary_symmetry_breaking_constraints.value();}
   bool disable_infinite_register_dominance_constraints(void) const {return _disable_infinite_register_dominance_constraints.value();}
   /* Diversification flags */
-  bool disable_lns_div(void) const {return _disable_lns_div.value();}
   bool disable_relax_a(void) const {return _disable_relax_a.value();}
   bool disable_relax_i(void) const {return _disable_relax_i.value();}
   bool disable_relax_y(void) const {return _disable_relax_y.value();}

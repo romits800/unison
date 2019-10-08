@@ -106,7 +106,6 @@ void DivModel::post_diversification_hamming(void) {
 
 
 void DivModel::constrain(const Space & _b) {
-
   const DivModel& b = static_cast<const DivModel&>(_b);
 
   BoolVarArgs bh;
@@ -118,6 +117,8 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance
+    else
+      cerr << "No constraints @ constrain";
     break;
   case DIST_HAMMING_DIFF:
 
@@ -126,6 +127,8 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
+    else
+      cerr << "No constraints @ constrain";
     break;
   case DIST_HAMMING_BR:
     for (operation o : input -> O) {
@@ -134,6 +137,10 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
+    else {
+      cerr << "No constraints @ constrain";
+      GECODE_NEVER;
+    }
     break;
   }
 
@@ -171,6 +178,7 @@ void DivModel::post_constrain(DivModel* _b) {
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
+
     break;
   }
 
@@ -204,6 +212,8 @@ bool DivModel::slave(const MetaInfo& mi) {
       return false;
       // } else
         // return true;
+    } else if (mi.restart() == 0) {
+      return true;
     } else {
       return true;
     }
@@ -213,7 +223,6 @@ bool DivModel::slave(const MetaInfo& mi) {
 }
 
 void DivModel::next(const DivModel& l) {
-
 
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;

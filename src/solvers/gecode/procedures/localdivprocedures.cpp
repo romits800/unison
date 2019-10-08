@@ -34,7 +34,7 @@
 
 #include "localdivprocedures.hpp"
 
-Solution<LocalDivModel> local_problem(DivModel * g1, block b) {
+Solution<LocalDivModel> local_problem(DecompDivModel * g1, block b) {
   IntPropLevel ipl = IPL_DOM;
   if (g1->input->ops[b].size() > g1->options->consistency_threshold()) {
     ipl = IPL_BND;
@@ -51,11 +51,11 @@ Solution<LocalDivModel> local_problem(DivModel * g1, block b) {
 
 
 
-LocalDivModel * make_div_local(const DivModel * gs, block b) {
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b) {
   return make_div_local(gs, b, gs->ipl);
 }
 
-LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl) {
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl) {
   return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
 }
 
