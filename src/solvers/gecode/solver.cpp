@@ -406,7 +406,6 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < argc; i++) argv0.push_back(argv[i]);
 
   ModelOptions options;
-
   options.parse(argc, argv);
 
   if (argc < 2) {
@@ -613,8 +612,7 @@ int main(int argc, char* argv[]) {
   Support::Timer t;
   t.start();
 
-
-    // Base global space to accumulate bounds and nogoods: not to search
+  // Base global space to accumulate bounds and nogoods: not to search
   GlobalModel * base = new GlobalModel(&input, &options, IPL_DOM);
   GlobalData gd(base->n_int_vars, base->n_bool_vars, base->n_set_vars);
 
@@ -623,7 +621,7 @@ int main(int argc, char* argv[]) {
   double execution_time = t.stop();
   if (execution_time > options.timeout()) {
     results.push_back(ResultData(NULL, false, 0, 0, presolver_time,
-                                   0, 0, execution_time));
+                                 0, 0, execution_time));
     timeout_exit(base, results, gd, go, t.stop());
   }
 
@@ -633,7 +631,7 @@ int main(int argc, char* argv[]) {
       cerr << "giving up: number of operations (" << input.O.size()
            << ") exceeds solving threshold (" << options.solving_threshold()
            << ")" << endl;
-        cerr << "execution time: " << execution_time << " ms" << endl;
+      cerr << "execution time: " << execution_time << " ms" << endl;
     }
     results.push_back(ResultData(NULL, false, 0, 0, presolver_time,
                                  0, 0, execution_time));
@@ -649,12 +647,9 @@ int main(int argc, char* argv[]) {
          << gd.global_n_bool_vars << " bool, "
          << gd.global_n_set_vars << " set" << endl;
 
-
-
   // Post cost upper bound
   base->post_upper_bound(input.maxf);
   Gecode::SpaceStatus ss1 = status_lb(base);
-
 
   // Emit initial optimality gap
   emit_initial_gap(base, base);
@@ -666,7 +661,7 @@ int main(int argc, char* argv[]) {
       cerr << "execution time: " << execution_time << " ms" << endl;
     }
     results.push_back(ResultData(NULL, true, 1, 1, presolver_time,
-                                   0, 0, execution_time));
+                                 0, 0, execution_time));
     emit_output_exit(base, results, gd, go);
   } else {
     results.push_back(ResultData(NULL, false, 0, 0, presolver_time, 0, 0, 0));
@@ -852,7 +847,6 @@ int main(int argc, char* argv[]) {
     cerr << pre() << "presolving time: " << presolving_time << " ms" << endl;
   }
 
-
   if (optimality_gap(base, base, 0) <= base->options->acceptable_gap() &&
       base->options->acceptable_gap() > 0) {
     if (options.verbose())
@@ -862,7 +856,6 @@ int main(int argc, char* argv[]) {
 
   if (t.stop() > options.timeout())
     timeout_exit(base, results, gd, go, t.stop());
-
 
   Support::Timer t_solver;
   t_solver.start();
@@ -989,6 +982,7 @@ int main(int argc, char* argv[]) {
               break;
             }
           }
+
         }
 
         // Forbid the current global solution
@@ -1003,8 +997,8 @@ int main(int argc, char* argv[]) {
           vector<int> new_best_cost = var_vector(gs.solution->cost());
           assert((best_cost == new_best_cost) ||
                  std::lexicographical_compare(
-                                              &new_best_cost, &new_best_cost + input.N,
-                                              &best_cost,     &best_cost     + input.N));
+                   &new_best_cost, &new_best_cost + input.N,
+                   &best_cost,     &best_cost     + input.N));
           best_cost = new_best_cost;
 
           if (options.verbose()) {
@@ -1074,7 +1068,7 @@ int main(int argc, char* argv[]) {
           base = (GlobalModel*) results.back().solution->clone();
         } else {
           if (options.verbose()) {
-              cerr << global() << unsat_report(base) << endl;
+            cerr << global() << unsat_report(base) << endl;
           }
         }
         proven = true;
@@ -1104,7 +1098,6 @@ int main(int argc, char* argv[]) {
 
       if (t.stop() > options.timeout())
         timeout_exit(base, results, gd, go, t.stop());
-
 
       IterationState next_state(state);
       next_state.next(&options);
@@ -1162,6 +1155,8 @@ int main(int argc, char* argv[]) {
       }
     }
   }
+
+  execution_time = t.stop();
 
   if (options.verbose()) {
     cerr << "execution time: " << execution_time << " ms" << endl;

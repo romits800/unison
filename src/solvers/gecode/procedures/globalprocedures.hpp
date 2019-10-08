@@ -102,7 +102,4 @@ string pre();
 // Prefix for debug output
 string monolithic();
 
-// Prefix for debug output
-string div();
-
 #endif

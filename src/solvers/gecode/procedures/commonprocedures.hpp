@@ -44,10 +44,7 @@
 #include "models/options.hpp"
 #include "models/parameters.hpp"
 #include "models/model.hpp"
-// #include "models/divmodel.hpp"
-#include "models/globalmodel.hpp"
 #include "models/localmodel.hpp"
-// #include "models/localdivmodel.hpp"
 
 using namespace std;
 using namespace Gecode;

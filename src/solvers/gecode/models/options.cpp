@@ -69,7 +69,7 @@ ModelOptions::ModelOptions(void)
     _total_threads("total-threads", "total number of threads", 5),
     _portfolio_threads("portfolio-threads", "threads for each portfolio", 5),
     _complete("complete", "run to completeness", false),
-    _decomposition("decomposition", "run decomposition", false),
+    _decomposition("decomposition", "run decomposition", true),
     _monolithic("monolithic", "run monolithic solver", true),
     _initial_aggressiveness("initial-aggressiveness", "initial aggressiveness", 0.0),
     _step_aggressiveness("step-aggressiveness", "aggressiveness step", 1.0 / 9 - 0.0000001),
