@@ -600,19 +600,25 @@ int main(int argc, char* argv[]) {
 
     } else {
       cout << div() << "Using optimal cost " << bestcost << endl;
-
       // Best cost upper bound
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
       for (uint i = 1; i < input.N; i++) {
-        ag_best_cost.push_back(solver.cost[i]);
+        int bcost = solver.cost[i];
+        ag_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
+
       }
       // Best cost lower bound
-      best_cost.push_back(bestcost);
-      for (uint i = 1; i < input.N; i++) {
-        best_cost.push_back(solver.cost[i]);
+      if (solver.proven) {
+        best_cost.push_back(bestcost);
+        for (uint i = 1; i < input.N; i++) {
+          best_cost.push_back(solver.cost[i]);
+        }
+      } else {
+        for (uint i = 0; i < input.N; i++)
+          best_cost.push_back(d->cost()[i].min());
       }
-
     }
+
 
     // }
 
@@ -627,12 +633,12 @@ int main(int argc, char* argv[]) {
       ag_best_cost.push_back(input.maxf[i]);
     }
     // Best cost lower bound
-    for (uint i = 1; i < input.N; i++) {
+    for (uint i = 0; i < input.N; i++) {
       best_cost.push_back(d->cost()[i].min());
     }
   }
 
-  // d -> post_lower_bound(best_cost);
+  d -> post_lower_bound(best_cost);
   d -> post_upper_bound(ag_best_cost);
 
   if (d->status() == SS_FAILED) {
@@ -657,6 +663,7 @@ int main(int argc, char* argv[]) {
     GlobalData dgd(dd->n_int_vars, dd->n_bool_vars, dd->n_set_vars);
 
     dd -> post_upper_bound(ag_best_cost);
+    dd -> post_lower_bound(best_cost);
 
     vector<block> blocks(dd->input->B);
     map<block, LocalDivModel *> local_problems;
@@ -681,7 +688,7 @@ int main(int argc, char* argv[]) {
       local_problems[b] = (LocalDivModel *) make_div_local(dd, b);
       local_problems[b]-> post_div_branchers();
       local_problems[b]-> post_diversification_constraints();
-      local_problems[b]-> constrain_cost(IRT_LE, ag_best_cost[0]);
+      local_problems[b]-> constrain_cost(IRT_LE, ceil((float)ag_best_cost[0]/(float)dd->input->freq[b]));
 
       // Restart-based meta-engine
       local_engines[b] = new  RBS<LocalDivModel,BAB>(local_problems[b], localOptions);
