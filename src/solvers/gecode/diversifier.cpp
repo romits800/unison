@@ -685,6 +685,9 @@ int main(int argc, char* argv[]) {
     map<block, RBS<LocalDivModel,BAB> *> local_engines;
     map<block, vector<LocalDivModel *>*> local_solutions;
 
+    DFS<DecompDivModel> e1(dd);
+    DecompDivModel *temp = e1.next() ; // find some solution for propagating the cost
+
     for (block b: blocks) {
 
       Search::Options localOptions;
@@ -702,17 +705,16 @@ int main(int argc, char* argv[]) {
       }
 
       localOptions.cutoff = c;
-      local_problems[b] = (LocalDivModel *) make_div_local(dd, b);
+      local_problems[b] = (LocalDivModel *) make_div_local(temp, b);
       local_problems[b]-> post_div_branchers();
       local_problems[b]-> post_diversification_constraints();
-      // local_problems[b]-> constrain_cost(IRT_LE, ag_best_cost[0]);
-      local_problems[b]-> constrain_cost(IRT_LE, ceil((float)ag_best_cost[0]/(float)dd->input->freq[b]));
 
       // Restart-based meta-engine
       local_engines[b] = new  RBS<LocalDivModel,BAB>(local_problems[b], localOptions);
       // local_engines.push_back(e);
       local_solutions[b] = new vector<LocalDivModel *>();
     }
+    delete temp;
 
 
     if (dd->status() != SS_SOLVED && dd->status() != SS_BRANCH) {
@@ -722,7 +724,6 @@ int main(int argc, char* argv[]) {
     DecompDivModel * g = (DecompDivModel*) dd -> clone();
 
     g -> post_branchers();
-
     g -> post_diversification_constraints(); // Diversification constraints
 
 
@@ -760,7 +761,6 @@ int main(int argc, char* argv[]) {
         block b = fls->b;
         // TODO delete the old one
         local_problems[b] = fls;
-        found_local_solution = false;
         break;
       } else {
         block b = ls->b;
@@ -781,6 +781,7 @@ int main(int argc, char* argv[]) {
 
     srand (time(NULL));
 
+
     while(count < maxcount) {
 
       if (g1 == NULL || g1->status() == SS_FAILED) {
@@ -788,20 +789,25 @@ int main(int argc, char* argv[]) {
         return 0;
       }
 
+      found_local_solution = true;
+
       for (block b: blocks) {
         vector<LocalDivModel *> * lsb = local_solutions[b];
         int maxsize = lsb->size();
 
         int index = rand() % maxsize;
-        cout << div() << "maxsize for b:" << b << " " << index << endl;
 
         LocalDivModel *ls = (*lsb)[index];
-        if (ls && ls->status() != SS_FAILED) {
+
+        if (ls->status() != SS_FAILED) {
           g1 -> apply_solution(ls);
+        } else {
+          found_local_solution = false;
+          break;
         }
       }
 
-      if (g1->status() == SS_FAILED) {
+      if (g1->status() == SS_FAILED || !found_local_solution) {
         DecompDivModel * g2 = g1;
         if (g->status() == SS_FAILED) {
           cerr << "G cloning failed." << endl;
@@ -811,23 +817,40 @@ int main(int argc, char* argv[]) {
         continue;
       }
 
-      cerr << "1." << endl;
+      // DecompDivModel * tmp = (DecompDivModel *)g1 -> clone();
+
+      Search::Options globalOptions;
+
+      Gecode::RestartMode restart = options.restart();
+      Search::Cutoff* c;
+      unsigned long int s_const = options.restart_base();
+
+      if (restart == RM_LUBY ){
+        c = Search::Cutoff::luby(s_const);
+      } else if (restart == RM_CONSTANT) {
+        c = Search::Cutoff::constant(s_const);
+      } else {
+        c = Search::Cutoff::constant(1000);
+      }
+
+      globalOptions.cutoff = c;
 
       RBS<DecompDivModel,DFS> e(g1, globalOptions);
 
+      DecompDivModel * tmp = g1;
       g1 = e.next();
+      delete tmp;
 
       if (g1->status() == SS_FAILED) {
         DecompDivModel * g2 = g1;
         if (g->status() == SS_FAILED) {
           cerr << "G cloning failed." << endl;
+          return 0;
         }
         g1 = (DecompDivModel *)g->clone();
         delete g2;
         continue;
       }
-
-      cerr << "2." << endl;
 
 
       // if (!found_local_solution) {
@@ -838,6 +861,9 @@ int main(int argc, char* argv[]) {
       if (g1->status() != SS_FAILED) {
         cerr << div() << "Clone" << endl;
         solutions.push_back(g1);
+        // cout << "vals a" << g1->v_a << endl;
+        // cout << "vals r" << g1->v_r << endl;
+        // cout << "vals c" << g1->v_c << endl;
         ResultData rd = ResultData(g1, false, 0,
                                    0, 0,
                                    0, t_solver.stop(),
@@ -851,15 +877,14 @@ int main(int argc, char* argv[]) {
         g->post_constrain(g1);
       }
 
-      cerr << "3." << endl;
 
       DecompDivModel * g2 = g1;
       if (g->status() == SS_FAILED) {
         cerr << "G cloning failed." << endl;
+        return 0;
       }
       g1 = (DecompDivModel *)g->clone();
       delete g2;
-      cerr << "4." << endl;
 
     }
 
