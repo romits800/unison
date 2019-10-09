@@ -218,24 +218,31 @@ protected:
   RBS<LocalDivModel,BAB> * e;
   vector<LocalDivModel *> * sols;
 
+  double timeout;
 public:
   LocalJob(LocalDivModel *l0,
            RBS<LocalDivModel,BAB> * e0,
-           vector<LocalDivModel *>* sols0
-           ):
-    l(l0), e(e0), sols(sols0){}
+           vector<LocalDivModel *>* sols0,
+           double timeout0):
+    l(l0), e(e0),
+    sols(sols0), timeout(timeout0) {}
 
   virtual LocalDivModel * run(int) {
-    int count =  0;
+
+    Support::Timer t;
+
+    t.start();
     LocalDivModel * newl  = (LocalDivModel *)l->clone();
     while (LocalDivModel * nextl = e->next()) {
 
       sols-> push_back(nextl);
       newl = nextl;
-      cout << "Count:" << count << "," << l->b << endl;
-      if (count++ >= 80) break;
-
+      // if (count++ >= 80) break;
+      double tmpt = t.stop();
+      // cout << tmpt << " ," << timeout << endl;
+      if (tmpt > timeout) break;
     }
+    // cout << "done" << endl;
 
 
     return newl;
@@ -249,14 +256,17 @@ protected:
   map<block, RBS<LocalDivModel,BAB> *> e;
   map<block, vector<LocalDivModel *>*> solutions;
   vector<block> blocks;
+  double timeout;
   unsigned int k;
 public:
   LocalJobs(map<block, LocalDivModel*> l0,
             map<block, RBS<LocalDivModel,BAB> *> e0,
             map<block, vector<LocalDivModel *>*> solutions0,
-            vector<block> blocks0) :
+            vector<block> blocks0,
+            double timeout0) :
     l(l0), e(e0), solutions(solutions0),
-    blocks(blocks0), k(0) {}
+    blocks(blocks0),
+    timeout(timeout0), k(0) {}
   bool operator ()(void) const {
     return k < blocks.size();
   }
@@ -270,7 +280,7 @@ public:
     vector<LocalDivModel *>* solsb = solutions[b];
     k++;
 
-    return new LocalJob(lb, eb, solsb); //, local_solutions);
+    return new LocalJob(lb, eb, solsb, timeout); //, local_solutions);
   }
 };
 
@@ -714,6 +724,7 @@ int main(int argc, char* argv[]) {
       // local_engines.push_back(e);
       local_solutions[b] = new vector<LocalDivModel *>();
     }
+
     delete temp;
 
 
@@ -748,7 +759,7 @@ int main(int argc, char* argv[]) {
 
     bool found_local_solution = true;
     //Here
-    LocalJobs ljs(local_problems, local_engines, local_solutions, blocks);
+    LocalJobs ljs(local_problems, local_engines, local_solutions, blocks, options.timeout());
     unsigned int threads = options.total_threads();
     Support::RunJobs<LocalJobs, LocalDivModel *> js(ljs, threads);
 
@@ -772,6 +783,10 @@ int main(int argc, char* argv[]) {
       }
 
     }
+    // for (block b: blocks) {
+    //   cout << "solutions " << local_solutions[b]->size() << endl;
+    // }
+
 
     if (g->status() == SS_FAILED) {
       cerr << "g cloning failed." << endl;
