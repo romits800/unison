@@ -705,7 +705,8 @@ int main(int argc, char* argv[]) {
       local_problems[b] = (LocalDivModel *) make_div_local(dd, b);
       local_problems[b]-> post_div_branchers();
       local_problems[b]-> post_diversification_constraints();
-      local_problems[b]-> constrain_cost(IRT_LE, ag_best_cost[0]);
+      // local_problems[b]-> constrain_cost(IRT_LE, ag_best_cost[0]);
+      local_problems[b]-> constrain_cost(IRT_LE, ceil((float)ag_best_cost[0]/(float)dd->input->freq[b]));
 
       // Restart-based meta-engine
       local_engines[b] = new  RBS<LocalDivModel,BAB>(local_problems[b], localOptions);
