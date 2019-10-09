@@ -136,10 +136,10 @@ void DivModel::constrain(const Space & _b) {
         bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
+      constraint(sum(bh) >= 1); // hamming distance on the branches
     else {
       cerr << "No constraints @ constrain";
-      GECODE_NEVER;
+      exit(EXIT_FAILURE);
     }
     break;
   }
