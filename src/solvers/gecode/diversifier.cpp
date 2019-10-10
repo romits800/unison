@@ -695,6 +695,7 @@ int main(int argc, char* argv[]) {
     map<block, RBS<LocalDivModel,BAB> *> local_engines;
     map<block, vector<LocalDivModel *>*> local_solutions;
 
+    // TODO(Romy) replace this with just status()
     DFS<DecompDivModel> e1(dd);
     DecompDivModel *temp = e1.next() ; // find some solution for propagating the cost
 
