@@ -665,6 +665,11 @@ int main(int argc, char* argv[]) {
     dd -> post_upper_bound(ag_best_cost);
     dd -> post_lower_bound(best_cost);
 
+    if (dd->status() == SS_FAILED) {
+      cerr << div() << "No better solution!" << endl;
+      return -1;
+    }
+
     vector<block> blocks(dd->input->B);
     map<block, LocalDivModel *> local_problems;
     map<block, RBS<LocalDivModel,BAB> *> local_engines;
@@ -696,9 +701,6 @@ int main(int argc, char* argv[]) {
     }
 
 
-    if (dd->status() != SS_SOLVED && dd->status() != SS_BRANCH) {
-      cerr << div() << "The status of the model is not ready." << endl;
-    }
 
     DecompDivModel * g = (DecompDivModel*) dd -> clone();
 
