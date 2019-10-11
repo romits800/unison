@@ -47,13 +47,25 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
   div_r.seed(p_options->seed());
   div_p = p_options->relax();
-
   int op_size = O().size();
-
   int maxval = max_of(input->maxc);
-  // difference between operators
-  v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
-  // Hamming distance between operators
+  // difference between operations
+  if (options->dist_metric() == DIST_HAMMING_DIFF) {
+    v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
+  }
+  // difference between operations and branch operations
+  else if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
+    int br_size = 0;
+    for (operation o : input -> O)
+      if (input->type[o] == BRANCH)
+        br_size += 1;
+    // Is it ok if br_size = 0?
+    v_diff  = int_var_array((op_size-1)*br_size, -maxval, maxval);
+  } else {
+    // Unused
+    v_diff = int_var_array(1,0,0);
+  }
+  // Hamming distance between operations
   v_hamm  = int_var_array(op_size, -1, maxval);
 
 }
@@ -74,9 +86,10 @@ DivModel* DivModel::copy(void) {
 
 void DivModel::post_diversification_constraints(void) {
   post_diversification_hamming();
-  if (options->dist_metric() == DIST_HAMMING_DIFF) {
+  if (options->dist_metric() == DIST_HAMMING_DIFF)
     post_diversification_diffs();
-  }
+  if (options->dist_metric() == DIST_HAMMING_DIFF_BR)
+    post_diversification_br_diffs();
 }
 
 void DivModel::post_diversification_diffs(void) {
@@ -91,6 +104,20 @@ void DivModel::post_diversification_diffs(void) {
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
       k++;
     }
+}
+
+void DivModel::post_diversification_br_diffs(void) {
+  int k=0;
+  int maxval = max_of(input->maxc);
+  for (operation o : input -> O)
+    for (operation br : input -> O)
+      if (input->type[br] == BRANCH) {
+        BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
+        IntVar elseb = var (maxval) ;
+        IntVar thenb =  var (c(br) - c(o));
+        ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
+        k++;
+      }
 }
 
 
@@ -117,8 +144,10 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance
-    else
+    else {
       cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
     break;
   case DIST_HAMMING_DIFF:
 
@@ -127,8 +156,21 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
-    else
+    else {
       cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+  case DIST_HAMMING_DIFF_BR:
+    for (int i = 0; i < v_diff.size(); i++) {
+      bh << var (diff(i) != b.diff(i));
+    }
+    if (bh.size() >0)
+      constraint(sum(bh) >= 1); // hamming distance
+    else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
     break;
   case DIST_HAMMING_BR:
     for (operation o : input -> O) {
@@ -164,6 +206,14 @@ void DivModel::post_constrain(DivModel* _b) {
       constraint(sum(bh) >= 1); // hamming distance
     break;
   case DIST_HAMMING_DIFF:
+
+    for (int i = 0; i < v_diff.size(); i++) {
+      bh << var (diff(i) != b.diff(i));
+    }
+    if (bh.size() >0)
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+  case DIST_HAMMING_DIFF_BR:
 
     for (int i = 0; i < v_diff.size(); i++) {
       bh << var (diff(i) != b.diff(i));

@@ -83,10 +83,11 @@ public:
 
   DivModel* copy(void);
 
-  // Constraints
-  void post_diversification_constraints(void); // Diversification constraints
-  void post_diversification_diffs(void); // Diversification constraints
-  void post_diversification_hamming(void); // Diversification constraints
+  // Diversification Constraints
+  void post_diversification_constraints(void);
+  void post_diversification_diffs(void);
+  void post_diversification_br_diffs(void);
+  void post_diversification_hamming(void);
 
 
   // Constrain function

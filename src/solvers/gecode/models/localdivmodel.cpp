@@ -128,6 +128,8 @@ void LocalDivModel::constrain(const Space & _b) {
   //   if (bh.size() >0)
   //     constraint(sum(bh) >= 1); // hamming distance
     break;
+  case DIST_HAMMING_DIFF_BR:
+    break;
   case DIST_HAMMING_BR:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
       if (input->type[o] == BRANCH)

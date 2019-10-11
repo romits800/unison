@@ -111,6 +111,7 @@ enum UnisonConstraintExprId
 typedef enum divdistance
   { DIST_HAMMING,
     DIST_HAMMING_DIFF,
+    DIST_HAMMING_DIFF_BR,
     DIST_HAMMING_BR
   } DivDistance;
 
