@@ -50,17 +50,22 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   int op_size = O().size();
   int maxval = max_of(input->maxc);
   // difference between operations
+  int real_op_size = 0;
+  for (operation o : input -> O)
+    if (is_real_type(o))
+      real_op_size += 1;
+
   if (options->dist_metric() == DIST_HAMMING_DIFF) {
-    v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
+    v_diff  = int_var_array((real_op_size*(real_op_size -1))/2, -maxval, maxval);
   }
   // difference between operations and branch operations
   else if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
     int br_size = 0;
     for (operation o : input -> O)
-      if (input->type[o] == BRANCH)
+      if (is_branch_type(o))
         br_size += 1;
     // Is it ok if br_size = 0?
-    v_diff  = int_var_array((op_size-1)*br_size, -maxval, maxval);
+    v_diff  = int_var_array((real_op_size-1)*br_size, -maxval, maxval);
   } else {
     // Unused
     v_diff = int_var_array(1,0,0);
@@ -115,7 +120,7 @@ void DivModel::post_diversification_br_diffs(void) {
   for (operation o : input -> O) {
     if (!is_real_type(o)) continue;
     for (operation br : input -> O)
-      if (input->type[br] == BRANCH) {
+      if (is_branch_type(br)) {
         BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
         IntVar elseb = var (maxval) ;
         IntVar thenb =  var (c(br) - c(o));
@@ -137,12 +142,18 @@ void DivModel::post_diversification_hamming(void) {
 }
 
 
-bool DivModel::is_real_type( int o) {
+bool DivModel::is_real_type(int o) {
 
   return (input->type[o] == BRANCH ||
           input->type[o] == LINEAR ||
           input->type[o] == CALL ||
           input->type[o] == COPY);
+}
+
+bool DivModel::is_branch_type(int o) {
+
+  return (input->type[o] == BRANCH ||
+          input->type[o] == CALL);
 }
 
 void DivModel::constrain(const Space & _b) {
@@ -188,7 +199,7 @@ void DivModel::constrain(const Space & _b) {
     break;
   case DIST_HAMMING_BR:
     for (operation o : input -> O) {
-      if (input->type[o] == BRANCH)
+      if (is_branch_type(0))
         bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)
@@ -238,7 +249,7 @@ void DivModel::post_constrain(DivModel* _b) {
     break;
   case DIST_HAMMING_BR:
     for (operation o : input -> O) {
-      if (input->type[o] == BRANCH)
+      if (is_branch_type(0))
         bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)

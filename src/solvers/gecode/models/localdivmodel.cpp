@@ -105,6 +105,20 @@ void LocalDivModel::post_diversification_hamming(void) {
   }
 }
 
+bool LocalDivModel::is_real_type(int o) {
+
+  return (input->type[o] == BRANCH ||
+          input->type[o] == LINEAR ||
+          input->type[o] == CALL ||
+          input->type[o] == COPY);
+}
+
+bool LocalDivModel::is_branch_type(int o) {
+
+  return (input->type[o] == BRANCH ||
+          input->type[o] == CALL);
+}
+
 
 void LocalDivModel::constrain(const Space & _b) {
   const LocalDivModel& bi = static_cast<const LocalDivModel&>(_b);
@@ -132,7 +146,7 @@ void LocalDivModel::constrain(const Space & _b) {
     break;
   case DIST_HAMMING_BR:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
-      if (input->type[o] == BRANCH)
+      if (is_branch_type(o))
         bh << var (hamm(o) != bi.hamm(o));
     }
     if (bh.size() >0)

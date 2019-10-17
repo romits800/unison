@@ -90,6 +90,10 @@ public:
   void post_diversification_diffs(void); // Diversification constraints
   void post_diversification_hamming(void); // Diversification constraints
 
+  // Branch types
+  bool is_branch_type(int o);
+  bool is_real_type(int o);
+
   // Constrain function
 
   void constrain(const Space & _b);

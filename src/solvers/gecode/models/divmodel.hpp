@@ -89,7 +89,10 @@ public:
   void post_diversification_br_diffs(void);
   void post_diversification_hamming(void);
 
+  // Check if the type of the operation is a branch, i.e. BRANCH or CALL
   bool is_real_type( int o);
+  bool is_branch_type(int o);
+
 
   // Constrain function
 
