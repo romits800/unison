@@ -1,4 +1,4 @@
-/*
+ /*
  *  Main authors:
  *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
  *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>

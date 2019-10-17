@@ -95,21 +95,25 @@ void DivModel::post_diversification_constraints(void) {
 void DivModel::post_diversification_diffs(void) {
   int k=0;
   int maxval = max_of(input->maxc);
-  for (uint i = 0; i < input->O.size(); i++)
+  for (uint i = 0; i < input->O.size(); i++) {
+    if (!is_real_type(i)) continue;
     for (uint j = i+1; j< input->O.size(); j++) {
       // If then else constraint
+      if (!is_real_type(j)) continue;
       BoolVar ifb = var ((a(i) == 1) && (a(j) == 1));
       IntVar elseb = var (maxval) ;
       IntVar thenb =  var (c(i) - c(j));
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
       k++;
     }
+  }
 }
 
 void DivModel::post_diversification_br_diffs(void) {
   int k=0;
   int maxval = max_of(input->maxc);
-  for (operation o : input -> O)
+  for (operation o : input -> O) {
+    if (!is_real_type(o)) continue;
     for (operation br : input -> O)
       if (input->type[br] == BRANCH) {
         BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
@@ -118,11 +122,13 @@ void DivModel::post_diversification_br_diffs(void) {
         ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
         k++;
       }
+  }
 }
 
 
 void DivModel::post_diversification_hamming(void) {
   for (operation i : input -> O) {
+    if (!is_real_type(i)) continue;
     BoolVar ifb = var (a(i) == 1);
     IntVar thenb = var ( c(i) );
     IntVar elseb = var ( -1 );
@@ -131,6 +137,13 @@ void DivModel::post_diversification_hamming(void) {
 }
 
 
+bool DivModel::is_real_type( int o) {
+
+  return (input->type[o] == BRANCH ||
+          input->type[o] == LINEAR ||
+          input->type[o] == CALL ||
+          input->type[o] == COPY);
+}
 
 void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
@@ -140,7 +153,8 @@ void DivModel::constrain(const Space & _b) {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (operation o: input -> O) {
-      bh << var (hamm(o) != b.hamm(o));
+      if (is_real_type(o))
+          bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance
@@ -200,7 +214,8 @@ void DivModel::post_constrain(DivModel* _b) {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (operation o: input -> O) {
-      bh << var (hamm(o) != b.hamm(o));
+      if (is_real_type(o))
+        bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance

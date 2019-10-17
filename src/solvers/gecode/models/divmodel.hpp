@@ -89,6 +89,7 @@ public:
   void post_diversification_br_diffs(void);
   void post_diversification_hamming(void);
 
+  bool is_real_type( int o);
 
   // Constrain function
 
