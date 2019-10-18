@@ -878,6 +878,7 @@ int main(int argc, char* argv[]) {
 
       if (count >= maxcount) break;
 
+
       ResultData rd = ResultData(nextg,
                                  proven, // false, /*proven*/
                                  0,

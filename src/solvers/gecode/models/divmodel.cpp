@@ -70,9 +70,11 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     // Unused
     v_diff = int_var_array(1,0,0);
   }
-  // Hamming distance between operations
+  // Prepare cycles for hamming distance between operations' cycles
   v_hamm  = int_var_array(op_size, -1, maxval);
 
+  // Global cycles array - similar to
+  v_gc = int_var_array(op_size, 0, sum_of(input->maxc));  
 }
 
 DivModel::DivModel(DivModel& cg) :
@@ -82,6 +84,7 @@ DivModel::DivModel(DivModel& cg) :
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
+  v_gc.update(*this, cg.v_gc);
 }
 
 DivModel* DivModel::copy(void) {
@@ -90,6 +93,7 @@ DivModel* DivModel::copy(void) {
 
 
 void DivModel::post_diversification_constraints(void) {
+  post_global_cycles();
   post_diversification_hamming();
   if (options->dist_metric() == DIST_HAMMING_DIFF)
     post_diversification_diffs();
@@ -107,7 +111,7 @@ void DivModel::post_diversification_diffs(void) {
       if (!is_real_type(j)) continue;
       BoolVar ifb = var ((a(i) == 1) && (a(j) == 1));
       IntVar elseb = var (maxval) ;
-      IntVar thenb =  var (c(i) - c(j));
+      IntVar thenb =  var (gc(i) - gc(j));
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
       k++;
     }
@@ -123,7 +127,7 @@ void DivModel::post_diversification_br_diffs(void) {
       if (is_branch_type(br)) {
         BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
         IntVar elseb = var (maxval) ;
-        IntVar thenb =  var (c(br) - c(o));
+        IntVar thenb =  var (gc(br) - gc(o));
         ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
         k++;
       }
@@ -135,9 +139,21 @@ void DivModel::post_diversification_hamming(void) {
   for (operation i : input -> O) {
     if (!is_real_type(i)) continue;
     BoolVar ifb = var (a(i) == 1);
-    IntVar thenb = var ( c(i) );
+    IntVar thenb = var ( gc(i) );
     IntVar elseb = var ( -1 );
     ite(*this, ifb,  thenb, elseb, hamm(i), IPL_DOM);
+  }
+}
+
+void DivModel::post_global_cycles(void) {
+  // VarInt offset;
+  for(block b: input->B) {
+    for (operation o: input->ops[b]) {
+      if (b == 0)
+        constraint(gc(o) == c(o));
+      else
+        constraint(gc(o) == c(o) + gc(input->out[b-1]));
+    }
   }
 }
 

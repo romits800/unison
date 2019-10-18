@@ -56,6 +56,9 @@ public:
   // Hamming distance between operations
   IntVarArray v_hamm;
 
+  // Global cycles array
+  IntVarArray v_gc;
+
 
   // p: relax parameter for LNS
   double div_p;
@@ -73,6 +76,8 @@ public:
 
   IntVar hamm(operation o) const {return v_hamm[o]; }
 
+  IntVar gc(operation o) const {return v_gc[o]; }
+
 
 
   // Gecode space methods
@@ -88,6 +93,8 @@ public:
   void post_diversification_diffs(void);
   void post_diversification_br_diffs(void);
   void post_diversification_hamming(void);
+  void post_global_cycles(void);
+
 
   // Check if the type of the operation is a branch, i.e. BRANCH or CALL
   bool is_real_type( int o);
