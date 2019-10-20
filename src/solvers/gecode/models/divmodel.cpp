@@ -215,7 +215,7 @@ void DivModel::constrain(const Space & _b) {
     break;
   case DIST_HAMMING_BR:
     for (operation o : input -> O) {
-      if (is_branch_type(0))
+      if (is_branch_type(o))
         bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)
@@ -265,7 +265,7 @@ void DivModel::post_constrain(DivModel* _b) {
     break;
   case DIST_HAMMING_BR:
     for (operation o : input -> O) {
-      if (is_branch_type(0))
+      if (is_branch_type(o))
         bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0)
