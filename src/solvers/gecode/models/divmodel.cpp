@@ -45,7 +45,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   GlobalModel(p_input, p_options, p_ipl)
 {
 
-  div_r.seed(p_options->seed());
+  div_r.seed(time(NULL)); //p_options->seed());
   div_p = p_options->relax();
   int op_size = O().size();
   int maxval = max_of(input->maxc);

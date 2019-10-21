@@ -41,6 +41,8 @@
 #include "branchers/merit.hpp"
 #include "branchers/value.hpp"
 
+#include "time.h"
+
 using namespace Gecode;
 using namespace std;
 
