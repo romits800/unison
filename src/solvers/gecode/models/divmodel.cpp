@@ -314,47 +314,52 @@ bool DivModel::slave(const MetaInfo& mi) {
   GECODE_NEVER;
 }
 
-void DivModel::next(const DivModel& l) {
-
+void DivModel::next(const DivModel& b) {
+  // Instructions
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;
     for (operation o: input -> O) {
       instr << i(o);
-      linstr << l.i(o);
+      linstr << b.i(o);
     }
     relax(*this, instr, linstr, div_r, div_p);
   }
 
+  // temporaries
   if (!options->disable_relax_y()) {
     IntVarArgs temp, ltemp;
     for (operand p : input -> P) {
       temp << y(p);
-      ltemp << l.y(p);
+      ltemp << b.y(p);
     }
     relax(*this,temp, ltemp, div_r, div_p);
   }
 
 
+  // Cycles
   if (!options->disable_relax_c()) {
-    relax(*this, v_a, l.v_a, div_r, div_p);
+    // Relax all active variables.
+    // relax(*this, v_a, b.v_a, div_r, 1.0);
     IntVarArgs cycles, lcycles;
     for (operation o : input -> O) {
-      if (l.a(o).val()) { // if activated
+      if (b.a(o).val()) { // if activated
         cycles << c(o);
-        lcycles << l.c(o);
+        lcycles << b.c(o);
       }
     }
     relax(*this, cycles, lcycles, div_r, div_p);
   }
 
+  // Registers
   if (!options->disable_relax_r()) {
     IntVarArgs lregs, regs;
     for (temporary t : input->T) {
-      if (l.l(t).assigned() && l.l(t).val()) { // if the tempoorary is assigned
-        lregs << l.r(t);
+      if (b.l(t).assigned() && b.l(t).val()) { // if the tempoorary is assigned
+        lregs << b.r(t);
         regs << r(t);
       }
     }
+    // Regs
     relax(*this, regs, lregs, div_r, div_p);
   }
 
