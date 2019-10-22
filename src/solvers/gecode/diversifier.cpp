@@ -643,7 +643,8 @@ int main(int argc, char* argv[]) {
 
   if (d->status() == SS_FAILED) {
     cerr << div() << "No better solution!" << endl;
-    cerr << div() << "ag_best_cost[0]" << ag_best_cost[0] << endl;
+    cerr << div() << "ag_best_cost[0]:" << ag_best_cost[0] << endl;
+    cerr << div() << "best_cost[0]:" << best_cost[0] << endl;
     return -1;
   }
 
