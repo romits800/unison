@@ -155,6 +155,8 @@ protected:
 
   Driver::StringValueOption _solver_file; // Solver file for best solution (if available)
 
+  Driver::StringValueOption _divs_dir; // Solver file for best solution (if available)
+
 public:
 
   ModelOptions(void);
@@ -251,6 +253,8 @@ public:
   DivMethod div_method(void) const { return static_cast <DivMethod>( _div_method.value());}
 
   string solver_file(void) const {return _solver_file.value();}
+
+  string divs_dir(void) const {return _divs_dir.value();}
 
 };
 

@@ -124,13 +124,14 @@ ModelOptions::ModelOptions(void)
     _disable_relax_c("disable-relax-c", "disable relaxing variable c for diversification", false),
     _disable_relax_r("disable-relax-r", "disable relaxing variable r for diversification", false),
 
-    _number_divs("number-divs", "Number of generated diversified programs", 100),
+    _number_divs("number-divs", "number of generated diversified programs", 100),
 
     _use_optimal_for_diversification("use-optimal-for-diversification", "Use optimal solution for constraining the diversification", false),
 
-    _distance("distance", "Distance Metrics", DIST_HAMMING),
-    _div_method("div-method", "Disversification Method", DIV_MONOLITHIC_LNS),
-    _solver_file("solver-file", "solver json file file", "")
+    _distance("distance", "distance Metrics", DIST_HAMMING),
+    _div_method("div-method", "disversification Method", DIV_MONOLITHIC_LNS),
+    _solver_file("solver-file", "solver json file file", ""),
+    _divs_dir("divs-dir", "folder to store the diversified versions", "./divs_dir")
 
 {
   add(_output_file);
@@ -235,4 +236,5 @@ ModelOptions::ModelOptions(void)
   add(_div_method);
 
   add(_solver_file);
+  add(_divs_dir);
 }

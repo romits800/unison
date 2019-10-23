@@ -94,6 +94,9 @@
 #include "inspectors/operandlatencyinspector.hpp"
 #endif
 
+#include <sys/stat.h>
+#include <errno.h>
+
 // #include <exception.hpp>
 using namespace Gecode;
 using namespace std;
@@ -299,6 +302,27 @@ bool has_solution(vector<ResultData> & results) {
     }
   }
   return false;
+}
+
+static int do_mkdir(const string divs_path)
+{
+  struct stat     st;
+  int             status = 0;
+  mode_t          mode = 0775;
+
+  if (stat(divs_path.c_str(), &st) != 0) {
+  /* Directory does not exist. EEXIST for race condition */
+    if (mkdir(divs_path.c_str(), mode) != 0 && errno != EEXIST) {
+      cerr << div() << "Creating folder: " + divs_path + " failed." << endl;
+      status = -1;
+    }
+  }
+  else if (!S_ISDIR(st.st_mode)) {
+    /* File is not directory */
+      cerr << div() << "The given folder: " + divs_path + " is not a directory." << endl;
+      status = -1;
+  }
+  return(status);
 }
 
 int main(int argc, char* argv[]) {
@@ -580,6 +604,14 @@ int main(int argc, char* argv[]) {
 #endif
     SolverParameters solver(root);
 
+    cerr << div() << "Creating folder: " + options.divs_dir() << endl;
+
+    if (do_mkdir(options.divs_dir())) {
+      cerr << div() << "Failed to create folder. " << endl;
+      cerr << div() << "Exiting. " << endl;
+      return -1;
+    }
+
 
     bestcost = solver.cost[0];
     if (bestcost < 0) {
@@ -652,6 +684,7 @@ int main(int argc, char* argv[]) {
     cerr << div() << "Printing cost status report..." << endl;
     cerr << div() << cost_status_report(d, d) << endl;
   }
+
 
   //////////////////////////////// START //////////////////////////////
   cerr << div() << "Starting..." << endl;
@@ -832,7 +865,7 @@ int main(int argc, char* argv[]) {
                                  t_it.stop());
 
       ofstream fout;
-      fout.open(to_string(count) + "." + d->options->output_file());
+      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
       fout.close();
 
@@ -889,7 +922,7 @@ int main(int argc, char* argv[]) {
                                  t_solver.stop(),
                                  t_it.stop());
       ofstream fout;
-      fout.open(to_string(count) + "." + d->options->output_file());
+      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
       fout.close();
 
