@@ -65,7 +65,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
       if (is_branch_type(o))
         br_size += 1;
     // Is it ok if br_size = 0?
-    v_diff  = int_var_array((real_op_size-1)*br_size, -maxval, maxval);
+    v_diff  = int_var_array((real_op_size  )*br_size, -maxval, maxval);
   } else {
     // Unused
     v_diff = int_var_array(1,0,0);
@@ -163,12 +163,14 @@ bool DivModel::is_real_type(int o) {
   return (input->type[o] == BRANCH ||
           input->type[o] == LINEAR ||
           input->type[o] == CALL ||
+          input->type[o] == TAILCALL ||
           input->type[o] == COPY);
 }
 
 bool DivModel::is_branch_type(int o) {
 
   return (input->type[o] == BRANCH ||
+          input->type[o] == TAILCALL ||
           input->type[o] == CALL);
 }
 
