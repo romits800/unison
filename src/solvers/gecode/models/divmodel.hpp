@@ -90,6 +90,9 @@ public:
 
   DivModel* copy(void);
 
+  // Branchers
+  void post_div_branchers(void);
+
   // Diversification Constraints
   void post_diversification_constraints(void);
   void post_diversification_diffs(void);

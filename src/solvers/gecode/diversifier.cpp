@@ -934,7 +934,7 @@ int main(int argc, char* argv[]) {
 
   else if (options.div_method() == DIV_MONOLITHIC_DFS) {
 
-    d->post_complete_branchers(0);
+    d->post_div_branchers();
     d->post_diversification_constraints(); // Diversification constraint
 
     BAB<DivModel> e(d);
@@ -977,7 +977,7 @@ int main(int argc, char* argv[]) {
   }
   else if (options.div_method() == DIV_MONOLITHIC_LNS) {
 
-    d->post_complete_branchers(0);
+    d->post_div_branchers();
     d->post_diversification_constraints(); // Diversification constraint
 
   // } else {
