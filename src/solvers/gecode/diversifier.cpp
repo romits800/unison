@@ -134,6 +134,37 @@ public:
   }
 };
 
+class ResultDivData {
+
+public:
+
+  DivModel * solution;
+  bool proven;
+  long long int fail;
+  long long int it_fail;
+  long long int node;
+  long long int it_node;
+  int presolver_time;
+  int presolving_time;
+  int solving_time;
+  int it_solving_time;
+
+  ResultDivData(DivModel * solution, bool proven, long long int it_fail,
+                long long int it_node, int presolver_time, int presolving_time,
+                int solving_time, int it_solving_time) {
+    this->solution = solution;
+    this->proven = proven;
+    fail = -1;
+    this->it_fail = it_fail;
+    node = -1;
+    this->it_node = it_node;
+    this->presolver_time = presolver_time;
+    this->presolving_time = presolving_time;
+    this->solving_time = solving_time;
+    this->it_solving_time = it_solving_time;
+  }
+};
+
 class GlobalData {
 
 public:
@@ -168,11 +199,76 @@ string produce_json(const ResultData& rd,
     init_vector(ones, N, -1);
 
     // Added types to json output
+    vector<operation> ts; //types
+    for (operation o : rd.solution->input->O)
+      ts.push_back(rd.solution->input->type[o]);
+
+    ss << ", \"type\":" << to_json(ts);
+
+
+    ss << ", \"cost\": "
+       << (rd.solution ? show(var_vector(rd.solution->cost())) : show(ones));
+    if (rd.fail >= 0) {
+      ss << ", \"failures\": " << rd.fail;
+    }
+    if (rd.it_fail >= 0) {
+      ss << ", \"it_failures\": " << rd.it_fail;
+    }
+    if (rd.node >= 0) {
+      ss << ", \"nodes\": " << rd.node;
+    }
+    if (rd.it_node >= 0) {
+      ss << ", \"it_nodes\": " << rd.it_node;
+    }
+    if (it_num == 0) {
+      if (rd.presolver_time >= 0) {
+        ss << ", \"presolver_time\": " << rd.presolver_time;
+      }
+      ss << ", \"gecode_presolving_time\": " << rd.presolving_time;
+    }
+    if (rd.solving_time >= 0) {
+      ss << ", \"solver_time\": " << rd.solving_time;
+    }
+    if (rd.it_solving_time >= 0) {
+      ss << ", \"it_solving_time\": " << rd.it_solving_time;
+    }
+    ss << ", \"global_int_variables\": " << gd.global_n_int_vars;
+    ss << ", \"global_bool_variables\": " << gd.global_n_bool_vars;
+    ss << ", \"global_set_variables\": " << gd.global_n_set_vars;
+    string more_json = ss.str();
+    json.insert(json.find_last_of("}"), more_json);
+    return json;
+}
+
+string produce_json(const ResultDivData& rd,
+                    const GlobalData& gd,
+                    unsigned int N,
+                    unsigned int it_num)
+{
+    string json;
+    if (rd.solution) json = rd.solution->solution_to_json();
+    else             json = "{}";
+    stringstream ss;
+    if (rd.solution) ss << ", ";
+    ss << "\"solver\": \"gecode-diversifier\"";
+    ss << ", \"has_solution\": " << (rd.solution ? "true" : "false");
+    ss << ", \"proven\": " << (rd.proven ? "true" : "false");
+    vector<int> ones;
+    init_vector(ones, N, -1);
+
+    // Added types to json output
     vector<temporary> ts; //types
     for (operand o : rd.solution->input->O)
       ts.push_back(rd.solution->input->type[o]);
 
     ss << ", \"type\":" << to_json(ts);
+
+    vector<int> gcs;
+    for (operation o : rd.solution->input->O)
+      gcs.push_back(rd.solution->a(o).val() ? rd.solution->gc(o).val() : -1);
+
+
+    ss << ", \"global_cycles\":" << to_json(gcs);
     //
 
     ss << ", \"cost\": "
@@ -855,14 +951,14 @@ int main(int argc, char* argv[]) {
 
       if (count >= maxcount) break;
 
-      ResultData rd = ResultData(nextg,
-                                 proven, // false, /*proven*/
-                                 0,
-                                 count,
-                                 0, //presolver_time,
-                                 0, //presolving_time,
-                                 t_solver.stop(),
-                                 t_it.stop());
+      ResultDivData rd = ResultDivData(nextg,
+                                       proven, // false, /*proven*/
+                                       0,
+                                       count,
+                                       0, //presolver_time,
+                                       0, //presolving_time,
+                                       t_solver.stop(),
+                                       t_it.stop());
 
       ofstream fout;
       fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
@@ -913,14 +1009,14 @@ int main(int argc, char* argv[]) {
       if (count >= maxcount) break;
 
 
-      ResultData rd = ResultData(nextg,
-                                 proven, // false, /*proven*/
-                                 0,
-                                 count,
-                                 0, //presolver_time,
-                                 0, //presolving_time,
-                                 t_solver.stop(),
-                                 t_it.stop());
+      ResultDivData rd = ResultDivData(nextg,
+                                       proven, // false, /*proven*/
+                                       0,
+                                       count,
+                                       0, //presolver_time,
+                                       0, //presolving_time,
+                                       t_solver.stop(),
+                                       t_it.stop());
       ofstream fout;
       fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
