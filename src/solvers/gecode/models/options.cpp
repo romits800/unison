@@ -131,7 +131,7 @@ ModelOptions::ModelOptions(void)
     _distance("distance", "distance Metrics", DIST_HAMMING),
     _div_method("div-method", "disversification Method", DIV_MONOLITHIC_LNS),
     _solver_file("solver-file", "solver json file file", ""),
-    _divs_dir("divs-dir", "folder to store the diversified versions", "./divs_dir")
+    _divs_dir("divs-dir", "folder to store the diversified versions", ".")
 
 {
   add(_output_file);
@@ -223,7 +223,7 @@ ModelOptions::ModelOptions(void)
 
   _distance.add(DIST_HAMMING, "hamming");
   _distance.add(DIST_HAMMING_DIFF, "diff_hamming");
-  _distance.add(DIST_HAMMING_DIFF, "diff_br_hamming");
+  _distance.add(DIST_HAMMING_DIFF_BR, "diff_br_hamming");
   _distance.add(DIST_HAMMING_BR, "br_hamming");
 
   add(_distance);
