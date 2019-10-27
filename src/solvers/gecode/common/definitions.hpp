@@ -124,6 +124,13 @@ typedef enum divmethod
   } DivMethod;
 // Unison constraint expression
 
+// Branching options
+typedef enum brtype
+  {
+    BR_RND,
+    BR_COMPLETE
+  } BrType;
+
 class UnisonConstraintExpr {
 public:
   // default constructor means "true"

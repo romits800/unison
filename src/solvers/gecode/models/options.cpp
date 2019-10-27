@@ -131,7 +131,8 @@ ModelOptions::ModelOptions(void)
     _distance("distance", "distance Metrics", DIST_HAMMING),
     _div_method("div-method", "disversification Method", DIV_MONOLITHIC_LNS),
     _solver_file("solver-file", "solver json file file", ""),
-    _divs_dir("divs-dir", "folder to store the diversified versions", ".")
+    _divs_dir("divs-dir", "folder to store the diversified versions", "."),
+    _branching("branching", "Branching options", BR_RND)
 
 {
   add(_output_file);
@@ -237,4 +238,9 @@ ModelOptions::ModelOptions(void)
 
   add(_solver_file);
   add(_divs_dir);
+
+  _branching.add(BR_RND, "random");
+  _branching.add(BR_COMPLETE, "original");
+
+  add(_branching);
 }
