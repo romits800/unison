@@ -434,7 +434,7 @@ int main(int argc, char* argv[]) {
 
   options.branching(BR_RND); // Default
   options.branching(BR_RND, "random");
-  options.branching(BR_COMPLETE, "orginal");
+  options.branching(BR_COMPLETE, "original");
 
   // options for LNS
   if (options.div_method() == DIV_MONOLITHIC_LNS || options.div_method() == DIV_DECOMPOSITION_LNS) {
