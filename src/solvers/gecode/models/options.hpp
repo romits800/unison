@@ -157,8 +157,6 @@ protected:
 
   Driver::StringValueOption _divs_dir; // Solver file for best solution (if available)
 
-  Driver::StringOption _branching; // Solver file for best solution (if available)
-
 public:
 
   ModelOptions(void);
@@ -257,8 +255,6 @@ public:
   string solver_file(void) const {return _solver_file.value();}
 
   string divs_dir(void) const {return _divs_dir.value();}
-  
-  BrType branching(void) const {return static_cast <BrType>( _branching.value());}
 
 };
 

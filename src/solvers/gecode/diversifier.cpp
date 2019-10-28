@@ -428,6 +428,14 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < argc; i++) argv0.push_back(argv[i]);
 
   ModelOptions options;
+
+
+  // Initialize branching options
+
+  options.branching(BR_RND); // Default
+  options.branching(BR_RND, "random");
+  options.branching(BR_COMPLETE, "orginal");
+
   // options for LNS
   if (options.div_method() == DIV_MONOLITHIC_LNS || options.div_method() == DIV_DECOMPOSITION_LNS) {
     options.iterations(10);
