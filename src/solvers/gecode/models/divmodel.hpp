@@ -61,6 +61,12 @@ public:
   // Global cycles array
   IntVarArray v_gc;
 
+  // Channel of gc
+  SetVarArray v_oc;
+
+  // // Levenshtein distance
+  // IntVarArray v_lev;
+
 
   // p: relax parameter for LNS
   double div_p;
@@ -80,6 +86,9 @@ public:
 
   IntVar gc(operation o) const {return v_gc[o]; }
 
+  // Ordered by the issue cycles
+  SetVar oc(int c) const {return v_oc[c]; }
+
 
 
   // Gecode space methods
@@ -94,6 +103,7 @@ public:
   void post_div_branchers(void);
 
   // Diversification Constraints
+  void post_diversification_levenshtein(void);
   void post_diversification_constraints(void);
   void post_diversification_diffs(void);
   void post_diversification_br_diffs(void);

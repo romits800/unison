@@ -66,15 +66,16 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
         br_size += 1;
     // Is it ok if br_size = 0?
     v_diff  = int_var_array((real_op_size  )*br_size, -maxval, maxval);
-  } else {
-    // Unused
-    v_diff = int_var_array(1,0,0);
   }
+
   // Prepare cycles for hamming distance between operations' cycles
   v_hamm  = int_var_array(op_size, -1, maxval);
 
-  // Global cycles array - similar to
-  v_gc = int_var_array(op_size, 0, sum_of(input->maxc));  
+  // Global cycles array - similar to cycles
+  v_gc = int_var_array(op_size, 0, sum_of(input->maxc));
+
+  // Array for levenshtein distance
+  v_oc = set_var_array(sum_of(input->maxc) + 1, IntSet::empty, IntSet(0,op_size));
 }
 
 DivModel::DivModel(DivModel& cg) :
@@ -85,6 +86,7 @@ DivModel::DivModel(DivModel& cg) :
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
   v_gc.update(*this, cg.v_gc);
+  v_oc.update(*this, cg.v_oc);
 }
 
 DivModel* DivModel::copy(void) {
@@ -119,7 +121,6 @@ void DivModel::post_div_branchers(void) {
 
     GlobalModel::post_complete_branchers(time(NULL));
   }
-      
 
 }
 
@@ -130,6 +131,26 @@ void DivModel::post_diversification_constraints(void) {
     post_diversification_diffs();
   if (options->dist_metric() == DIST_HAMMING_DIFF_BR)
     post_diversification_br_diffs();
+  if (options->dist_metric() == DIST_LEVENSHTEIN)
+    post_diversification_levenshtein();
+
+}
+
+
+void DivModel::post_diversification_levenshtein(void) {
+  IntVarArgs bs;
+  uint smaxc = sum_of(input->maxc);
+  for (operation i : input -> O) {
+    if (!is_real_type(i)) continue; //
+    BoolVar ifb = var ( a(i) == 1 );
+    IntVar thenb = var ( gc(i) );
+    IntVar elseb = IntVar(*this, 0, smaxc);
+    max(*this, v_gc, elseb);
+    IntVar res = IntVar(*this, 0, smaxc);
+    ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
+    bs << res;
+  }
+  channel(*this, bs, v_oc);
 }
 
 void DivModel::post_diversification_diffs(void) {
@@ -258,6 +279,47 @@ void DivModel::constrain(const Space & _b) {
       exit(EXIT_FAILURE);
     }
     break;
+  case DIST_LEVENSHTEIN:
+    uint sizex = v_oc.size() + 1; // size of maxc
+    int op_size = O().size();
+    IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
+    Matrix<IntVarArray> mat(x, sizex, sizex);
+
+
+    mat(0,0) = var(0);
+    for (uint i = 1; i < sizex; i++) {
+      mat(i,0) = var(i);
+      mat(0,i) = var(i);
+    }
+    for (uint i = 1; i < sizex; i++)
+      for (uint j = 1; j < sizex; j++) {
+        // BoolVar res = var ( oc(i-1) != b.oc(j-1) );
+        // TODO(check if really correct) Use subset for parallel operations
+        BoolVar res = var ( oc(i-1) <= b.oc(j-1) );
+        IntVarArgs v;
+        v << var (mat(i-1,j) + 1);
+        v << var (mat(i,j-1) + 1);
+        v << var (mat(i-1,j-1) + res);
+        min(*this, v, mat(i,j));
+
+        // BoolVar res = var ( oc(i-1) != b.oc(j-1) );
+        // TODO(check if really correct) Use subset for parallel operations
+        // IntVarArgs cs;
+        // cs << var (cardinality (oc(i-1) - b.oc(j-1)));
+        // cs << var (cardinality (b.oc(j-1) - oc(i-1)));
+        // IntVar res = IntVar(*this, 0, op_size);
+        // max(*this, cs, res);
+
+        // // BoolVar res = var ( oc(i-1) != b.oc(j-1) );
+        // IntVarArgs v;
+        // v << var (mat(i-1,j) + cardinality(oc(i-1)));
+        // v << var (mat(i,j-1) + cardinality(b.oc(j-1)));
+        // v << var (mat(i-1,j-1) + res);
+        // min(*this, v, mat(i,j));
+      }
+
+    // cout << "bef constraint" << endl;
+    constraint(mat(sizex-1, sizex-1) >= 1); // Levenshtein distance
   }
 
   return;
@@ -305,6 +367,33 @@ void DivModel::post_constrain(DivModel* _b) {
       constraint(sum(bh) >= 1); // hamming distance
 
     break;
+  case DIST_LEVENSHTEIN:
+    uint sizex = v_oc.size() + 1; // size of maxc
+
+    IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
+    Matrix<IntVarArray> mat(x, sizex, sizex);
+
+
+    mat(0,0) = var(0);
+    for (uint i = 1; i < sizex; i++) {
+      mat(i,0) = var(i);
+      mat(0,i) = var(i);
+    }
+    for (uint i = 1; i < sizex; i++)
+      for (uint j = 1; j < sizex; j++) {
+
+        // BoolVar res = var ( oc(i-1) != b.oc(j-1) );
+        // TODO(check if really correct) Use subset for parallel operations
+        BoolVar res = var ( oc(i-1) != b.oc(j-1) );
+        IntVarArgs v;
+        v << var (mat(i-1,j) + 1);
+        v << var (mat(i,j-1) + 1);
+        v << var (mat(i-1,j-1) + res);
+        min(*this, v, mat(i,j));
+      }
+
+    constraint(mat(sizex-1, sizex-1) >= 1); // Levenshtein distance
+
   }
 
   return;
