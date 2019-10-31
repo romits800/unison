@@ -109,6 +109,8 @@ public:
   void post_diversification_br_diffs(void);
   void post_diversification_hamming(void);
   void post_global_cycles(void);
+  void post_levenshtein(const DivModel & b);
+  void post_levenshtein_set(const DivModel & b);
 
 
   // Check if the type of the operation is a branch, i.e. BRANCH or CALL

@@ -226,6 +226,7 @@ ModelOptions::ModelOptions(void)
   _distance.add(DIST_HAMMING_DIFF_BR, "diff_br_hamming");
   _distance.add(DIST_HAMMING_BR, "br_hamming");
   _distance.add(DIST_LEVENSHTEIN, "levenshtein");
+  _distance.add(DIST_LEVENSHTEIN_SET, "levenshtein_set");
 
   add(_distance);
 
