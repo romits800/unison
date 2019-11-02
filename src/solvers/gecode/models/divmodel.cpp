@@ -144,13 +144,15 @@ void DivModel::post_diversification_levenshtein(void) {
     if (!is_real_type(i)) continue; //
     BoolVar ifb = var ( a(i) == 1 );
     IntVar thenb = var ( gc(i) );
-    IntVar elseb = IntVar(*this, 0, smaxc);
-    max(*this, v_gc, elseb);
+    IntVar elseb = var(smaxc); //IntVar(*this, 0, smaxc); //
+    // max(*this, v_gc, elseb);
     IntVar res = IntVar(*this, 0, smaxc);
     ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
     bs << res;
   }
+
   channel(*this, bs, v_oc);
+
 }
 
 void DivModel::post_diversification_diffs(void) {
@@ -214,7 +216,7 @@ void DivModel::post_global_cycles(void) {
 
 void DivModel::post_levenshtein(const DivModel & b)
 {
-  uint sizex = v_oc.size() + 1; // size of maxc
+  uint sizex = v_oc.size(); // size of maxc
 
   IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
   Matrix<IntVarArray> mat(x, sizex, sizex);
@@ -241,23 +243,27 @@ void DivModel::post_levenshtein(const DivModel & b)
 
 void DivModel::post_levenshtein_set(const DivModel & b)
 {
-  uint sizex = v_oc.size() + 1; // size of maxc
+  uint sizex = v_oc.size();// + 1; // size of maxc
   int op_size = O().size();
   IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
   Matrix<IntVarArray> mat(x, sizex, sizex);
 
 
+  uint maxcap = max_of(input->cap);
   mat(0,0) = var(0);
   for (uint i = 1; i < sizex; i++) {
-    mat(i,0) = var( mat(i-1,0) + cardinality(oc(i-1)) ); //var(i);
-    mat(0,i) = var( mat(0,i-1) + cardinality(b.oc(i-1)) ); //var(i);
+    IntVar nw = var(cardinality(oc(i-1)));
+    IntVar old = var(cardinality(b.oc(i-1)));
+    mat(i,0) = var( mat(i-1,0) + nw);
+    mat(0,i) = var( mat(0,i-1) + old);
   }
+
   for (uint i = 1; i < sizex; i++)
     for (uint j = 1; j < sizex; j++) {
       IntVarArgs cs;
       cs << var (cardinality (oc(i-1) - b.oc(j-1)));
       cs << var (cardinality (b.oc(j-1) - oc(i-1)));
-      IntVar res = IntVar(*this, 0, op_size);
+      IntVar res = IntVar(*this, 0, maxcap);
       max(*this, cs, res);
 
       IntVarArgs v;
