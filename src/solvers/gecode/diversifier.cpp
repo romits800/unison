@@ -957,8 +957,6 @@ int main(int argc, char* argv[]) {
       // if (t.stop() > options.timeout())
       //   timeout_exit(base, results, gd, go, t.stop());
 
-      if (count >= maxcount) break;
-
       ResultDivData rd = ResultDivData(nextg,
                                        proven, // false, /*proven*/
                                        0,
@@ -979,6 +977,7 @@ int main(int argc, char* argv[]) {
       delete tmpg;
 
       count++;
+      if (count >= maxcount) break;
       t_it.start();
 
     }
@@ -1014,7 +1013,6 @@ int main(int argc, char* argv[]) {
     while (DivModel *nextg = e.next()) {
       cerr << div() << "Cloning" << endl;
 
-      if (count >= maxcount) break;
 
 
       ResultDivData rd = ResultDivData(nextg,
@@ -1025,6 +1023,8 @@ int main(int argc, char* argv[]) {
                                        0, //presolving_time,
                                        t_solver.stop(),
                                        t_it.stop());
+
+      cout << "Dist: " << nextg -> dist << endl;
       ofstream fout;
       fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
@@ -1035,6 +1035,8 @@ int main(int argc, char* argv[]) {
       delete tmpg;
 
       count++;
+      if (count >= maxcount) break;
+
       t_it.start();
 
     }

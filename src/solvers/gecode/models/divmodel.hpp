@@ -64,6 +64,8 @@ public:
   // Channel of gc
   SetVarArray v_oc;
 
+  // Distance
+  IntVar dist;
   // // Levenshtein distance
   // IntVarArray v_lev;
 
