@@ -1024,7 +1024,6 @@ int main(int argc, char* argv[]) {
                                        t_solver.stop(),
                                        t_it.stop());
 
-      cout << "Dist: " << nextg -> dist << endl;
       ofstream fout;
       fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);

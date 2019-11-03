@@ -224,7 +224,6 @@ void DivModel::post_levenshtein(const DivModel & b)
   IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
   Matrix<IntVarArray> mat(x, sizex, sizex);
 
-  cout << "lset" << b.v_oc << endl;
   mat(0,0) = var(0);
   for (uint i = 1; i < sizex; i++) {
     mat(i,0) = var(i);
@@ -257,7 +256,6 @@ void DivModel::post_levenshtein_set(const DivModel & b)
   IntVarArray cap = int_var_array(sizex-1, 0, maxcap);
   IntVarArray bcap = int_var_array(sizex-1, 0, maxcap);
 
-  cout << "lset" << b.v_oc << endl;
 
   for (uint i = 0; i < sizex-1; i++) {
     cap[i] = var(cardinality(oc(i)));
