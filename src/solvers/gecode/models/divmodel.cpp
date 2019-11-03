@@ -248,7 +248,7 @@ void DivModel::post_levenshtein(const DivModel & b)
 void DivModel::post_levenshtein_set(const DivModel & b)
 {
   uint sizex = v_oc.size();// + 1; // size of maxc
-  int op_size = O().size();
+  // int op_size = O().size();
   IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
   Matrix<IntVarArray> mat(x, sizex, sizex);
   uint maxcap = max_of(input->cap);
