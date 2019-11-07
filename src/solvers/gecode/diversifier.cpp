@@ -945,6 +945,9 @@ int main(int argc, char* argv[]) {
     d->post_div_branchers();
     d->post_diversification_constraints(); // Diversification constraint
 
+    if (d->status() == SS_FAILED) {
+      cerr << div() << "Status failed." << endl;
+    }
     BAB<DivModel> e(d);
 
     t_solver.start();
@@ -987,7 +990,9 @@ int main(int argc, char* argv[]) {
     d->post_div_branchers();
     d->post_diversification_constraints(); // Diversification constraint
 
-  // } else {
+    if (d->status() == SS_FAILED) {
+      cerr << div() << "Status failed." << endl;
+    }
 
     Gecode::RestartMode restart = options.restart();
     Search::Cutoff* c;
@@ -1008,7 +1013,7 @@ int main(int argc, char* argv[]) {
     t_solver.start();
     t_it.start();
 
-    cerr << div() << "Starting" << endl;
+    cerr << div() << "Starting" << e.next() << endl;
 
     while (DivModel *nextg = e.next()) {
       cerr << div() << "Cloning" << endl;
@@ -1039,6 +1044,7 @@ int main(int argc, char* argv[]) {
       t_it.start();
 
     }
+    cerr << div() << "Finishing" << endl;
 
     // execution_time = t.stop();
   }

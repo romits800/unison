@@ -48,7 +48,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   div_r.seed(time(NULL)); //p_options->seed());
   div_p = p_options->relax();
   int op_size = O().size();
-  int maxval = max_of(input->maxc);
+  int maxval = sum_of(input->maxc);
   // difference between operations
   int real_op_size = 0;
   for (operation o : input -> O)
