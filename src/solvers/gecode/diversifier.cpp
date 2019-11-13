@@ -1013,7 +1013,7 @@ int main(int argc, char* argv[]) {
     t_solver.start();
     t_it.start();
 
-    cerr << div() << "Starting" << e.next() << endl;
+    cerr << div() << "Starting" << endl;
 
     while (DivModel *nextg = e.next()) {
       cerr << div() << "Cloning" << endl;
