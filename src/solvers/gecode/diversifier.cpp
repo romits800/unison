@@ -922,7 +922,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (g1->status() != SS_FAILED) {
-        cerr << div() << "Clone" << endl;
+        cerr << div() << "Cloning " << count << "\r";
         solutions.push_back(g1);
         ResultData rd = ResultData(g1, false, 0,
                                    0, 0,
@@ -936,6 +936,9 @@ int main(int argc, char* argv[]) {
         count++;
         g->post_constrain(g1);
       }
+      cerr << endl;
+      cerr << div() << "Finished" << endl;
+
     }
 
   } // decompose
@@ -955,7 +958,7 @@ int main(int argc, char* argv[]) {
 
 
     while (DivModel *nextg = e.next()) {
-      cout << div() << "Clone" << endl;
+      cerr << div() << "Cloning " << count << "\r";
 
       // if (t.stop() > options.timeout())
       //   timeout_exit(base, results, gd, go, t.stop());
@@ -984,6 +987,9 @@ int main(int argc, char* argv[]) {
       t_it.start();
 
     }
+    cerr << endl;
+    cerr << div() << "Finished" << endl;
+
   }
   else if (options.div_method() == DIV_MONOLITHIC_LNS) {
 
@@ -1016,7 +1022,7 @@ int main(int argc, char* argv[]) {
     cerr << div() << "Starting" << endl;
 
     while (DivModel *nextg = e.next()) {
-      cerr << div() << "Cloning" << endl;
+      cerr << div() << "Cloning " << count << "\r";
 
 
 
@@ -1044,7 +1050,8 @@ int main(int argc, char* argv[]) {
       t_it.start();
 
     }
-    cerr << div() << "Finishing" << endl;
+    cerr << endl;
+    cerr << div() << "Finished" << endl;
 
     // execution_time = t.stop();
   }
