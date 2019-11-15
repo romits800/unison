@@ -432,9 +432,11 @@ int main(int argc, char* argv[]) {
 
   // Initialize branching options
 
-  options.branching(BR_RND); // Default
+  options.branching(BR_ORIGINAL); // Default
   options.branching(BR_RND, "random");
-  options.branching(BR_COMPLETE, "original");
+  options.branching(BR_ORIGINAL, "original");
+  options.branching(BR_RND_COSTLAST, "clrandom");
+  options.branching(BR_ORIGINAL_COSTLAST, "cloriginal");
 
   // options for LNS
   if (options.div_method() == DIV_MONOLITHIC_LNS || options.div_method() == DIV_DECOMPOSITION_LNS) {

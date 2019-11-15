@@ -130,7 +130,9 @@ typedef enum divmethod
 typedef enum brtype
   {
     BR_RND,
-    BR_COMPLETE
+    BR_ORIGINAL,
+    BR_ORIGINAL_COSTLAST,
+    BR_RND_COSTLAST,
   } BrType;
 
 class UnisonConstraintExpr {
