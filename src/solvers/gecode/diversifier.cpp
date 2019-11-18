@@ -1023,10 +1023,12 @@ int main(int argc, char* argv[]) {
 
     cerr << div() << "Starting" << endl;
 
+    vector<DivModel *> divs;
     while (DivModel *nextg = e.next()) {
       cerr << div() << "Cloning " << count << "\r";
 
 
+      // cout << "dm1" << dm1->hamm(o) << endl;
 
       ResultDivData rd = ResultDivData(nextg,
                                        proven, // false, /*proven*/
@@ -1038,13 +1040,14 @@ int main(int argc, char* argv[]) {
                                        t_it.stop());
 
       ofstream fout;
-      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
+      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + nextg->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
       fout.close();
 
-      DivModel *tmpg = d;
-      d = nextg;
-      delete tmpg;
+      divs.push_back(nextg);
+      // DivModel *tmpg = d;
+      // d = nextg;
+      // delete tmpg;
 
       count++;
       if (count >= maxcount) break;
@@ -1052,11 +1055,54 @@ int main(int argc, char* argv[]) {
       t_it.start();
 
     }
+
     cerr << endl;
+
+    map<int, map<int,int>> hams;
+    int i = 0, j = 0;
+
+    cout << divs.size() << endl;
+
+    for (DivModel *dm1: divs) {
+      j = 0;
+      for (DivModel *dm2: divs) {
+        int sham = 0;
+        for (operation o: input.O) {
+          if (!dm1->is_real_type(o))
+            continue;
+          sham += (dm1->hamm(o).val() == dm2->hamm(o).val()) ? 0 : 1;
+        }
+        hams[i][j] = sham;
+        j++;
+      }
+      i++;
+    }
+
+    for (uint i=0; i<hams.size(); i++) {
+      for (uint j=0; j<hams.size(); j++) {
+        cout << hams[i][j] << " ";
+        // sum += hams[i][j];
+      }
+      cout << endl;
+    }
+
+    for (uint i=0; i<hams.size(); i++) {
+      int sum = 0;
+      for (uint j=0; j<hams.size(); j++) {
+        // cout << sum << endl;
+        sum += hams[i][j];
+      }
+      hams[i][hams.size()] = sum;
+    }
+    for (uint i=0; i<hams.size(); i++) {
+      cout << hams[i][hams.size()] << endl;
+    }
+
     cerr << div() << "Finished" << endl;
 
     // execution_time = t.stop();
   }
+
   if (d!=NULL) delete d;
   // }
 }
