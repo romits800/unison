@@ -472,6 +472,46 @@ void DivModel::post_constrain(DivModel* _b) {
 
 }
 
+
+
+
+
+void DivModel::post_constraint_all(map<int, map <int,int>> vals, vector <DivModel *> divs, int min) {
+
+  // const DivModel& b = static_cast<const DivModel&>(*_b);
+
+  BoolVarArgs bh;
+
+  switch (options->dist_metric()) {
+  case DIST_HAMMING_DIFF:
+  case DIST_HAMMING_DIFF_BR:
+  case DIST_HAMMING_BR:
+  case DIST_LEVENSHTEIN:
+  case DIST_LEVENSHTEIN_SET:
+  case DIST_HAMMING:
+    uint size = vals.size();
+    for (uint i = 0; i < size; i++)
+      if (vals[i][size] > min) {
+        for (operation o: input -> O) {
+          if (is_real_type(o))
+            bh << var (hamm(o) != divs[i]->hamm(o));
+        }
+      }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= dist); // hamming distance
+
+
+    break;
+
+  }
+  return;
+
+}
+
+void DivModel::post_dist_constraint(int min) {
+  constraint(dist > min);
+}
+
 bool DivModel::master(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);

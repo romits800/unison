@@ -1078,14 +1078,7 @@ int main(int argc, char* argv[]) {
       i++;
     }
 
-    for (uint i=0; i<hams.size(); i++) {
-      for (uint j=0; j<hams.size(); j++) {
-        cout << hams[i][j] << " ";
-        // sum += hams[i][j];
-      }
-      cout << endl;
-    }
-
+    int min = 0;
     for (uint i=0; i<hams.size(); i++) {
       int sum = 0;
       for (uint j=0; j<hams.size(); j++) {
@@ -1093,10 +1086,19 @@ int main(int argc, char* argv[]) {
         sum += hams[i][j];
       }
       hams[i][hams.size()] = sum;
+      if (min > sum)
+        min = sum;
     }
+
+
     for (uint i=0; i<hams.size(); i++) {
-      cout << hams[i][hams.size()] << endl;
+      for (uint j=0; j<hams.size()+1; j++) {
+        cout << hams[i][j] << " ";
+        // sum += hams[i][j];
+      }
+      cout << endl;
     }
+
 
     cerr << div() << "Finished" << endl;
 

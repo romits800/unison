@@ -121,6 +121,9 @@ public:
 
 
   // Constrain function
+  void post_dist_constraint(int min);
+
+  void post_constraint_all(map<int, map <int,int>> vals, vector <DivModel *> divs, int min);
 
   void constrain(const Space & _b);
   // The same constraints as the constrain function
