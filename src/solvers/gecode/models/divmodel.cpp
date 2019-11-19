@@ -526,7 +526,7 @@ void DivModel::next(const DivModel& b) {
       temp << y(p);
       ltemp << b.y(p);
     }
-    relax(*this,temp, ltemp, div_r, div_p);
+    relax(*this, temp, ltemp, div_r, div_p);
   }
 
 
