@@ -74,8 +74,10 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   // Global cycles array - similar to cycles
   v_gc = int_var_array(op_size, 0, sum_of(input->maxc));
 
+  int maxcap = max_of(input->cap);
   // Array for levenshtein distance
-  v_oc = set_var_array(sum_of(input->maxc) + 1, IntSet::empty, IntSet(0,op_size));
+  v_oc = set_var_array(sum_of(input->maxc), IntSet::empty, IntSet(0,op_size), 0, maxcap);
+  v_last = SetVar (*this, IntSet::empty, IntSet(0,op_size));
 
   dist = IntVar(*this, 0, 10000);
 }
@@ -89,6 +91,9 @@ DivModel::DivModel(DivModel& cg) :
   v_hamm.update(*this, cg.v_hamm);
   v_gc.update(*this, cg.v_gc);
   v_oc.update(*this, cg.v_oc);
+  // cout << endl;
+  // cout << "V_oc" << v_oc << endl;
+  v_last.update(*this, cg.v_last);
   dist.update(*this, cg.dist);
 }
 
@@ -201,7 +206,11 @@ void DivModel::post_diversification_levenshtein(void) {
     bs << res;
   }
 
-  channel(*this, bs, v_oc);
+  SetVarArgs cs;
+  for(uint i=0; i<v_oc.size(); i++)
+    cs << v_oc[i];
+  cs << v_last;
+  channel(*this, bs, cs);
 
 }
 
@@ -266,7 +275,7 @@ void DivModel::post_global_cycles(void) {
 
 void DivModel::post_levenshtein(const DivModel & b)
 {
-  uint sizex = v_oc.size(); // size of maxc
+  uint sizex = v_oc.size() + 1; // size of maxc
 
   IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
   Matrix<IntVarArray> mat(x, sizex, sizex);
@@ -294,7 +303,7 @@ void DivModel::post_levenshtein(const DivModel & b)
 
 void DivModel::post_levenshtein_set(const DivModel & b)
 {
-  uint sizex = v_oc.size();// + 1; // size of maxc
+  uint sizex = v_oc.size() + 1;// + 1; // size of maxc
   // int op_size = O().size();
   IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
   Matrix<IntVarArray> mat(x, sizex, sizex);

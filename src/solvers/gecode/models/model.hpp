@@ -183,6 +183,7 @@ public:
   BoolVarArray bool_var_array(int n, int min, int max);
 
   SetVarArray set_var_array(int n, const IntSet & glb, const IntSet & lub);
+  SetVarArray set_var_array(int n, const IntSet & glb, const IntSet & lub, int min_card, int max_card);
 
   void constraint(const BoolExpr &e) {rel(*this, e, ipl);}
 

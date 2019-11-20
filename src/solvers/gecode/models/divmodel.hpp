@@ -63,6 +63,7 @@ public:
 
   // Channel of gc
   SetVarArray v_oc;
+  SetVar v_last;
 
   // Distance
   IntVar dist;

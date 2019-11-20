@@ -55,6 +55,12 @@ Model::set_var_array(int n, const IntSet & glb, const IntSet & lub) {
   return SetVarArray(*this, n, glb, lub);
 }
 
+SetVarArray
+Model::set_var_array(int n, const IntSet & glb, const IntSet & lub, int min_card, int max_card) {
+  n_set_vars += n;
+  return SetVarArray(*this, n, glb, lub, min_card, max_card);
+}
+
 BoolVar Model::adhoc_constraint_var(UnisonConstraintExpr & e) {
   BoolVar v(*this, 0, 1);
   switch (e.id) {
