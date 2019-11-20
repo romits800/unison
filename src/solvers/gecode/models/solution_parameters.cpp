@@ -45,7 +45,7 @@ SolParameters::SolParameters(JSONVALUE root) :
   global_cycles   (get_vector<int>(getRoot(root, "global_cycles")))
   // Program parameters
 {
-  compute_derived();
+  // compute_derived();
 }
 
 void SolParameters::compute_derived() {

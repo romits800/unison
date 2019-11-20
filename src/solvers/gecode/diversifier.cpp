@@ -57,6 +57,7 @@
 
 #include "common/definitions.hpp"
 #include "models/parameters.hpp"
+#include "models/solution_parameters.hpp"
 #include "models/solver-parameters.hpp"
 #include "models/options.hpp"
 #include "models/simplemodel.hpp"
@@ -96,6 +97,12 @@
 
 #include <sys/stat.h>
 #include <errno.h>
+
+//////
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#include <regex>
+
 
 // #include <exception.hpp>
 using namespace Gecode;
@@ -421,6 +428,18 @@ static int do_mkdir(const string divs_path)
   return(status);
 }
 
+
+bool match_solution_file(std::string mainStr)
+{
+  std::regex r(".*/\\d+\\..*\\.out\\.json");
+  std::cout << "Check" << mainStr << std::endl;
+  if (std::regex_match(mainStr, r))
+    return true;
+  else
+    return false;
+}
+
+
 int main(int argc, char* argv[]) {
 
   int argc0 = argc;
@@ -521,6 +540,88 @@ int main(int argc, char* argv[]) {
 #endif
 
   Parameters input(root);
+
+
+  ////////// READ iNPUT SOLUTIONS //////////////////////////////////////////
+
+  vector<SolParameters *> input_solutions;
+  /* Read current directory */
+  std::string path = ".";
+  for (const auto & entry : fs::directory_iterator(path)) {
+    std::string current_path = entry.path();
+    if (match_solution_file(current_path)) {
+
+#ifdef GRAPHICS
+      QApplication *app = new QApplication(argc, argv, false);
+#endif
+
+      ifstream fin;
+      fin.open(current_path.c_str(), ios::in);
+
+      if (fin.fail()) {
+        cerr << "Failed to open " << name << ": " << strerror(errno) << endl;
+#ifdef GRAPHICS
+        cerr << "Working directory: "
+             << QDir::currentPath().toStdString() << endl;
+#endif
+        exit(EXIT_FAILURE);
+
+      }
+
+      string json_input ((std::istreambuf_iterator<char>(fin)),
+                           (std::istreambuf_iterator<char>()));
+      // Close file
+
+      fin.close();
+      if (fin.fail()) {
+        cerr << "Failed to close " << name << ": " << strerror(errno) << endl;
+        exit(EXIT_FAILURE);
+      }
+
+#ifdef GRAPHICS
+      QScriptValue root;
+      QScriptEngine engine;
+      root = engine.evaluate("(" + QString::fromStdString(json_input) + ")");
+      if (engine.hasUncaughtException()) {
+        QScriptValue val = engine.uncaughtException();
+        if (val.isError()) {
+          cerr << "Failed to parse " << name << ": "
+               << val.toString().toStdString() << " at line "
+               << engine.uncaughtExceptionLineNumber() << endl
+               << "Backtrace: "
+               << engine.uncaughtExceptionBacktrace().join("\n").toStdString()
+               << endl;
+          }
+        exit(EXIT_FAILURE);
+      }
+      app->exit();
+      delete app;
+#else
+
+      Json::Value root;
+      Json::CharReaderBuilder reader;
+      std::stringstream json_input_stream;
+      json_input_stream << json_input;
+      std::string errs;
+      if (!Json::parseFromStream(reader, json_input_stream, &root, &errs)) {
+        cerr << "Failed to parse " << name << endl << errs;
+        exit(EXIT_FAILURE);
+      }
+#endif
+
+
+      SolParameters * solution = new SolParameters(root);
+
+      input_solutions.push_back(solution);
+
+    }
+  }
+
+
+
+  //////////////////////////////////////////////////////////////////////////
+
+
 
 
   GIST_OPTIONS * go = new GIST_OPTIONS(),

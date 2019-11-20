@@ -75,10 +75,10 @@ public:
   vector<int> cycles;
   vector<int> temporaries;
   vector<int> global_cycles;
+  SolParameters(JSONVALUE root);
 
 
 protected:
-  SolParameters(JSONVALUE root);
   SolParameters() {};
 
   // Compute derived parameters
