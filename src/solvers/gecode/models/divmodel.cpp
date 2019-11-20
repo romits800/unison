@@ -41,9 +41,9 @@
 
 
 DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
-                   IntPropLevel p_ipl, vector<SolParameters *> p_sol_input) :
-  GlobalModel(p_input, p_options, p_ipl),
-  input_solutions(p_sol_input)
+                   IntPropLevel p_ipl) :
+  GlobalModel(p_input, p_options, p_ipl)
+  // input_solutions(p_sol_input)
 {
 
   div_r.seed(time(NULL)); //p_options->seed());
@@ -79,12 +79,14 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   v_oc = set_var_array(sum_of(input->maxc) + 1, IntSet::empty, IntSet(0,op_size));
 
   dist = IntVar(*this, 0, 10000);
+  // input_solutions = vector
 }
 
 DivModel::DivModel(DivModel& cg) :
   GlobalModel(cg),
   div_p(cg.div_p),
-  div_r(cg.div_r)
+  div_r(cg.div_r),
+  input_solutions(cg.input_solutions)
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
@@ -266,77 +268,167 @@ void DivModel::post_global_cycles(void) {
 
 
 
-void DivModel::post_levenshtein(const DivModel & b)
+void DivModel::post_levenshtein(void)
 {
   uint sizex = v_oc.size(); // size of maxc
 
-  IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
-  Matrix<IntVarArray> mat(x, sizex, sizex);
+  IntVarArgs bh;
+  for (DivModel *s: input_solutions) {
 
-  mat(0,0) = var(0);
-  for (uint i = 1; i < sizex; i++) {
-    mat(i,0) = var(i);
-    mat(0,i) = var(i);
-  }
-  for (uint i = 1; i < sizex; i++)
-    for (uint j = 1; j < sizex; j++) {
+    IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
+    Matrix<IntVarArray> mat(x, sizex, sizex);
 
-      BoolVar res = var ( oc(i-1) != b.oc(j-1) );
-      IntVarArgs v;
-      v << var (mat(i-1,j) + 1);
-      v << var (mat(i,j-1) + 1);
-      v << var (mat(i-1,j-1) + res);
-      min(*this, v, mat(i,j));
+    mat(0,0) = var(0);
+    for (uint i = 1; i < sizex; i++) {
+      mat(i,0) = var(i);
+      mat(0,i) = var(i);
     }
+    for (uint i = 1; i < sizex; i++)
+      for (uint j = 1; j < sizex; j++) {
 
-  dist = var( mat(sizex-1, sizex-1));
+        BoolVar res = var ( oc(i-1) != s->oc(j-1) );
+        IntVarArgs v;
+        v << var (mat(i-1,j) + 1);
+        v << var (mat(i,j-1) + 1);
+        v << var (mat(i-1,j-1) + res);
+        min(*this, v, mat(i,j));
+      }
+    bh << var( mat(sizex-1, sizex-1));
+  }
+  dist = var(sum(bh));
 
-  constraint(dist >= 1); // Levenshtein distance
 }
 
-void DivModel::post_levenshtein_set(const DivModel & b)
+void DivModel::constrain_levenshtein(const DivModel & b)
+{
+  uint sizex = v_oc.size(); // size of maxc
+
+  IntVarArgs bh;
+  for (DivModel *s: input_solutions) {
+
+    IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
+    Matrix<IntVarArray> mat(x, sizex, sizex);
+
+    mat(0,0) = var(0);
+    for (uint i = 1; i < sizex; i++) {
+      mat(i,0) = var(i);
+      mat(0,i) = var(i);
+    }
+    for (uint i = 1; i < sizex; i++)
+      for (uint j = 1; j < sizex; j++) {
+
+        BoolVar res = var ( s->oc(i-1) != b.oc(j-1) );
+        IntVarArgs v;
+        v << var (mat(i-1,j) + 1);
+        v << var (mat(i,j-1) + 1);
+        v << var (mat(i-1,j-1) + res);
+        min(*this, v, mat(i,j));
+    }
+    bh << var( mat(sizex-1, sizex-1));
+  }
+
+  constraint(dist > sum(bh)); // Levenshtein distance
+}
+
+void DivModel::post_levenshtein_set(void)
 {
   uint sizex = v_oc.size();// + 1; // size of maxc
   // int op_size = O().size();
-  IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
-  Matrix<IntVarArray> mat(x, sizex, sizex);
-  uint maxcap = max_of(input->cap);
+  IntVarArgs bh;
+  for (DivModel *s: input_solutions) {
 
-  IntVarArray cap = int_var_array(sizex-1, 0, maxcap);
-  IntVarArray bcap = int_var_array(sizex-1, 0, maxcap);
+    IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
+    Matrix<IntVarArray> mat(x, sizex, sizex);
+    uint maxcap = max_of(input->cap);
+
+    IntVarArray cap = int_var_array(sizex-1, 0, maxcap);
+    IntVarArray bcap = int_var_array(sizex-1, 0, maxcap);
 
 
-  for (uint i = 0; i < sizex-1; i++) {
-    cap[i] = var(cardinality(oc(i)));
-    bcap[i] = var(cardinality(b.oc(i)));
-  }
-
-  mat(0,0) = var(0);
-  for (uint i = 1; i < sizex; i++) {
-    IntVar nw = cap[i-1]; //var(cardinality(oc(i-1)));
-    IntVar old = bcap[i-1]; //var(cardinality(b.oc(i-1)));
-    mat(i,0) = var( mat(i-1,0) +  nw);
-    mat(0,i) = var( mat(0,i-1) + old);
-  }
-
-  for (uint i = 1; i < sizex; i++)
-    for (uint j = 1; j < sizex; j++) {
-      IntVarArgs cs;
-      cs << var (cardinality (oc(i-1) - b.oc(j-1)));
-      cs << var (cardinality (b.oc(j-1) - oc(i-1)));
-      IntVar res = IntVar(*this, 0, maxcap);
-      max(*this, cs, res);
-
-      IntVarArgs v;
-      v << var (mat(i-1,j) + cap[i-1]); //cardinality(oc(i-1)));
-      v << var (mat(i,j-1) + bcap[i-1]); //cardinality(b.oc(j-1)));
-      v << var (mat(i-1,j-1) + res);
-      min(*this, v, mat(i,j));
+    for (uint i = 0; i < sizex-1; i++) {
+      cap[i] = var(cardinality(oc(i)));
+      bcap[i] = var(cardinality(s->oc(i)));
     }
 
-  dist = var( mat(sizex-1, sizex-1));
-  constraint( dist >= 1); // Levenshtein distance
+    mat(0,0) = var(0);
+    for (uint i = 1; i < sizex; i++) {
+      IntVar nw = cap[i-1]; //var(cardinality(oc(i-1)));
+      IntVar old = bcap[i-1]; //var(cardinality(b.oc(i-1)));
+      mat(i,0) = var( mat(i-1,0) +  nw);
+      mat(0,i) = var( mat(0,i-1) + old);
+    }
+
+    for (uint i = 1; i < sizex; i++)
+      for (uint j = 1; j < sizex; j++) {
+        IntVarArgs cs;
+        cs << var (cardinality (oc(i-1) - s->oc(j-1)));
+        cs << var (cardinality (s->oc(j-1) - oc(i-1)));
+        IntVar res = IntVar(*this, 0, maxcap);
+        max(*this, cs, res);
+
+        IntVarArgs v;
+        v << var (mat(i-1,j) + cap[i-1]); //cardinality(oc(i-1)));
+        v << var (mat(i,j-1) + bcap[i-1]); //cardinality(b.oc(j-1)));
+        v << var (mat(i-1,j-1) + res);
+        min(*this, v, mat(i,j));
+      }
+    bh << var( mat(sizex-1, sizex-1));
+  }
+  dist = var(sum(bh));
 }
+
+
+
+
+void DivModel::constrain_levenshtein_set(const DivModel & b)
+{
+  uint sizex = v_oc.size();// + 1; // size of maxc
+  // int op_size = O().size();
+  IntVarArgs bh;
+  for (DivModel *s: input_solutions) {
+
+    IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
+    Matrix<IntVarArray> mat(x, sizex, sizex);
+    uint maxcap = max_of(input->cap);
+
+    IntVarArray cap = int_var_array(sizex-1, 0, maxcap);
+    IntVarArray bcap = int_var_array(sizex-1, 0, maxcap);
+
+
+    for (uint i = 0; i < sizex-1; i++) {
+      cap[i] = var(cardinality(oc(i)));
+      bcap[i] = var(cardinality(b.oc(i)));
+    }
+
+    mat(0,0) = var(0);
+    for (uint i = 1; i < sizex; i++) {
+      IntVar nw = cap[i-1]; //var(cardinality(oc(i-1)));
+      IntVar old = bcap[i-1]; //var(cardinality(b.oc(i-1)));
+      mat(i,0) = var( mat(i-1,0) +  nw);
+      mat(0,i) = var( mat(0,i-1) + old);
+    }
+
+    for (uint i = 1; i < sizex; i++)
+      for (uint j = 1; j < sizex; j++) {
+        IntVarArgs cs;
+        cs << var (cardinality (s->oc(i-1) - b.oc(j-1)));
+        cs << var (cardinality (b.oc(j-1) - s->oc(i-1)));
+        IntVar res = IntVar(*this, 0, maxcap);
+        max(*this, cs, res);
+
+        IntVarArgs v;
+        v << var (mat(i-1,j) + cap[i-1]); //cardinality(oc(i-1)));
+        v << var (mat(i,j-1) + bcap[i-1]); //cardinality(b.oc(j-1)));
+        v << var (mat(i-1,j-1) + res);
+        min(*this, v, mat(i,j));
+      }
+
+    bh << var( mat(sizex-1, sizex-1));
+  }
+  constraint( dist > sum(bh)); // Levenshtein distance
+}
+
+
 bool DivModel::is_real_type(int o) {
 
   return (input->type[o] == BRANCH ||
@@ -353,6 +445,69 @@ bool DivModel::is_branch_type(int o) {
           input->type[o] == CALL);
 }
 
+
+
+void DivModel::post_input_solution_constrain() {
+  // const DivModel& b = static_cast<const DivModel&>(_b);
+
+  BoolVarArgs bh;
+
+  switch (options->dist_metric()) {
+  case DIST_HAMMING:
+    for (DivModel *s: input_solutions) {
+      for (operation o: input -> O) {
+        if (is_real_type(o))
+          bh << var (hamm(o) != s->hamm(o));
+      }
+    }
+    if (bh.size() >0) {           //
+      // cout << "bh.size() >0 "  <<var(sum(bh)) << endl;
+      dist = var( sum(bh));
+    } else {
+      cout << "bh.size() >0 "  <<var(sum(bh)) << endl;
+
+      dist = var(0);
+    }
+    break;
+  case DIST_HAMMING_DIFF_BR:
+  case DIST_HAMMING_DIFF:
+    for (DivModel *s: input_solutions) {
+      for (int i = 0; i < v_diff.size(); i++) {
+        bh << var (diff(i) != s->diff(i));
+      }
+    }
+    if (bh.size() >0) {
+      dist = var( sum(bh));
+    } else {
+      dist = var(0);
+    }
+    break;
+  case DIST_HAMMING_BR:
+    for (DivModel *s: input_solutions) {
+      for (operation o : input -> O) {
+        if (is_branch_type(o))
+          bh << var (hamm(o) != s->hamm(o));
+      }
+    }
+
+    if (bh.size() >0) {
+      dist = var( sum(bh));
+    } else {
+      dist = var(0);
+    }
+    break;
+  case DIST_LEVENSHTEIN:
+    post_levenshtein();
+    break;
+
+  case DIST_LEVENSHTEIN_SET:
+    post_levenshtein_set();
+  }
+
+  return;
+
+}
+
 void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
 
@@ -360,63 +515,57 @@ void DivModel::constrain(const Space & _b) {
 
   switch (options->dist_metric()) {
   case DIST_HAMMING:
-    for (operation o: input -> O) {
-      if (is_real_type(o))
-          bh << var (hamm(o) != b.hamm(o));
+    for (DivModel *s: input_solutions) {
+      for (operation o: input -> O) {
+        if (is_real_type(o))
+          bh << var (b.hamm(o) != s->hamm(o));
+      }
     }
     if (bh.size() >0) {           //
-      dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+      // dist = var( sum(bh));
+      constraint(dist > sum(bh)); // hamming distance
 
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
     }
-    break;
-  case DIST_HAMMING_DIFF:
 
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
-    }
-    if (bh.size() >0) {
-      dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
-    } else {
-      cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
-    }
     break;
   case DIST_HAMMING_DIFF_BR:
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
+  case DIST_HAMMING_DIFF:
+    for (DivModel *s: input_solutions) {
+      for (int i = 0; i < v_diff.size(); i++)
+        bh << var (b.diff(i) != s->diff(i));
     }
-    if (bh.size() >0) {
-      dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+    if (bh.size() >0) {           //
+      // dist = var( sum(bh));
+      constraint(dist > sum(bh)); // hamming distance
+
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
     }
     break;
   case DIST_HAMMING_BR:
-    for (operation o : input -> O) {
-      if (is_branch_type(o))
-        bh << var (hamm(o) != b.hamm(o));
+    for (DivModel *s: input_solutions) {
+      for (operation o : input -> O) {
+        if (is_branch_type(o))
+          bh << var (b.hamm(o) != s->hamm(o));
+      }
     }
     if (bh.size() >0) {
-      dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance on the branches
+      constraint(dist > sum(bh)); // hamming distance on the branches
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
     }
     break;
   case DIST_LEVENSHTEIN:
-    post_levenshtein(b);
+    constrain_levenshtein(b);
     break;
 
   case DIST_LEVENSHTEIN_SET:
-    post_levenshtein_set(b);
+    constrain_levenshtein_set(b);
   }
 
   return;
@@ -424,55 +573,6 @@ void DivModel::constrain(const Space & _b) {
 }
 
 
-void DivModel::post_constrain(DivModel* _b) {
-
-  const DivModel& b = static_cast<const DivModel&>(*_b);
-
-  BoolVarArgs bh;
-
-  switch (options->dist_metric()) {
-  case DIST_HAMMING:
-    for (operation o: input -> O) {
-      if (is_real_type(o))
-        bh << var (hamm(o) != b.hamm(o));
-    }
-    if (bh.size() >0)           //
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_DIFF:
-
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_DIFF_BR:
-
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_BR:
-    for (operation o : input -> O) {
-      if (is_branch_type(o))
-        bh << var (hamm(o) != b.hamm(o));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-
-    break;
-  case DIST_LEVENSHTEIN:
-    post_levenshtein(b);
-    break;
-  case DIST_LEVENSHTEIN_SET:
-    post_levenshtein_set(b);
-  }
-  return;
-
-}
 
 bool DivModel::master(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {

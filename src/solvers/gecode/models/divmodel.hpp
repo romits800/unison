@@ -40,7 +40,6 @@
 #include "localdivmodel.hpp"
 #include "branchers/merit.hpp"
 #include "branchers/value.hpp"
-#include "solution_parameters.hpp"
 #include "time.h"
 
 using namespace Gecode;
@@ -52,7 +51,6 @@ class DivModel : public GlobalModel {
 
 public:
 
-  vector<SolParameters *> input_solutions;
 
   // Diff array
   IntVarArray v_diff;
@@ -77,6 +75,8 @@ public:
   // r: random number for LNS
   Rnd div_r;
 
+  vector<DivModel *> input_solutions;
+
   void set_random(Rnd r) {div_r = r;};
 
   void set_relax(double p) {div_p = p;};
@@ -98,7 +98,7 @@ public:
 
   // Gecode space methods
 
-  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl, vector<SolParameters *>  p_sol_input);
+  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
   DivModel(DivModel& cg);
 
@@ -113,9 +113,10 @@ public:
   void post_diversification_diffs(void);
   void post_diversification_br_diffs(void);
   void post_diversification_hamming(void);
+  void post_input_solution_constrain(void);
   void post_global_cycles(void);
-  void post_levenshtein(const DivModel & b);
-  void post_levenshtein_set(const DivModel & b);
+  void post_levenshtein(void);
+  void post_levenshtein_set(void);
 
 
   // Check if the type of the operation is a branch, i.e. BRANCH or CALL
@@ -126,8 +127,9 @@ public:
   // Constrain function
 
   void constrain(const Space & _b);
-  // The same constraints as the constrain function
-  void post_constrain(DivModel* b);
+  void constrain_levenshtein(const DivModel & b);
+  void constrain_levenshtein_set(const DivModel & b);
+
 
   // Master and slave configuration
 

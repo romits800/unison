@@ -57,7 +57,6 @@
 
 #include "common/definitions.hpp"
 #include "models/parameters.hpp"
-#include "models/solution_parameters.hpp"
 #include "models/solver-parameters.hpp"
 #include "models/options.hpp"
 #include "models/simplemodel.hpp"
@@ -98,13 +97,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-//////
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#include <regex>
-
-
-// #include <exception.hpp>
 using namespace Gecode;
 using namespace std;
 
@@ -429,16 +421,6 @@ static int do_mkdir(const string divs_path)
 }
 
 
-bool match_solution_file(std::string mainStr)
-{
-  std::regex r(".*/\\d+\\..*\\.out\\.json");
-  std::cout << "Check" << mainStr << std::endl;
-  if (std::regex_match(mainStr, r))
-    return true;
-  else
-    return false;
-}
-
 
 int main(int argc, char* argv[]) {
 
@@ -542,83 +524,6 @@ int main(int argc, char* argv[]) {
   Parameters input(root);
 
 
-  ////////// READ iNPUT SOLUTIONS //////////////////////////////////////////
-
-  vector<SolParameters *> input_solutions;
-  /* Read current directory */
-  std::string path = ".";
-  for (const auto & entry : fs::directory_iterator(path)) {
-    std::string current_path = entry.path();
-    if (match_solution_file(current_path)) {
-
-#ifdef GRAPHICS
-      QApplication *app = new QApplication(argc, argv, false);
-#endif
-
-      ifstream fin;
-      fin.open(current_path.c_str(), ios::in);
-
-      if (fin.fail()) {
-        cerr << "Failed to open " << name << ": " << strerror(errno) << endl;
-#ifdef GRAPHICS
-        cerr << "Working directory: "
-             << QDir::currentPath().toStdString() << endl;
-#endif
-        exit(EXIT_FAILURE);
-
-      }
-
-      string json_input ((std::istreambuf_iterator<char>(fin)),
-                           (std::istreambuf_iterator<char>()));
-      // Close file
-
-      fin.close();
-      if (fin.fail()) {
-        cerr << "Failed to close " << name << ": " << strerror(errno) << endl;
-        exit(EXIT_FAILURE);
-      }
-
-#ifdef GRAPHICS
-      QScriptValue root;
-      QScriptEngine engine;
-      root = engine.evaluate("(" + QString::fromStdString(json_input) + ")");
-      if (engine.hasUncaughtException()) {
-        QScriptValue val = engine.uncaughtException();
-        if (val.isError()) {
-          cerr << "Failed to parse " << name << ": "
-               << val.toString().toStdString() << " at line "
-               << engine.uncaughtExceptionLineNumber() << endl
-               << "Backtrace: "
-               << engine.uncaughtExceptionBacktrace().join("\n").toStdString()
-               << endl;
-          }
-        exit(EXIT_FAILURE);
-      }
-      app->exit();
-      delete app;
-#else
-
-      Json::Value root;
-      Json::CharReaderBuilder reader;
-      std::stringstream json_input_stream;
-      json_input_stream << json_input;
-      std::string errs;
-      if (!Json::parseFromStream(reader, json_input_stream, &root, &errs)) {
-        cerr << "Failed to parse " << name << endl << errs;
-        exit(EXIT_FAILURE);
-      }
-#endif
-
-
-      SolParameters * solution = new SolParameters(root);
-
-      input_solutions.push_back(solution);
-
-    }
-  }
-
-
-  //////////////////////////////////////////////////////////////////////////
 
 
 
@@ -736,14 +641,13 @@ int main(int argc, char* argv[]) {
 
 
   // Code for diversification
-  DivModel *d = new DivModel(&input, &options, IPL_DOM, input_solutions);
+  DivModel *d = new DivModel(&input, &options, IPL_DOM);
 
   // for (uint i =0; i< d->input_solutions.size(); i++) {
   //   for (uint j = 0; j< d->input_solutions[i]->global_cycles.size(); j++)
   //     cout << d->input_solutions[i]->global_cycles[j] << endl;
   // }
 
-  return 0;
   GlobalData gd(d->n_int_vars, d->n_bool_vars, d->n_set_vars);
 
 
@@ -898,41 +802,75 @@ int main(int argc, char* argv[]) {
   }
 
 
+
   //////////////////////////////// START //////////////////////////////
   cerr << div() << "Starting..." << endl;
 
 
   if (options.div_method() == DIV_MONOLITHIC_DFS) {
 
-    d->post_div_branchers();
-    d->post_diversification_constraints(); // Diversification constraint
+    while (true) {
 
-    // d->post_input_solution_constraints(input_solutions);
-      // for (uint i=0; i< input_solutions.size(); i++) {
-      //   for (uint j=0; j< input_solutions[i]->registers.size(); j++)
-      //     std::cout << input_solutions[i]->registers[j] << " ";
-      //   std::cout << std::endl;
-      // }
+      if (d->status() == SS_FAILED) {
+        cerr << div() << "Status failed." << endl;
+        exit(EXIT_FAILURE);
+      }
 
-    return 0;
+      DivModel *d0 = (DivModel *)d->clone();
+
+      d0->post_div_branchers();
+      d0->post_diversification_constraints(); // Diversification constraint
+
+      cout << "posting_input_sol " << endl;
+      d0->post_input_solution_constrain();
+
+      if (d0->status() == SS_FAILED) {
+        cerr << div() << "Status failed." << endl;
+        exit(EXIT_FAILURE);
+      }
+      BAB<DivModel> e(d0);
+
+      t_solver.start();
+      t_it.start();
 
 
-    if (d->status() == SS_FAILED) {
-      cerr << div() << "Status failed." << endl;
-    }
-    BAB<DivModel> e(d);
+      if (d0->input_solutions.empty()) {
+        cerr << div() << "Starting " << count << endl;
+        if (DivModel *nextg = e.next()) {
+          cerr << div() << "Found first solution " << count << endl;
+          DivModel *tmpg = d0;
+          d0 = nextg;
+          delete tmpg;
+        } else {
+          exit(EXIT_FAILURE);
+        }
+      } else {
+        while (DivModel *nextg = e.next()) {
+          cerr << div() << "Cloning " << count << " Dist:" <<  nextg->dist << endl;
 
-    t_solver.start();
-    t_it.start();
+          // if (t.stop() > options.timeout())
+          //   timeout_exit(base, results, gd, go, t.stop());
+
+          DivModel *tmpg = d0;
+          d0 = nextg;
+          delete tmpg;
 
 
-    while (DivModel *nextg = e.next()) {
-      cerr << div() << "Cloning " << count << "\r";
+          t_it.start();
+        }
+      }
+      cerr << div() << "Pushing back solutions " << endl;
 
-      // if (t.stop() > options.timeout())
-      //   timeout_exit(base, results, gd, go, t.stop());
+      if (d0 == NULL) {
+        cout << "d0 is null " << endl;
+      }
+      d->input_solutions.push_back(d0);
 
-      ResultDivData rd = ResultDivData(nextg,
+      if (d->input_solutions.empty()) {
+        cout << "d input_solutions are empty" << endl;
+      }
+
+      ResultDivData rd = ResultDivData(d0,
                                        proven, // false, /*proven*/
                                        0,
                                        count,
@@ -940,24 +878,15 @@ int main(int argc, char* argv[]) {
                                        0, //presolving_time,
                                        t_solver.stop(),
                                        t_it.stop());
-
       ofstream fout;
-      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
-      fout << produce_json(rd, gd, nextg->input->N, 0);
+      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d0->options->output_file());
+      fout << produce_json(rd, gd, d0->input->N, 0);
       fout.close();
-
-
-      DivModel *tmpg = d;
-      d = nextg;
-      delete tmpg;
-
       count++;
       if (count >= maxcount) break;
-      t_it.start();
 
+      // cerr << div() << "Done " << count << endl;
     }
-    cerr << endl;
-    cerr << div() << "Finished" << endl;
 
   }
   else if (options.div_method() == DIV_MONOLITHIC_LNS) {

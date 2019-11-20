@@ -35,7 +35,6 @@ HEADERS += common/definitions.hpp \
            common/util.hpp \
            common/jsonutil.hpp \
            models/parameters.hpp \
-           models/solution_parameters.hpp \
            models/solver-parameters.hpp \
            models/options.hpp \
            models/model.hpp \
@@ -65,7 +64,6 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            common/util.cpp \
            common/jsonutil.cpp \
            models/parameters.cpp \
-           models/solution_parameters.cpp \
            models/solver-parameters.cpp \
            models/options.cpp \
            models/model.cpp \
