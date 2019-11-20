@@ -40,7 +40,7 @@
 #include "localdivmodel.hpp"
 #include "branchers/merit.hpp"
 #include "branchers/value.hpp"
-
+#include "solution_parameters.hpp"
 #include "time.h"
 
 using namespace Gecode;
@@ -51,6 +51,8 @@ class LocalDivModel;
 class DivModel : public GlobalModel {
 
 public:
+
+  vector<SolParameters *> input_solutions;
 
   // Diff array
   IntVarArray v_diff;
@@ -80,6 +82,7 @@ public:
   void set_relax(double p) {div_p = p;};
 
 
+
   // Variable accessors
 
   IntVar diff(operation o) const {return v_diff[o]; }
@@ -95,7 +98,7 @@ public:
 
   // Gecode space methods
 
-  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
+  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl, vector<SolParameters *>  p_sol_input);
 
   DivModel(DivModel& cg);
 

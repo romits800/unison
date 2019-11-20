@@ -41,8 +41,9 @@
 
 
 DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
-                   IntPropLevel p_ipl) :
-  GlobalModel(p_input, p_options, p_ipl)
+                   IntPropLevel p_ipl, vector<SolParameters *> p_sol_input) :
+  GlobalModel(p_input, p_options, p_ipl),
+  input_solutions(p_sol_input)
 {
 
   div_r.seed(time(NULL)); //p_options->seed());
@@ -185,6 +186,7 @@ void DivModel::post_diversification_constraints(void) {
     post_diversification_levenshtein();
 
 }
+
 
 
 void DivModel::post_diversification_levenshtein(void) {
