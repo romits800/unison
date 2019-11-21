@@ -816,26 +816,27 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
       }
 
-      DivModel *d0 = (DivModel *)d->clone();
-
-      d0->post_div_branchers();
-      d0->post_diversification_constraints(); // Diversification constraint
-
-      cout << "posting_input_sol " << endl;
-      d0->post_input_solution_constrain();
-
-      if (d0->status() == SS_FAILED) {
-        cerr << div() << "Status failed." << endl;
-        exit(EXIT_FAILURE);
-      }
-      BAB<DivModel> e(d0);
-
-      t_solver.start();
-      t_it.start();
-
-
-      if (d0->input_solutions.empty()) {
+      if (d->input_solutions.empty()) {
         cerr << div() << "Starting " << count << endl;
+
+        DivModel *d0 = (DivModel *)d->clone();
+
+        d0->post_clrandom_branchers();
+        d0->post_diversification_constraints(); // Diversification constraint
+
+        // cout << "posting_input_sol " << endl;
+        // d0->post_input_solution_constrain();
+
+        if (d0->status() == SS_FAILED) {
+          cerr << div() << "Status failed." << endl;
+          exit(EXIT_FAILURE);
+        }
+
+        BAB<DivModel> e(d0);
+
+        t_solver.start();
+        t_it.start();
+
         if (DivModel *nextg = e.next()) {
           cerr << div() << "Found first solution " << count << endl;
           DivModel *tmpg = d0;
@@ -844,10 +845,46 @@ int main(int argc, char* argv[]) {
         } else {
           exit(EXIT_FAILURE);
         }
-      } else {
+
+
+        d->input_solutions.push_back(d0);
+
+        ResultDivData rd = ResultDivData(d0,
+                                         proven, // false, /*proven*/
+                                         0,
+                                         count,
+                                         0, //presolver_time,
+                                         0, //presolving_time,
+                                         t_solver.stop(),
+                                         t_it.stop());
+        ofstream fout;
+        fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d0->options->output_file());
+        fout << produce_json(rd, gd, d0->input->N, 0);
+        fout.close();
+        count++;
+        if (count >= maxcount) break;
+
+      } // first time
+      else { // Not first time
+        DivModel *d0 = (DivModel *)d->clone();
+
+        d0->post_div_branchers();
+        d0->post_diversification_constraints(); // Diversification constraint
+
+        cout << "posting_input_sol " << endl;
+        d0->post_input_solution_constrain();
+
+        if (d0->status() == SS_FAILED) {
+          cerr << div() << "Status failed." << endl;
+          exit(EXIT_FAILURE);
+        }
+        BAB<DivModel> e(d0);
+
+        t_solver.start();
+        t_it.start();
+
         while (DivModel *nextg = e.next()) {
           cerr << div() << "Cloning " << count << " Dist:" <<  nextg->dist << endl;
-
           // if (t.stop() > options.timeout())
           //   timeout_exit(base, results, gd, go, t.stop());
 
@@ -855,104 +892,95 @@ int main(int argc, char* argv[]) {
           d0 = nextg;
           delete tmpg;
 
-
-          t_it.start();
         }
-      }
-      cerr << div() << "Pushing back solutions " << endl;
 
-      if (d0 == NULL) {
-        cout << "d0 is null " << endl;
-      }
-      d->input_solutions.push_back(d0);
+        cerr << div() << "Pushing back solutions " << endl;
 
-      if (d->input_solutions.empty()) {
-        cout << "d input_solutions are empty" << endl;
-      }
+        d->input_solutions.push_back(d0);
 
-      ResultDivData rd = ResultDivData(d0,
-                                       proven, // false, /*proven*/
-                                       0,
-                                       count,
-                                       0, //presolver_time,
-                                       0, //presolving_time,
-                                       t_solver.stop(),
-                                       t_it.stop());
-      ofstream fout;
-      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d0->options->output_file());
-      fout << produce_json(rd, gd, d0->input->N, 0);
-      fout.close();
-      count++;
-      if (count >= maxcount) break;
+        ResultDivData rd = ResultDivData(d0,
+                                         proven, // false, /*proven*/
+                                         0,
+                                         count,
+                                         0, //presolver_time,
+                                         0, //presolving_time,
+                                         t_solver.stop(),
+                                         t_it.stop());
+        ofstream fout;
+        fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d0->options->output_file());
+        fout << produce_json(rd, gd, d0->input->N, 0);
+        fout.close();
+        count++;
+        if (count >= maxcount) break;
+        t_it.start();
 
-      // cerr << div() << "Done " << count << endl;
+      } // Not first time
     }
-
   }
-  else if (options.div_method() == DIV_MONOLITHIC_LNS) {
+  // else if (options.div_method() == DIV_MONOLITHIC_LNS) {
 
-    d->post_div_branchers();
-    d->post_diversification_constraints(); // Diversification constraint
+  //   d->post_div_branchers();
+  //   d->post_diversification_constraints(); // Diversification constraint
 
-    if (d->status() == SS_FAILED) {
-      cerr << div() << "Status failed." << endl;
-    }
+  //   if (d->status() == SS_FAILED) {
+  //     cerr << div() << "Status failed." << endl;
+  //   }
 
-    Gecode::RestartMode restart = options.restart();
-    Search::Cutoff* c;
-    Search::Options o;
-    unsigned long int s_const = options.restart_base();
+  //   Gecode::RestartMode restart = options.restart();
+  //   Search::Cutoff* c;
+  //   Search::Options o;
+  //   unsigned long int s_const = options.restart_base();
 
-    if (restart == RM_LUBY ){
-      c = Search::Cutoff::luby(s_const);
-    } else if (restart == RM_CONSTANT) {
-      c = Search::Cutoff::constant(s_const);
-    } else {
-      c = Search::Cutoff::constant(1000);
-    }
+  //   if (restart == RM_LUBY ){
+  //     c = Search::Cutoff::luby(s_const);
+  //   } else if (restart == RM_CONSTANT) {
+  //     c = Search::Cutoff::constant(s_const);
+  //   } else {
+  //     c = Search::Cutoff::constant(1000);
+  //   }
 
-    o.cutoff = c;
-    RBS<DivModel,BAB> e(d, o);
+  //   o.cutoff = c;
+  //   RBS<DivModel,BAB> e(d, o);
 
-    t_solver.start();
-    t_it.start();
+  //   t_solver.start();
+  //   t_it.start();
 
-    cerr << div() << "Starting" << endl;
+  //   cerr << div() << "Starting" << endl;
 
-    while (DivModel *nextg = e.next()) {
-      cerr << div() << "Cloning " << count << "\r";
+  //   while (DivModel *nextg = e.next()) {
+  //     cerr << div() << "Cloning " << count << "\r";
 
 
 
-      ResultDivData rd = ResultDivData(nextg,
-                                       proven, // false, /*proven*/
-                                       0,
-                                       count,
-                                       0, //presolver_time,
-                                       0, //presolving_time,
-                                       t_solver.stop(),
-                                       t_it.stop());
+  //     ResultDivData rd = ResultDivData(nextg,
+  //                                      proven, // false, /*proven*/
+  //                                      0,
+  //                                      count,
+  //                                      0, //presolver_time,
+  //                                      0, //presolving_time,
+  //                                      t_solver.stop(),
+  //                                      t_it.stop());
 
-      ofstream fout;
-      fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
-      fout << produce_json(rd, gd, nextg->input->N, 0);
-      fout.close();
+  //     ofstream fout;
+  //     fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
+  //     fout << produce_json(rd, gd, nextg->input->N, 0);
+  //     fout.close();
 
-      DivModel *tmpg = d;
-      d = nextg;
-      delete tmpg;
+  //     DivModel *tmpg = d;
+  //     d = nextg;
+  //     delete tmpg;
 
-      count++;
-      if (count >= maxcount) break;
+  //     count++;
+  //     if (count >= maxcount) break;
 
-      t_it.start();
+  //     t_it.start();
 
-    }
-    cerr << endl;
-    cerr << div() << "Finished" << endl;
+  //   }
+  //   cerr << endl;
+  //   cerr << div() << "Finished" << endl;
 
-    // execution_time = t.stop();
-  }
-  if (d!=NULL) delete d;
+  //   // execution_time = t.stop();
+  // }
+  if (d != NULL) delete d;
   // }
 }

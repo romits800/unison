@@ -106,6 +106,9 @@ public:
 
   // Branchers
   void post_div_branchers(void);
+  void post_random_branchers(void);
+  void post_clrandom_branchers(void);
+  void post_cloriginal_branchers(void);
 
   // Diversification Constraints
   void post_diversification_levenshtein(void);
@@ -117,6 +120,7 @@ public:
   void post_global_cycles(void);
   void post_levenshtein(void);
   void post_levenshtein_set(void);
+
 
 
   // Check if the type of the operation is a branch, i.e. BRANCH or CALL
