@@ -75,6 +75,10 @@ public:
   // r: random number for LNS
   Rnd div_r;
 
+
+  vector<operation> branch_operations;
+  vector<operation> real_operations;
+
   void set_random(Rnd r) {div_r = r;};
 
   void set_relax(double p) {div_p = p;};
