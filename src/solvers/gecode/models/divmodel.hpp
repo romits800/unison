@@ -76,6 +76,9 @@ public:
   Rnd div_r;
 
   vector<DivModel *> input_solutions;
+  vector<operation> branch_operations;
+  vector<operation> real_operations;
+
 
   void set_random(Rnd r) {div_r = r;};
 

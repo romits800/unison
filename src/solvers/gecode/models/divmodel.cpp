@@ -45,28 +45,42 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   GlobalModel(p_input, p_options, p_ipl)
   // input_solutions(p_sol_input)
 {
-
   div_r.seed(time(NULL)); //p_options->seed());
   div_p = p_options->relax();
   int op_size = O().size();
   int maxval = sum_of(input->maxc);
   // difference between operations
-  int real_op_size = 0;
+
+  // Initialize branch operations
+  for (operation o : input -> O)
+    if (is_branch_type(o))
+      branch_operations.push_back(o);
+
+  // Initialize real operations
   for (operation o : input -> O)
     if (is_real_type(o))
-      real_op_size += 1;
+      real_operations.push_back(o);
+
+
+  int real_op_size = real_operations.size();
 
   if (options->dist_metric() == DIST_HAMMING_DIFF) {
     v_diff  = int_var_array((real_op_size*(real_op_size -1))/2, -maxval, maxval);
   }
   // difference between operations and branch operations
   else if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
-    int br_size = 0;
-    for (operation o : input -> O)
-      if (is_branch_type(o))
-        br_size += 1;
+    int size = 0; // = branch_operations.size();
     // Is it ok if br_size = 0?
-    v_diff  = int_var_array((real_op_size  )*br_size, -maxval, maxval);
+    int prevbr = real_operations[0];
+
+    for (operation br: branch_operations) {
+      for (int o = prevbr; o < br; o++) {
+        if (!is_real_type(o)) continue;
+        size++;
+        prevbr = br + 1;
+      }
+    }
+    v_diff  = int_var_array(size, -maxval, maxval);
   }
 
   // Prepare cycles for hamming distance between operations' cycles
@@ -79,14 +93,15 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   v_oc = set_var_array(sum_of(input->maxc) + 1, IntSet::empty, IntSet(0,op_size));
 
   dist = IntVar(*this, 0, 10000);
-  // input_solutions = vector
 }
 
 DivModel::DivModel(DivModel& cg) :
   GlobalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
-  input_solutions(cg.input_solutions)
+  input_solutions(cg.input_solutions),
+  branch_operations(cg.branch_operations),
+  real_operations(cg.real_operations)
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
@@ -195,8 +210,7 @@ void DivModel::post_diversification_constraints(void) {
 void DivModel::post_diversification_levenshtein(void) {
   IntVarArgs bs;
   uint smaxc = sum_of(input->maxc);
-  for (operation i : input -> O) {
-    if (!is_real_type(i)) continue; //
+  for (operation i : real_operations) {
     BoolVar ifb = var ( a(i) == 1 );
     IntVar thenb = var ( gc(i) );
     IntVar elseb = var(smaxc); //IntVar(*this, 0, smaxc); //
@@ -213,11 +227,9 @@ void DivModel::post_diversification_levenshtein(void) {
 void DivModel::post_diversification_diffs(void) {
   int k=0;
   int maxval = max_of(input->maxc);
-  for (uint i = 0; i < input->O.size(); i++) {
-    if (!is_real_type(i)) continue;
-    for (uint j = i+1; j< input->O.size(); j++) {
+  for (uint i: real_operations) {
+    for (uint j: real_operations) {
       // If then else constraint
-      if (!is_real_type(j)) continue;
       BoolVar ifb = var ((a(i) == 1) && (a(j) == 1));
       IntVar elseb = var (maxval) ;
       IntVar thenb =  var (gc(i) - gc(j));
@@ -227,26 +239,28 @@ void DivModel::post_diversification_diffs(void) {
   }
 }
 
+
 void DivModel::post_diversification_br_diffs(void) {
-  int k=0;
   int maxval = max_of(input->maxc);
-  for (operation o : input -> O) {
-    if (!is_real_type(o)) continue;
-    for (operation br : input -> O)
-      if (is_branch_type(br)) {
-        BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
-        IntVar elseb = var (maxval) ;
-        IntVar thenb =  var (gc(br) - gc(o));
-        ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
-        k++;
-      }
+  int prevbr = real_operations[0];
+  int k=0;
+  for (operation br: branch_operations) {
+    for (int o = prevbr; o < br; o++) {
+      if (!is_real_type(o)) continue;
+      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
+      IntVar thenb =  var (gc(br) - gc(o));
+      IntVar elseb = var (maxval) ;
+      ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
+      prevbr = br + 1;
+      k++;
+    }
   }
+
 }
 
 
 void DivModel::post_diversification_hamming(void) {
-  for (operation i : input -> O) {
-    if (!is_real_type(i)) continue;
+  for (operation i : real_operations) {
     BoolVar ifb = var (a(i) == 1);
     IntVar thenb = var ( gc(i) );
     IntVar elseb = var ( -1 );
@@ -456,17 +470,13 @@ void DivModel::post_input_solution_constrain() {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (DivModel *s: input_solutions) {
-      for (operation o: input -> O) {
-        if (is_real_type(o))
+      for (operation o: real_operations) {
           bh << var (hamm(o) != s->hamm(o));
       }
     }
     if (bh.size() >0) {           //
-      // cout << "bh.size() >0 "  <<var(sum(bh)) << endl;
       dist = var( sum(bh));
     } else {
-      cout << "bh.size() >0 "  <<var(sum(bh)) << endl;
-
       dist = var(0);
     }
     break;
@@ -485,9 +495,8 @@ void DivModel::post_input_solution_constrain() {
     break;
   case DIST_HAMMING_BR:
     for (DivModel *s: input_solutions) {
-      for (operation o : input -> O) {
-        if (is_branch_type(o))
-          bh << var (hamm(o) != s->hamm(o));
+      for (operation o : branch_operations) {
+        bh << var (hamm(o) != s->hamm(o));
       }
     }
 
@@ -549,9 +558,8 @@ void DivModel::constrain(const Space & _b) {
     break;
   case DIST_HAMMING_BR:
     for (DivModel *s: input_solutions) {
-      for (operation o : input -> O) {
-        if (is_branch_type(o))
-          bh << var (b.hamm(o) != s->hamm(o));
+      for (operation o : branch_operations) {
+        bh << var (b.hamm(o) != s->hamm(o));
       }
     }
     if (bh.size() >0) {
