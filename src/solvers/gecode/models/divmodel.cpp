@@ -98,7 +98,9 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 DivModel::DivModel(DivModel& cg) :
   GlobalModel(cg),
   div_p(cg.div_p),
-  div_r(cg.div_r)
+  div_r(cg.div_r),
+  branch_operations(cg.branch_operations),
+  real_operations(cg.real_operations)
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
@@ -205,8 +207,7 @@ void DivModel::post_diversification_constraints(void) {
 void DivModel::post_diversification_levenshtein(void) {
   IntVarArgs bs;
   uint smaxc = sum_of(input->maxc);
-  for (operation i : input -> O) {
-    if (!is_real_type(i)) continue; //
+  for (operation i : real_operations) {
     BoolVar ifb = var ( a(i) == 1 );
     IntVar thenb = var ( gc(i) );
     IntVar elseb = var(smaxc); //IntVar(*this, 0, smaxc); //
@@ -243,8 +244,6 @@ void DivModel::post_diversification_br_diffs(void) {
     for (int o = prevbr; o < br; o++) {
       if (!is_real_type(o)) continue;
 
-      cout << "Br:" << br << " Op:" << o << endl;
-
       BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
       IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval) ;
@@ -259,7 +258,6 @@ void DivModel::post_diversification_br_diffs(void) {
 
 void DivModel::post_diversification_hamming(void) {
   for (operation i : real_operations) {
-    // if (!is_real_type(i)) continue;
     BoolVar ifb = var (a(i) == 1);
     IntVar thenb = var ( gc(i) );
     IntVar elseb = var ( -1 );
