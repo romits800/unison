@@ -806,7 +806,8 @@ int main(int argc, char* argv[]) {
   //////////////////////////////// START //////////////////////////////
   cerr << div() << "Starting..." << endl;
 
-
+  t_solver.start();
+  
   if (options.div_method() == DIV_MONOLITHIC_DFS) {
 
     while (true) {
@@ -834,7 +835,7 @@ int main(int argc, char* argv[]) {
 
         BAB<DivModel> e(d0);
 
-        t_solver.start();
+
         t_it.start();
 
         if (DivModel *nextg = e.next()) {
@@ -880,7 +881,7 @@ int main(int argc, char* argv[]) {
         }
         BAB<DivModel> e(d0);
 
-        t_solver.start();
+	//  t_solver.start();	
         t_it.start();
 
         while (DivModel *nextg = e.next()) {
