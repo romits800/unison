@@ -45,7 +45,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   GlobalModel(p_input, p_options, p_ipl)
 {
 
-  div_r.seed(time(NULL)); //p_options->seed());
+  div_r.seed(time(NULL) % 971); // 971 prime: p_options->seed());
   div_p = p_options->relax();
   int op_size = O().size();
   int maxval = sum_of(input->maxc);
@@ -121,7 +121,7 @@ void DivModel::post_div_branchers(void) {
     branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
 	   NULL, &print_global_cost_decision);
     Rnd r;
-    r.seed(time(NULL));
+    r.seed(time(NULL) % 971);
     branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
            NULL, &print_global_inactive_decision);
 
@@ -141,7 +141,7 @@ void DivModel::post_div_branchers(void) {
   else if (options->branching() == BR_RND_COSTLAST) {
 
     Rnd r;
-    r.seed(time(NULL));
+    r.seed(time(NULL) % 971);
     branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
            NULL, &print_global_inactive_decision);
 
@@ -164,7 +164,7 @@ void DivModel::post_div_branchers(void) {
 
   else if (options->branching() == BR_ORIGINAL_COSTLAST) {
     Rnd r;
-    r.seed(time(NULL));
+    r.seed(time(NULL) % 971);
     branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
            NULL, &print_global_inactive_decision);
 
@@ -186,7 +186,7 @@ void DivModel::post_div_branchers(void) {
   }
   else if (options->branching() == BR_ORIGINAL) {
 
-    GlobalModel::post_complete_branchers(time(NULL));
+    GlobalModel::post_complete_branchers(time(NULL) % 971);
   }
 
 }
