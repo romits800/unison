@@ -118,24 +118,23 @@ void DivModel::post_div_branchers(void) {
 
   if (options->branching() == BR_RND) {
 
-    branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-	   NULL, &print_global_cost_decision);
     Rnd r;
     r.seed(time(NULL) % 971);
-    branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
-           NULL, &print_global_inactive_decision);
+    IntVarArray va = int_var_array(v_a.size(), 0, 1);
+    IntVarArgs br;
+    
+    for (int i=0; i<v_a.size(); i++) {
+      constraint (va[i] == v_a[i]);
+      br << va[i];
+    }
+    for (IntVar c: v_c) br << c;
+    for (IntVar i: v_i) br << i;
+    for (IntVar y: v_y) br << y;
+    for (IntVar r: v_r) br << r;
 
-    branch(*this, v_c, INT_VAR_RND(r), INT_VAL_RND(r),
-	   &schedulable, &print_global_cycle_decision);
 
-    branch(*this, v_i, INT_VAR_RND(r), INT_VAL_MIN(),
-	   NULL, &print_global_instruction_decision);
-
-    branch(*this, v_y, INT_VAR_RND(r), INT_VAL_MIN(),
-	   NULL, &print_global_temporary_decision);
-
-    branch(*this, v_r, INT_VAR_RND(r), INT_VAL_RND(r),
-	   &global_assignable, &print_global_register_decision);
+    branch(*this, br, INT_VAR_RND(r), INT_VAL_RND(r),
+	   NULL, NULL); 
 
   }
   else if (options->branching() == BR_RND_COSTLAST) {
@@ -157,9 +156,6 @@ void DivModel::post_div_branchers(void) {
     branch(*this, v_r, INT_VAR_RND(r), INT_VAL_RND(r),
            &global_assignable, &print_global_register_decision);
 
-    branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-           NULL, &print_global_cost_decision);
-
   }
 
   else if (options->branching() == BR_ORIGINAL_COSTLAST) {
@@ -180,8 +176,6 @@ void DivModel::post_div_branchers(void) {
     branch(*this, v_r, INT_VAR_NONE(), INT_VAL_RND(r),
            &global_assignable, &print_global_register_decision);
 
-    branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-           NULL, &print_global_cost_decision);
 
   }
   else if (options->branching() == BR_ORIGINAL) {
