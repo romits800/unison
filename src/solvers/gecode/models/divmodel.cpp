@@ -469,51 +469,58 @@ bool DivModel::slave(const MetaInfo& mi) {
 
 void DivModel::next(const DivModel& b) {
   // Instructions
+  IntVarArgs instr, linstr;
+  for (operation o: input -> O) {
+    instr << i(o);
+    linstr << b.i(o);
+  }
   if (!options->disable_relax_i()) {
-    IntVarArgs instr, linstr;
-    for (operation o: input -> O) {
-      instr << i(o);
-      linstr << b.i(o);
-    }
     relax(*this, instr, linstr, div_r, div_p);
+  } else {
+    relax(*this, instr, linstr, div_r, 0.0);
   }
 
   // temporaries
+  IntVarArgs temp, ltemp;
+  for (operand p : input -> P) {
+    temp << y(p);
+    ltemp << b.y(p);
+  }
   if (!options->disable_relax_y()) {
-    IntVarArgs temp, ltemp;
-    for (operand p : input -> P) {
-      temp << y(p);
-      ltemp << b.y(p);
-    }
     relax(*this, temp, ltemp, div_r, div_p);
+  } else {
+    relax(*this, temp, ltemp, div_r, 0.0);
   }
 
 
   // Cycles
-  if (!options->disable_relax_c()) {
-    // Relax all active variables.
-    // relax(*this, v_a, b.v_a, div_r, 1.0);
-    IntVarArgs cycles, lcycles;
-    for (operation o : input -> O) {
-      if (b.a(o).val()) { // if activated
-        cycles << c(o);
-        lcycles << b.c(o);
-      }
+  // Relax all active variables.
+  // relax(*this, v_a, b.v_a, div_r, 1.0);
+  IntVarArgs cycles, lcycles;
+  for (operation o : input -> O) {
+    if (b.a(o).val()) { // if activated
+      cycles << c(o);
+      lcycles << b.c(o);
     }
+  }
+  if (!options->disable_relax_c()) {
     relax(*this, cycles, lcycles, div_r, div_p);
+  } else {
+    relax(*this, cycles, lcycles, div_r, 0.0);
   }
 
   // Registers
-  if (!options->disable_relax_r()) {
-    IntVarArgs lregs, regs;
-    for (temporary t : input->T) {
-      if (b.l(t).assigned() && b.l(t).val()) { // if the tempoorary is assigned
-        lregs << b.r(t);
-        regs << r(t);
-      }
+  IntVarArgs lregs, regs;
+  for (temporary t : input->T) {
+    if (b.l(t).assigned() && b.l(t).val()) { // if the tempoorary is assigned
+      lregs << b.r(t);
+      regs << r(t);
     }
-    // Regs
+  }
+  if (!options->disable_relax_r()) {
     relax(*this, regs, lregs, div_r, div_p);
+  } else {
+    relax(*this, regs, lregs, div_r, 0.0);
   }
 
 }
