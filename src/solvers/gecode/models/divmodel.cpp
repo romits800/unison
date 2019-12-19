@@ -147,7 +147,7 @@ void DivModel::post_div_branchers(void) {
     branch(*this, v_c, INT_VAR_RND(r), INT_VAL_RND(r),
            &schedulable, &print_global_cycle_decision);
 
-    branch(*this, v_i, INT_VAR_RND(r), INT_VAL_MIN(),
+    branch(*this, v_i, INT_VAR_RND(r), INT_VAL_RND(r),
            NULL, &print_global_instruction_decision);
 
     branch(*this, v_y, INT_VAR_RND(r), INT_VAL_MIN(),
