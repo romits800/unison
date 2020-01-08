@@ -119,7 +119,7 @@ void DivModel::post_random_branchers(void) {
   branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
          NULL, &print_global_cost_decision);
   Rnd r;
-  r.seed(p_options->seed());
+  r.seed(options->seed());
   branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
          NULL, &print_global_inactive_decision);
 
@@ -140,7 +140,7 @@ void DivModel::post_random_branchers(void) {
 
 void DivModel::post_clrandom_branchers(void) {
   Rnd r;
-  r.seed(p_options->seed());
+  r.seed(options->seed());
   branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
          NULL, &print_global_inactive_decision);
 
@@ -160,7 +160,7 @@ void DivModel::post_clrandom_branchers(void) {
 
 void DivModel::post_cloriginal_branchers(void) {
   Rnd r;
-  r.seed(p_options->seed());
+  r.seed(options->seed());
   branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
          NULL, &print_global_inactive_decision);
 
@@ -189,7 +189,7 @@ void DivModel::post_div_branchers(void) {
     post_cloriginal_branchers();
   }
   else if (options->branching() == BR_ORIGINAL) {
-    GlobalModel::post_complete_branchers(p_options->seed()) ;
+    GlobalModel::post_complete_branchers(options->seed()) ;
   }
 }
 
