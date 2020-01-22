@@ -281,6 +281,7 @@ void DivModel::post_levenshtein(const DivModel & b)
   IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
   Matrix<IntVarArray> mat(x, sizex, sizex);
 
+  BoolVarArgs isnotnop;
   mat(0,0) = var(0);
   for (uint i = 1; i < sizex; i++) {
     mat(i,0) = var(i);
@@ -295,9 +296,14 @@ void DivModel::post_levenshtein(const DivModel & b)
       v << var (mat(i,j-1) + 1);
       v << var (mat(i-1,j-1) + res);
       min(*this, v, mat(i,j));
+
+      BoolVar nn = var ( oc(i-1) != IntSet::empty );
+      isnotnop << nn;
     }
 
   dist = var( mat(sizex-1, sizex-1));
+
+  distinct(*this, isnotnop, v_oc);
 
   constraint(dist >= 1); // Levenshtein distance
 }
