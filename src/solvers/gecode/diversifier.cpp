@@ -879,6 +879,7 @@ int main(int argc, char* argv[]) {
           cerr << div() << "Status failed." << endl;
           exit(EXIT_FAILURE);
         }
+
         BAB<DivModel> e(d0);
 
 	//  t_solver.start();	

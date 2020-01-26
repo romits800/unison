@@ -92,7 +92,8 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   // Array for levenshtein distance
   v_oc = set_var_array(sum_of(input->maxc) + 1, IntSet::empty, IntSet(0,op_size));
 
-  dist = IntVar(*this, 0, 10000);
+  // TODO: Fix the upper bound
+  dist = IntVar(*this, 1, 10000);
 }
 
 DivModel::DivModel(DivModel& cg) :
@@ -310,7 +311,11 @@ void DivModel::post_levenshtein(void)
       }
     bh << var( mat(sizex-1, sizex-1));
   }
-  dist = var(sum(bh));
+  if (bh.size() >0) {
+      constraint(dist == var( sum(bh)));
+  }
+  else 
+      exit(EXIT_FAILURE);
 
 }
 
@@ -389,7 +394,11 @@ void DivModel::post_levenshtein_set(void)
       }
     bh << var( mat(sizex-1, sizex-1));
   }
-  dist = var(sum(bh));
+  if (bh.size() >0)
+      constraint(dist == var( sum(bh)));
+  else 
+      exit(EXIT_FAILURE);
+
 }
 
 
@@ -475,9 +484,9 @@ void DivModel::post_input_solution_constrain() {
       }
     }
     if (bh.size() >0) {           //
-      dist = var( sum(bh));
+      constraint(dist == var( sum(bh)));
     } else {
-      dist = var(0);
+      exit(EXIT_FAILURE);
     }
     break;
   case DIST_HAMMING_DIFF_BR:
@@ -488,9 +497,9 @@ void DivModel::post_input_solution_constrain() {
       }
     }
     if (bh.size() >0) {
-      dist = var( sum(bh));
+      constraint(dist == var( sum(bh)));
     } else {
-      dist = var(0);
+      exit(EXIT_FAILURE);
     }
     break;
   case DIST_HAMMING_BR:
@@ -501,9 +510,9 @@ void DivModel::post_input_solution_constrain() {
     }
 
     if (bh.size() >0) {
-      dist = var( sum(bh));
+      constraint(dist == var( sum(bh)));
     } else {
-      dist = var(0);
+      exit(EXIT_FAILURE);
     }
     break;
   case DIST_LEVENSHTEIN:
@@ -536,7 +545,7 @@ void DivModel::constrain(const Space & _b) {
       constraint(dist > sum(bh)); // hamming distance
 
     } else {
-      cerr << "No constraints @ constrain";
+      cerr << "No constraints @ constrain" << endl;
       exit(EXIT_FAILURE);
     }
 
