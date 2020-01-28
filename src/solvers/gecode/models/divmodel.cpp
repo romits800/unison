@@ -309,7 +309,10 @@ void DivModel::post_levenshtein(void)
         v << var (mat(i-1,j-1) + res);
         min(*this, v, mat(i,j));
       }
+    // Add the solutions for optimization
     bh << var( mat(sizex-1, sizex-1));
+    // Constraint for every solution
+    constraint(var( mat(sizex-1, sizex-1)) > 1);
   }
   if (bh.size() >0) {
       constraint(dist == var( sum(bh)));
@@ -392,6 +395,9 @@ void DivModel::post_levenshtein_set(void)
         v << var (mat(i-1,j-1) + res);
         min(*this, v, mat(i,j));
       }
+
+    constraint(var( mat(sizex-1, sizex-1)) > 1);
+
     bh << var( mat(sizex-1, sizex-1));
   }
   if (bh.size() >0)
@@ -479,9 +485,14 @@ void DivModel::post_input_solution_constrain() {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (DivModel *s: input_solutions) {
+      BoolVarArgs bhs;
       for (operation o: real_operations) {
           bh << var (hamm(o) != s->hamm(o));
+          bhs << var (hamm(o) != s->hamm(o));
       }
+      if (bhs.size() >0) {           //
+          constraint(var( sum(bhs)) > 0);
+      } 
     }
     if (bh.size() >0) {           //
       constraint(dist == var( sum(bh)));
@@ -492,9 +503,15 @@ void DivModel::post_input_solution_constrain() {
   case DIST_HAMMING_DIFF_BR:
   case DIST_HAMMING_DIFF:
     for (DivModel *s: input_solutions) {
+      BoolVarArgs bhs;
       for (int i = 0; i < v_diff.size(); i++) {
         bh << var (diff(i) != s->diff(i));
+        bhs << var (diff(i) != s->diff(i));
       }
+      if (bhs.size() >0) {           //
+          constraint(var( sum(bhs)) > 0);
+      } 
+ 
     }
     if (bh.size() >0) {
       constraint(dist == var( sum(bh)));
@@ -504,9 +521,15 @@ void DivModel::post_input_solution_constrain() {
     break;
   case DIST_HAMMING_BR:
     for (DivModel *s: input_solutions) {
+      BoolVarArgs bhs;
       for (operation o : branch_operations) {
         bh << var (hamm(o) != s->hamm(o));
+        bhs << var (hamm(o) != s->hamm(o));
       }
+      if (bhs.size() >0) {           //
+          constraint(var( sum(bhs)) > 0);
+      } 
+ 
     }
 
     if (bh.size() >0) {
