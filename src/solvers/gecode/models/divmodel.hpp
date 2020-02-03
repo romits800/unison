@@ -46,6 +46,11 @@
 using namespace Gecode;
 using namespace std;
 
+typedef struct  {
+  uint start;
+  uint end;
+} gadget_t;
+
 class LocalDivModel;
 
 class DivModel : public GlobalModel {
@@ -78,6 +83,8 @@ public:
 
   vector<operation> branch_operations;
   vector<operation> real_operations;
+
+  vector<gadget_t> gadgets;
 
   void set_random(Rnd r) {div_r = r;};
 
