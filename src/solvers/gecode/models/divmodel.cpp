@@ -77,18 +77,19 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     // gadgets
     int size = 0;
     // Is it ok if br_size = 0?
-    int prevbr = real_operations[0];
+    // int prevbr = real_operations[0];
 
     for (operation br: branch_operations) {
-      gadget_t g;
-      g.start = size;
-      for (int o = prevbr; o < br; o++) {
-        if (!is_real_type(o)) continue;
+      // gadget_t g;
+      // g.start = size;
+      for (operation o: real_operations) { // = prevbr; o < br; o++) {
+        // if (!is_real_type(o)) continue;
+        if (br == o) continue;
         size++;
       }
-      prevbr = br + 1;
-      g.end = size;
-      gadgets.push_back(g);
+      // prevbr = br + 1;
+      // g.end = size;
+      // gadgets.push_back(g);
     }
 
     v_diff  = int_var_array(size, -maxval, maxval);
@@ -202,15 +203,17 @@ void DivModel::post_diversification_constraints(void) {
   post_diversification_hamming();
   if (options->dist_metric() == DIST_HAMMING_DIFF)
     post_diversification_diffs();
-  if (options->dist_metric() == DIST_HAMMING_DIFF_BR)
+  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
+    // post_diversification_channel();
     post_diversification_br_diffs();
+  }
   if (options->dist_metric() == DIST_LEVENSHTEIN || options->dist_metric() == DIST_LEVENSHTEIN_SET )
-    post_diversification_levenshtein();
+    post_diversification_channel();
 
 }
 
 
-void DivModel::post_diversification_levenshtein(void) {
+void DivModel::post_diversification_channel(void) {
   IntVarArgs bs;
   uint smaxc = sum_of(input->maxc);
   for (operation i : real_operations) {
@@ -244,19 +247,19 @@ void DivModel::post_diversification_diffs(void) {
 
 void DivModel::post_diversification_br_diffs(void) {
   int maxval = max_of(input->maxc);
-  int prevbr = real_operations[0];
+  // int prevbr = real_operations[0];
   int k=0;
   for (operation br: branch_operations) {
-    for (int o = prevbr; o < br; o++) {
-      if (!is_real_type(o)) continue;
-
-      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
+    for (operation o: real_operations) { //int o = prevbr; o < br; o++) {
+      // if (!is_real_type(o)) continue;
+      if (br == o) continue;
+      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) < gc(br)));
       IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval) ;
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
       k++;
     }
-    prevbr = br + 1;
+    // prevbr = br + 1;
   }
 
 }
@@ -410,13 +413,13 @@ void DivModel::constrain(const Space & _b) {
     }
     break;
   case DIST_HAMMING_DIFF_BR:
-    for (gadget_t g: gadgets) {
-      BoolVarArgs btemp;
-      for (uint i = g.start; i < g.end; i++) {
-        btemp << var (diff(i) != b.diff(i));
-      }
-      constraint( var(sum(btemp) >= 1));
-    }
+    // for (gadget_t g: gadgets) {
+    //   BoolVarArgs btemp;
+    //   for (uint i = g.start; i < g.end; i++) {
+    //     btemp << var (diff(i) != b.diff(i));
+    //   }
+    //   constraint( var(sum(btemp) >= 1));
+    // }
     for (int i = 0; i < v_diff.size(); i++) {
       bh << var (diff(i) != b.diff(i));
     }

@@ -116,7 +116,7 @@ public:
   void post_div_branchers(void);
 
   // Diversification Constraints
-  void post_diversification_levenshtein(void);
+  void post_diversification_channel(void);
   void post_diversification_constraints(void);
   void post_diversification_diffs(void);
   void post_diversification_br_diffs(void);
