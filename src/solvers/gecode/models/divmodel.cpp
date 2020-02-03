@@ -76,16 +76,16 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     // int prevbr = real_operations[0];
 
     for (operation br: branch_operations) {
-      gadget_t g;
-      g.start = size;
+      // gadget_t g;
+      // g.start = size;
       for (operation o: real_operations) { // = prevbr; o < br; o++) {
         // if (!is_real_type(o)) continue;
         if (br == o) continue;
         size++;
       }
       // prevbr = br + 1;
-      g.end = size;
-      gadgets.push_back(g);
+      // g.end = size;
+      // gadgets.push_back(g);
     }
 
     v_diff  = int_var_array(size, -maxval, maxval);
