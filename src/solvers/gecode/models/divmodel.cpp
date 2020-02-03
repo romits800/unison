@@ -80,19 +80,20 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     // int prevbr = real_operations[0];
 
     for (operation br: branch_operations) {
-      // gadget_t g;
-      // g.start = size;
+      gadget_t g;
+      g.start = size;
       for (operation o: real_operations) { // = prevbr; o < br; o++) {
         // if (!is_real_type(o)) continue;
         if (br == o) continue;
         size++;
       }
       // prevbr = br + 1;
-      // g.end = size;
-      // gadgets.push_back(g);
+      g.end = size;
+      gadgets.push_back(g);
     }
 
     v_diff  = int_var_array(size, -maxval, maxval);
+
   }
 
   // Prepare cycles for hamming distance between operations' cycles
@@ -247,19 +248,19 @@ void DivModel::post_diversification_diffs(void) {
 
 void DivModel::post_diversification_br_diffs(void) {
   int maxval = max_of(input->maxc);
-  // int prevbr = real_operations[0];
+  int prevbr = 0; //branch_operations[0];
   int k=0;
   for (operation br: branch_operations) {
     for (operation o: real_operations) { //int o = prevbr; o < br; o++) {
       // if (!is_real_type(o)) continue;
       if (br == o) continue;
-      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) < gc(br)));
+      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
       IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval) ;
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
       k++;
     }
-    // prevbr = br + 1;
+    prevbr = br;
   }
 
 }
@@ -382,6 +383,7 @@ void DivModel::constrain(const Space & _b) {
 
   BoolVarArgs bh;
 
+  cout << "Contrain" << endl;
   // int num_gadgets = branch_operations.size();
 
   switch (options->dist_metric()) {
@@ -415,12 +417,14 @@ void DivModel::constrain(const Space & _b) {
   case DIST_HAMMING_DIFF_BR:
     // for (gadget_t g: gadgets) {
     //   BoolVarArgs btemp;
+    //   cout << g.start << " " << g.end << endl;
     //   for (uint i = g.start; i < g.end; i++) {
     //     btemp << var (diff(i) != b.diff(i));
     //   }
+    //   cout << "size of btemp: " << btemp.size() << endl;
     //   constraint( var(sum(btemp) >= 1));
     // }
-    for (int i = 0; i < v_diff.size(); i++) {
+    for (int i = 0; i < v_diff.size(); i++) { //
       bh << var (diff(i) != b.diff(i));
     }
     if (bh.size() >0) {
