@@ -243,20 +243,20 @@ void DivModel::post_diversification_diffs(void) {
 
 void DivModel::post_diversification_br_diffs(void) {
   int maxval = max_of(input->maxc);
-  int prevbr = real_operations[0];
+  int prevbr = 0; //branch_operations[0];
   int k=0;
   for (operation br: branch_operations) {
-    for (int o = prevbr; o < br; o++) {
-      if (!is_real_type(o)) continue;
-      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1));
+    for (operation o: real_operations) { //int o = prevbr; o < br; o++) {
+      // if (!is_real_type(o)) continue;
+      if (br == o) continue;
+      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
       IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval) ;
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
-      prevbr = br + 1;
       k++;
     }
+    prevbr = br;
   }
-
 }
 
 
