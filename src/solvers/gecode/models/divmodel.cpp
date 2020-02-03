@@ -68,21 +68,29 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     v_diff  = int_var_array((real_op_size*(real_op_size -1))/2, -maxval, maxval);
   }
   // difference between operations and branch operations
-  else if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
-    int size = 0; // = branch_operations.size();
+  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
+    // Gadgets creates groups between two branches that correspond to possible
+    // gadgets
+    int size = 0;
     // Is it ok if br_size = 0?
-    int prevbr = real_operations[0];
+    // int prevbr = real_operations[0];
 
     for (operation br: branch_operations) {
-      for (int o = prevbr; o < br; o++) {
-        if (!is_real_type(o)) continue;
+      gadget_t g;
+      g.start = size;
+      for (operation o: real_operations) { // = prevbr; o < br; o++) {
+        // if (!is_real_type(o)) continue;
+        if (br == o) continue;
         size++;
-        prevbr = br + 1;
       }
+      // prevbr = br + 1;
+      g.end = size;
+      gadgets.push_back(g);
     }
-    v_diff  = int_var_array(size, -maxval, maxval);
-  }
 
+    v_diff  = int_var_array(size, -maxval, maxval);
+
+  }
   // Prepare cycles for hamming distance between operations' cycles
   v_hamm  = int_var_array(op_size, -1, maxval);
 
