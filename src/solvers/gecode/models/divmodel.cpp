@@ -414,12 +414,14 @@ void DivModel::constrain(const Space & _b) {
     }
     break;
   case DIST_HAMMING_DIFF_BR:
-    // for (gadget_t g: gadgets) {
+    // for (uint j = 0; j < gadgets.size(); j++) {
+    //   gadget_t g = gadgets[j];
+    //   operation br = branch_operations[j];
     //   BoolVarArgs btemp;
     //   for (uint i = g.start; i < g.end; i++) {
     //     btemp << var (diff(i) != b.diff(i));
     //   }
-    //   int br = 0;
+    //   // int br = 0;
     //   rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
     //   // constraint( var(sum(btemp) >= 1));
     // }
