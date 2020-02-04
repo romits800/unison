@@ -256,7 +256,7 @@ void DivModel::post_diversification_br_diffs(void) {
       if (br == o) continue;
       BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
       IntVar thenb =  var (gc(br) - gc(o));
-      IntVar elseb = var (maxval) ;
+      IntVar elseb = var (maxval);
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
       k++;
     }
@@ -383,7 +383,6 @@ void DivModel::constrain(const Space & _b) {
 
   BoolVarArgs bh;
 
-  cout << "Contrain" << endl;
   // int num_gadgets = branch_operations.size();
 
   switch (options->dist_metric()) {
@@ -417,12 +416,12 @@ void DivModel::constrain(const Space & _b) {
   case DIST_HAMMING_DIFF_BR:
     // for (gadget_t g: gadgets) {
     //   BoolVarArgs btemp;
-    //   cout << g.start << " " << g.end << endl;
     //   for (uint i = g.start; i < g.end; i++) {
     //     btemp << var (diff(i) != b.diff(i));
     //   }
-    //   cout << "size of btemp: " << btemp.size() << endl;
-    //   constraint( var(sum(btemp) >= 1));
+    //   int br = 0;
+    //   rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
+    //   // constraint( var(sum(btemp) >= 1));
     // }
     for (int i = 0; i < v_diff.size(); i++) { //
       bh << var (diff(i) != b.diff(i));
