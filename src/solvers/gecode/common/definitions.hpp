@@ -122,7 +122,8 @@ typedef enum divmethod
   {
    DIV_DECOMPOSITION_LNS,
    DIV_MONOLITHIC_LNS,
-   DIV_MONOLITHIC_DFS
+   DIV_MONOLITHIC_DFS,
+   DIV_MAX_DIV
   } DivMethod;
 // Unison constraint expression
 

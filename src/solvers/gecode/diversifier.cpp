@@ -62,6 +62,7 @@
 #include "models/simplemodel.hpp"
 #include "models/globalmodel.hpp"
 #include "models/divmodel.hpp"
+#include "models/maxdivmodel.hpp"
 #include "models/decompdivmodel.hpp"
 #include "models/localdivmodel.hpp"
 #include "models/localmodel.hpp"
@@ -805,6 +806,8 @@ int main(int argc, char* argv[]) {
     dd -> post_upper_bound(ag_best_cost);
     dd -> post_lower_bound(best_cost);
 
+    t_solver.start();
+
     if (dd->status() == SS_FAILED) {
       cerr << div() << "No better solution!" << endl;
       return -1;
@@ -1057,6 +1060,131 @@ int main(int argc, char* argv[]) {
 
     // execution_time = t.stop();
   }
+  else if (options.div_method() == DIV_MAX_DIV) {
+
+    MaxDivModel *md = new MaxDivModel(&input, &options, IPL_DOM);
+    // MaxDivModel *md = new MaxDivModel (d); //dynamic_cast<MaxDivModel*> (d);
+
+    GlobalData dgd(md->n_int_vars, md->n_bool_vars, md->n_set_vars);
+
+    md -> post_upper_bound(ag_best_cost);
+    md -> post_lower_bound(best_cost);
+
+    t_solver.start();
+
+    while (true) {
+
+      if (md->status() == SS_FAILED) {
+        cerr << div() << "Status failed." << endl;
+        exit(EXIT_FAILURE);
+      }
+
+
+      if (md->input_solutions.empty()) {
+        cerr << div() << "Starting " << count << endl;
+
+        MaxDivModel *d0 = (MaxDivModel *)md->clone();
+
+
+        d0->post_clrandom_branchers();
+        d0->post_diversification_constraints(); // Diversification constraint
+
+        // cout << "posting_input_sol " << endl;
+        // d0->post_input_solution_constrain();
+
+        if (d0->status() == SS_FAILED) {
+          cerr << div() << "Status failed." << endl;
+          exit(EXIT_FAILURE);
+        }
+
+        BAB<MaxDivModel> e(d0);
+
+
+        t_it.start();
+
+        if (MaxDivModel *nextg = e.next()) {
+          cerr << div() << "Found first solution " << count << endl;
+          MaxDivModel *tmpg = d0;
+          d0 = nextg;
+          delete tmpg;
+        } else {
+          exit(EXIT_FAILURE);
+        }
+
+
+        md->input_solutions.push_back(d0);
+        ResultDivData rd = ResultDivData(d0,
+                                         proven, // false, /*proven*/
+                                         0,
+                                         count,
+                                         0, //presolver_time,
+                                         0, //presolving_time,
+                                         t_solver.stop(),
+                                         t_it.stop());
+        ofstream fout;
+        fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d0->options->output_file());
+        fout << produce_json(rd, dgd, d0->input->N, 0);
+        fout.close();
+        count++;
+        if (count >= maxcount) break;
+
+      } // first time
+      else { // Not first time
+        MaxDivModel *d0 = (MaxDivModel *)md->clone();
+
+        d0->post_div_branchers();
+        d0->post_diversification_constraints(); // Diversification constraint
+
+        cout << "posting_input_sol " << endl;
+        d0->post_input_solution_constrain();
+
+        if (d0->status() == SS_FAILED) {
+          cerr << div() << "Status failed." << endl;
+          exit(EXIT_FAILURE);
+        }
+
+        BAB<MaxDivModel> e(d0);
+
+	//  t_solver.start();
+        t_it.start();
+
+        while (MaxDivModel *nextg = e.next()) {
+          cerr << div() << "Cloning " << count << " Dist:" <<  nextg->maxdist << endl;
+          // if (t.stop() > options.timeout())
+          //   timeout_exit(base, results, gd, go, t.stop());
+
+          MaxDivModel *tmpg = d0;
+          d0 = nextg;
+          delete tmpg;
+
+        }
+
+        cerr << div() << "Pushing back solutions " << endl;
+
+        md->input_solutions.push_back(d0);
+
+        ResultDivData rd = ResultDivData(d0,
+                                         proven, // false, /*proven*/
+                                         0,
+                                         count,
+                                         0, //presolver_time,
+                                         0, //presolving_time,
+                                         t_solver.stop(),
+                                         t_it.stop());
+        ofstream fout;
+        fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d0->options->output_file());
+        fout << produce_json(rd, gd, d0->input->N, 0);
+        fout.close();
+        count++;
+        if (count >= maxcount) break;
+        t_it.start();
+
+      } // Not first time
+    } // While true
+  }
+
+
+
   if (d!=NULL) delete d;
   // }
 }

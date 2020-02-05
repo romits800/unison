@@ -114,6 +114,9 @@ public:
 
   // Branchers
   void post_div_branchers(void);
+  void post_random_branchers(void);
+  void post_clrandom_branchers(void);
+  void post_cloriginal_branchers(void);
 
   // Diversification Constraints
   void post_diversification_channel(void);

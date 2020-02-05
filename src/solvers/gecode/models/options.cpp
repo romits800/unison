@@ -233,6 +233,8 @@ ModelOptions::ModelOptions(void)
   _div_method.add(DIV_DECOMPOSITION_LNS, "decomposition_lns");
   _div_method.add(DIV_MONOLITHIC_LNS, "monolithic_lns");
   _div_method.add(DIV_MONOLITHIC_DFS, "monolithic_dfs");
+  _div_method.add(DIV_MAX_DIV, "max_div");
+
 
 
   add(_div_method);
