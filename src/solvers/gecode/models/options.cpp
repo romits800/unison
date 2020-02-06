@@ -222,9 +222,10 @@ ModelOptions::ModelOptions(void)
   add(_use_optimal_for_diversification);
 
   _distance.add(DIST_HAMMING, "hamming");
-  _distance.add(DIST_REGHAMMING, "register_hamming");
+  _distance.add(DIST_REGHAMMING, "reg_hamming");
   _distance.add(DIST_HAMMING_DIFF, "diff_hamming");
   _distance.add(DIST_HAMMING_DIFF_BR, "diff_br_hamming");
+  _distance.add(DIST_HAMMING_REG_GADGET, "hamm_reg_gadget");
   _distance.add(DIST_HAMMING_BR, "br_hamming");
   _distance.add(DIST_LEVENSHTEIN, "levenshtein");
   _distance.add(DIST_LEVENSHTEIN_SET, "levenshtein_set");

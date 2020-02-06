@@ -115,7 +115,8 @@ typedef enum divdistance
     DIST_HAMMING_BR,
     DIST_LEVENSHTEIN,
     DIST_LEVENSHTEIN_SET,
-    DIST_REGHAMMING
+    DIST_REGHAMMING,
+    DIST_HAMMING_REG_GADGET
   } DivDistance;
 
 // Diversification method

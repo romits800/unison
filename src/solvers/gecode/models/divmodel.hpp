@@ -66,6 +66,9 @@ public:
   // Register Hamming distance between operations
   IntVarArray v_reghamm;
 
+  // Gadgets distance between operations
+  IntVarArray v_gadget;
+
   // Global cycles array
   IntVarArray v_gc;
 
@@ -88,6 +91,7 @@ public:
   vector<operation> real_operations;
 
   vector<gadget_t> gadgets;
+  vector<int> gadgets_operations;
 
   void set_random(Rnd r) {div_r = r;};
 
@@ -101,6 +105,8 @@ public:
   IntVar hamm(operation o) const {return v_hamm[o]; }
   
   IntVar reghamm(temporary t) const {return v_reghamm[t]; }
+
+  IntVar gadget(temporary t) const {return v_gadget[t]; }
 
   IntVar gc(operation o) const {return v_gc[o]; }
 
@@ -130,6 +136,7 @@ public:
   void post_diversification_br_diffs(void);
   void post_diversification_hamming(void);
   void post_diversification_reghamming(void);
+  void post_diversification_reg_gadget(void);
   void post_global_cycles(void);
   void post_levenshtein(const DivModel & b);
   void post_levenshtein_set(const DivModel & b);

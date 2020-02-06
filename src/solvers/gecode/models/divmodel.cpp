@@ -73,36 +73,37 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     v_diff  = int_var_array((real_op_size*(real_op_size -1))/2, -maxval, maxval);
   }
 
-  // difference between operations and branch operations
-  else if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
-    // Gadgets creates groups between two branches that correspond to possible
-    // gadgets
-    int size = 0;
-    // Is it ok if br_size = 0?
-    // int prevbr = real_operations[0];
-
-    for (operation br: branch_operations) {
-      gadget_t g;
-      g.start = size;
-      for (operation o: real_operations) { // = prevbr; o < br; o++) {
-        // if (!is_real_type(o)) continue;
-        if (br == o) continue;
-        size++;
-      }
-      // prevbr = br + 1;
-      g.end = size;
-      gadgets.push_back(g);
+  // Gadgets creates groups between two branches that correspond to possible
+  // gadgets
+  int size = 0;
+  for (operation br: branch_operations) {
+    gadget_t g;
+    g.start = size;
+    for (operation o: real_operations) { // = prevbr; o < br; o++) {
+      if (br == o) continue;
+      gadgets_operations.push_back(o);
+      size++;
     }
+    g.end = size;
+    gadgets.push_back(g);
+  }
 
+  // difference between operations and branch operations
+  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
     v_diff  = int_var_array(size, -maxval, maxval);
 
   }
-  // Prepare cycles for hamming distance between operations' cycles
+  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
+    v_diff  = int_var_array(size, -maxval, maxval);
 
-  else if (options->dist_metric() == DIST_REGHAMMING) {
-    v_reghamm  = int_var_array(temp_size, -1, maxval);
-  }
-
+  }  
+  // Prepare cycles for hamming distance between registers
+  // if (options->dist_metric() == DIST_REGHAMMING) { // 
+  v_reghamm  = int_var_array(temp_size, -1, maxval);
+  // }
+  if (options->dist_metric() == DIST_HAMMING_REG_GADGET) {
+    v_gadget  = int_var_array(size, -maxval, maxval);
+  }  
 
   // Global cycles array - similar to cycles
   v_gc = int_var_array(op_size, 0, sum_of(input->maxc));
@@ -119,11 +120,13 @@ DivModel::DivModel(DivModel& cg) :
   div_r(cg.div_r),
   branch_operations(cg.branch_operations),
   real_operations(cg.real_operations),
-  gadgets(cg.gadgets)
+  gadgets(cg.gadgets),
+  gadgets_operations(cg.gadgets_operations)
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
   v_reghamm.update(*this, cg.v_reghamm);
+  v_gadget.update(*this, cg.v_gadget);
   v_gc.update(*this, cg.v_gc);
   v_oc.update(*this, cg.v_oc);
   dist.update(*this, cg.dist);
@@ -219,15 +222,16 @@ void DivModel::post_div_branchers(void) {
 void DivModel::post_diversification_constraints(void) {
   post_global_cycles();
   post_diversification_hamming();
+  post_diversification_reghamming();
   if (options->dist_metric() == DIST_HAMMING_DIFF)
     post_diversification_diffs();
   if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
     // post_diversification_channel();
     post_diversification_br_diffs();
   }
-  if (options->dist_metric() == DIST_REGHAMMING) {
+  if (options->dist_metric() == DIST_HAMMING_REG_GADGET) {
     // post_diversification_channel();
-    post_diversification_reghamming();
+    post_diversification_reg_gadget();
   }
 
   if (options->dist_metric() == DIST_LEVENSHTEIN || options->dist_metric() == DIST_LEVENSHTEIN_SET )
@@ -280,6 +284,26 @@ void DivModel::post_diversification_br_diffs(void) {
       IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval);
       ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
+      k++;
+    }
+    prevbr = br;
+  }
+
+}
+
+
+void DivModel::post_diversification_reg_gadget(void) {
+  int maxval = max_of(input->maxc);
+  int prevbr = 0; //branch_operations[0];
+  int k=0;
+  for (operation br: branch_operations) {
+    for (operation o: real_operations) { //int o = prevbr; o < br; o++) {
+      // if (!is_real_type(o)) continue;
+      if (br == o) continue;
+      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
+      IntVar thenb =  var (gc(o));
+      IntVar elseb = var (maxval);
+      ite(*this, ifb,  thenb, elseb, gadget(k), IPL_DOM);
       k++;
     }
     prevbr = br;
@@ -413,12 +437,9 @@ void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
 
   BoolVarArgs bh;
-
-  // int num_gadgets = branch_operations.size();
-
+    
   switch (options->dist_metric()) {
   case DIST_HAMMING:
-
     for (operation o: real_operations) {
       bh << var (hamm(o) != b.hamm(o));
     }
@@ -432,7 +453,6 @@ void DivModel::constrain(const Space & _b) {
     }
     break;
   case DIST_HAMMING_DIFF:
-
     for (int i = 0; i < v_diff.size(); i++) {
       bh << var (diff(i) != b.diff(i));
     }
@@ -499,8 +519,38 @@ void DivModel::constrain(const Space & _b) {
       exit(EXIT_FAILURE);
     }
     break;
-
-  }
+  case DIST_HAMMING_REG_GADGET:
+    IntVarArgs ih;
+    for (uint j = 0; j < gadgets.size(); j++) {
+      gadget_t g = gadgets[j];
+      operation br = branch_operations[j];
+      BoolVarArgs btemp;
+      for (uint i = g.start; i < g.end; i++) {
+        btemp << var (gadget(i) != b.gadget(i));
+	operation o = gadgets_operations[i];
+	for (operand p: input->operands[o]) {
+	  for (temporary t: input->temps[p]) {
+	    if (t >= 0) {
+	      btemp << var (reghamm(t) != b.reghamm(t));
+	    }
+	  }
+	}
+      }
+      if (btemp.size() >0) {
+	rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
+	ih << var(sum(btemp));
+      }
+    }
+    if (ih.size() >0) {
+      dist = var(sum(ih));
+      constraint(dist >= 1); // hamming distance
+    } else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+    
+  } // switch
 
   return;
 

@@ -242,10 +242,8 @@ void MaxDivModel::constrain_levenshtein_set(const MaxDivModel & b)
 
 
 void MaxDivModel::post_input_solution_constrain() {
-  // const MaxDivModel& b = static_cast<const MaxDivModel&>(_b);
 
   BoolVarArgs bh;
-
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (MaxDivModel *s: input_solutions) {
@@ -326,19 +324,55 @@ void MaxDivModel::post_input_solution_constrain() {
       exit(EXIT_FAILURE);
     }
     break;
+  case DIST_HAMMING_REG_GADGET:
+    IntVarArgs ih;
+    for (MaxDivModel *s: input_solutions) {
+      IntVarArgs ihs;
+      for (uint j = 0; j < gadgets.size(); j++) {
+	gadget_t g = gadgets[j];
+	// operation br = branch_operations[j];
+	BoolVarArgs btemp;
+	for (uint i = g.start; i < g.end; i++) {
+	  btemp << var (gadget(i) != s->gadget(i));
+	  // for (operation o : input->O) // 
+	
+	  for (operand p: input->operands[i]) {
+	    for (temporary t: input->temps[p]) {
+	      btemp << var (reghamm(t) != s->reghamm(t));
+	    }
+	  }
+	}
 
+	if (btemp.size() >0) {
+	  ih << var (sum(btemp)); 
+	  ihs << var (sum(btemp));
+	}
+      }
+      if (ihs.size() >0) {           //
+	constraint(var( sum(ihs)) > 0);
+      } 
+    }
+    if (ih.size() >0) {           //
+      constraint(maxdist == var( sum(ih)));
+    } else {
+      exit(EXIT_FAILURE);
+    }
+    break;
+
+    
       
-  }
+  } // Switch
 
   return;
 
 }
 
 void MaxDivModel::constrain(const Space & _b) {
+
   const MaxDivModel& b = static_cast<const MaxDivModel&>(_b);
 
   BoolVarArgs bh;
-
+  
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (MaxDivModel *s: input_solutions) {
@@ -405,7 +439,37 @@ void MaxDivModel::constrain(const Space & _b) {
       cerr << "No constraints @ constrain" << endl;
       exit(EXIT_FAILURE);
     }
+    break;
+  case DIST_HAMMING_REG_GADGET:
+    IntVarArgs ih;
+    for (MaxDivModel *s: input_solutions) {
+      for (uint j = 0; j < gadgets.size(); j++) {
+	gadget_t g = gadgets[j];
+	operation br = branch_operations[j];
+	BoolVarArgs btemp;
+	for (uint i = g.start; i < g.end; i++) {
+	  btemp << var (b.gadget(i) != s->gadget(i));
+	  for (operand p: input->operands[i]) {
+	    for (temporary t: input->temps[p]) {
+	      btemp << var (b.reghamm(t) != s->reghamm(t));
+	    }
+	  }
+	}
+	if (btemp.size() >0) {
+	  rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
+	  ih << var(sum(btemp));
+	}
+      }
+    }
+    if (ih.size() >0) {
+      constraint(maxdist >= sum(ih)); // hamming distance
+    } else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
 
+    
   } // switch
 
   return;
