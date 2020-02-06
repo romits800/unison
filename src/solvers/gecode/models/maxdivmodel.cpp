@@ -308,6 +308,26 @@ void MaxDivModel::post_input_solution_constrain() {
 
   case DIST_LEVENSHTEIN_SET:
     post_levenshtein_set();
+    break;
+  case DIST_REGHAMMING:
+    for (MaxDivModel *s: input_solutions) {
+      BoolVarArgs bhs;
+      for (temporary t: input->T) {
+          bh << var (reghamm(t) != s->reghamm(t));
+          bhs << var (reghamm(t) != s->reghamm(t));
+      }
+      if (bhs.size() >0) {           //
+          constraint(var( sum(bhs)) > 0);
+      } 
+    }
+    if (bh.size() >0) {           //
+      constraint(maxdist == var( sum(bh)));
+    } else {
+      exit(EXIT_FAILURE);
+    }
+    break;
+
+      
   }
 
   return;
@@ -371,7 +391,22 @@ void MaxDivModel::constrain(const Space & _b) {
 
   case DIST_LEVENSHTEIN_SET:
     constrain_levenshtein_set(b);
-  }
+    break;
+  case DIST_REGHAMMING:
+    for (MaxDivModel *s: input_solutions) {
+      for (temporary t: input -> T) {
+          bh << var (b.reghamm(t) != s->reghamm(t));
+      }
+    }
+    if (bh.size() >0) {           //
+      constraint(maxdist > sum(bh)); // hamming distance
+
+    } else {
+      cerr << "No constraints @ constrain" << endl;
+      exit(EXIT_FAILURE);
+    }
+
+  } // switch
 
   return;
 

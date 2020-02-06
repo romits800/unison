@@ -63,6 +63,9 @@ public:
   // Hamming distance between operations
   IntVarArray v_hamm;
 
+  // Register Hamming distance between operations
+  IntVarArray v_reghamm;
+
   // Global cycles array
   IntVarArray v_gc;
 
@@ -96,6 +99,8 @@ public:
   IntVar diff(operation o) const {return v_diff[o]; }
 
   IntVar hamm(operation o) const {return v_hamm[o]; }
+  
+  IntVar reghamm(temporary t) const {return v_reghamm[t]; }
 
   IntVar gc(operation o) const {return v_gc[o]; }
 
@@ -124,6 +129,7 @@ public:
   void post_diversification_diffs(void);
   void post_diversification_br_diffs(void);
   void post_diversification_hamming(void);
+  void post_diversification_reghamming(void);
   void post_global_cycles(void);
   void post_levenshtein(const DivModel & b);
   void post_levenshtein_set(const DivModel & b);

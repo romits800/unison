@@ -48,6 +48,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   div_r.seed(p_options->seed());
   div_p = p_options->relax();
   int op_size = O().size();
+  int temp_size = T().size();
   int maxval = sum_of(input->maxc);
   // difference between operations
 
@@ -66,13 +67,14 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
 
   // Initialize v_diff for diff_hamming and diff_br_hamming
-
+  v_hamm  = int_var_array(op_size, -1, maxval);
+  
   if (options->dist_metric() == DIST_HAMMING_DIFF) {
     v_diff  = int_var_array((real_op_size*(real_op_size -1))/2, -maxval, maxval);
   }
 
   // difference between operations and branch operations
-  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
+  else if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
     // Gadgets creates groups between two branches that correspond to possible
     // gadgets
     int size = 0;
@@ -95,9 +97,12 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     v_diff  = int_var_array(size, -maxval, maxval);
 
   }
-
   // Prepare cycles for hamming distance between operations' cycles
-  v_hamm  = int_var_array(op_size, -1, maxval);
+
+  else if (options->dist_metric() == DIST_REGHAMMING) {
+    v_reghamm  = int_var_array(temp_size, -1, maxval);
+  }
+
 
   // Global cycles array - similar to cycles
   v_gc = int_var_array(op_size, 0, sum_of(input->maxc));
@@ -118,6 +123,7 @@ DivModel::DivModel(DivModel& cg) :
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
+  v_reghamm.update(*this, cg.v_reghamm);
   v_gc.update(*this, cg.v_gc);
   v_oc.update(*this, cg.v_oc);
   dist.update(*this, cg.dist);
@@ -219,6 +225,11 @@ void DivModel::post_diversification_constraints(void) {
     // post_diversification_channel();
     post_diversification_br_diffs();
   }
+  if (options->dist_metric() == DIST_REGHAMMING) {
+    // post_diversification_channel();
+    post_diversification_reghamming();
+  }
+
   if (options->dist_metric() == DIST_LEVENSHTEIN || options->dist_metric() == DIST_LEVENSHTEIN_SET )
     post_diversification_channel();
 
@@ -276,6 +287,15 @@ void DivModel::post_diversification_br_diffs(void) {
 
 }
 
+
+void DivModel::post_diversification_reghamming(void) {
+  for (temporary t : input->T) {
+    BoolVar ifb = var (l(t) == 1);
+    IntVar thenb = var ( r(t) );
+    IntVar elseb = var ( -1 );
+    ite(*this, ifb,  thenb, elseb, reghamm(t), IPL_DOM);
+  }
+}
 
 void DivModel::post_diversification_hamming(void) {
   for (operation i : real_operations) {
@@ -465,6 +485,21 @@ void DivModel::constrain(const Space & _b) {
 
   case DIST_LEVENSHTEIN_SET:
     post_levenshtein_set(b);
+    break;
+  case DIST_REGHAMMING:
+    for (temporary t : input->T) {
+      bh << var (reghamm(t) != b.reghamm(t));
+    }
+    if (bh.size() >0) {           //
+      dist = var( sum(bh));
+      constraint(dist >= 1); // hamming distance
+
+    } else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+
   }
 
   return;
