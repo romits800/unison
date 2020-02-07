@@ -244,6 +244,7 @@ void MaxDivModel::constrain_levenshtein_set(const MaxDivModel & b)
 void MaxDivModel::post_input_solution_constrain() {
 
   BoolVarArgs bh;
+  IntVarArgs ih;
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (MaxDivModel *s: input_solutions) {
@@ -254,7 +255,7 @@ void MaxDivModel::post_input_solution_constrain() {
       }
       if (bhs.size() >0) {           //
           constraint(var( sum(bhs)) > 0);
-      } 
+      }
     }
     if (bh.size() >0) {           //
       constraint(maxdist == var( sum(bh)));
@@ -272,8 +273,8 @@ void MaxDivModel::post_input_solution_constrain() {
       }
       if (bhs.size() >0) {           //
           constraint(var( sum(bhs)) > 0);
-      } 
- 
+      }
+
     }
     if (bh.size() >0) {
       constraint(maxdist == var( sum(bh)));
@@ -290,8 +291,7 @@ void MaxDivModel::post_input_solution_constrain() {
       }
       if (bhs.size() >0) {           //
           constraint(var( sum(bhs)) > 0);
-      } 
- 
+      }
     }
 
     if (bh.size() >0) {
@@ -316,7 +316,7 @@ void MaxDivModel::post_input_solution_constrain() {
       }
       if (bhs.size() >0) {           //
           constraint(var( sum(bhs)) > 0);
-      } 
+      }
     }
     if (bh.size() >0) {           //
       constraint(maxdist == var( sum(bh)));
@@ -325,7 +325,6 @@ void MaxDivModel::post_input_solution_constrain() {
     }
     break;
   case DIST_HAMMING_REG_GADGET:
-    IntVarArgs ih;
     for (MaxDivModel *s: input_solutions) {
       IntVarArgs ihs;
       for (uint j = 0; j < gadgets.size(); j++) {
@@ -334,8 +333,7 @@ void MaxDivModel::post_input_solution_constrain() {
 	BoolVarArgs btemp;
 	for (uint i = g.start; i < g.end; i++) {
 	  btemp << var (gadget(i) != s->gadget(i));
-	  // for (operation o : input->O) // 
-	
+	  // for (operation o : input->O) //
 	  for (operand p: input->operands[i]) {
 	    for (temporary t: input->temps[p]) {
 	      btemp << var (reghamm(t) != s->reghamm(t));
@@ -344,13 +342,13 @@ void MaxDivModel::post_input_solution_constrain() {
 	}
 
 	if (btemp.size() >0) {
-	  ih << var (sum(btemp)); 
+	  ih << var (sum(btemp));
 	  ihs << var (sum(btemp));
 	}
       }
       if (ihs.size() >0) {           //
 	constraint(var( sum(ihs)) > 0);
-      } 
+      }
     }
     if (ih.size() >0) {           //
       constraint(maxdist == var( sum(ih)));
@@ -358,9 +356,25 @@ void MaxDivModel::post_input_solution_constrain() {
       exit(EXIT_FAILURE);
     }
     break;
+  case DIST_DIFF_BR:
+    for (MaxDivModel *s: input_solutions) {
+      IntVarArgs ihs;
+      for (int i = 0; i < v_diff.size(); i++) {
+        ih << var (abs (diff(i) - s->diff(i)));
+        ihs << var (abs (diff(i) - s->diff(i)));
+      }
+      if (ihs.size() >0) {           //
+        constraint(var( sum(ihs)) > 0);
+      }
 
-    
-      
+    }
+    if (ih.size() >0) {
+      constraint(maxdist == var(sum(ih)));
+    } else {
+      exit(EXIT_FAILURE);
+    }
+    break;
+
   } // Switch
 
   return;
@@ -372,7 +386,8 @@ void MaxDivModel::constrain(const Space & _b) {
   const MaxDivModel& b = static_cast<const MaxDivModel&>(_b);
 
   BoolVarArgs bh;
-  
+  IntVarArgs ih;
+
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (MaxDivModel *s: input_solutions) {
@@ -441,7 +456,6 @@ void MaxDivModel::constrain(const Space & _b) {
     }
     break;
   case DIST_HAMMING_REG_GADGET:
-    IntVarArgs ih;
     for (MaxDivModel *s: input_solutions) {
       for (uint j = 0; j < gadgets.size(); j++) {
 	gadget_t g = gadgets[j];
@@ -462,14 +476,25 @@ void MaxDivModel::constrain(const Space & _b) {
       }
     }
     if (ih.size() >0) {
-      constraint(maxdist >= sum(ih)); // hamming distance
+      constraint(maxdist >= sum(ih));
+    } else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+  case DIST_DIFF_BR:
+    for (MaxDivModel *s: input_solutions) {
+      for (int i = 0; i < v_diff.size(); i++)
+        ih << var (abs (b.diff(i) - s->diff(i)));
+    }
+    if (ih.size() >0) {
+      constraint(maxdist > sum(ih));
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
     }
     break;
 
-    
   } // switch
 
   return;

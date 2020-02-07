@@ -89,14 +89,10 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   }
 
   // difference between operations and branch operations
-  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
+  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) || (options->dist_metric() == DIST_DIFF_BR)) {
     v_diff  = int_var_array(size, -maxval, maxval);
 
   }
-  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
-    v_diff  = int_var_array(size, -maxval, maxval);
-
-  }  
   // Prepare cycles for hamming distance between registers
   // if (options->dist_metric() == DIST_REGHAMMING) { // 
   v_reghamm  = int_var_array(temp_size, -1, maxval);
@@ -225,7 +221,7 @@ void DivModel::post_diversification_constraints(void) {
   post_diversification_reghamming();
   if (options->dist_metric() == DIST_HAMMING_DIFF)
     post_diversification_diffs();
-  if (options->dist_metric() == DIST_HAMMING_DIFF_BR) {
+  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) || (options->dist_metric() == DIST_DIFF_BR)) {
     // post_diversification_channel();
     post_diversification_br_diffs();
   }
@@ -437,7 +433,8 @@ void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
 
   BoolVarArgs bh;
-    
+  IntVarArgs ih;
+
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (operation o: real_operations) {
@@ -520,7 +517,6 @@ void DivModel::constrain(const Space & _b) {
     }
     break;
   case DIST_HAMMING_REG_GADGET:
-    IntVarArgs ih;
     for (uint j = 0; j < gadgets.size(); j++) {
       gadget_t g = gadgets[j];
       operation br = branch_operations[j];
@@ -549,7 +545,19 @@ void DivModel::constrain(const Space & _b) {
       exit(EXIT_FAILURE);
     }
     break;
-    
+  case DIST_DIFF_BR:
+    for (int i = 0; i < v_diff.size(); i++) { //
+      ih << var (abs (diff(i) - b.diff(i)));
+    }
+    if (ih.size() >0) {
+      dist = var(sum(ih));
+      constraint(dist >= 1); // hamming distance
+    } else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+
   } // switch
 
   return;

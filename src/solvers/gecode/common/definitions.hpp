@@ -109,14 +109,15 @@ enum UnisonConstraintExprId
 
 // Diversification distance
 typedef enum divdistance
-  { DIST_HAMMING,
-    DIST_HAMMING_DIFF,
-    DIST_HAMMING_DIFF_BR,
-    DIST_HAMMING_BR,
-    DIST_LEVENSHTEIN,
-    DIST_LEVENSHTEIN_SET,
-    DIST_REGHAMMING,
-    DIST_HAMMING_REG_GADGET
+  { DIST_HAMMING,              // Hamming distance of cycles
+    DIST_HAMMING_DIFF,         // Hamming distance of all pairwise differences
+    DIST_HAMMING_DIFF_BR,      // Hamming distance of difference from nearby branches.
+    DIST_HAMMING_BR,           // Hamming distance of only branches
+    DIST_LEVENSHTEIN,          // Levenshtein for 1-1 cycle/operation and operation/cycle
+    DIST_LEVENSHTEIN_SET,      // Levenshtein considering sets for multi issue
+    DIST_REGHAMMING,           // Hamming of register array
+    DIST_HAMMING_REG_GADGET,   // Hamming of either cycles or registers for each "gadget"
+    DIST_DIFF_BR               // Like DIST_HAMMING_DIFF_BR but calculates the actual distance
   } DivDistance;
 
 // Diversification method
