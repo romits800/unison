@@ -68,7 +68,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
   // Initialize v_diff for diff_hamming and diff_br_hamming
   v_hamm  = int_var_array(op_size, -1, maxval);
-  
+
   if (options->dist_metric() == DIST_HAMMING_DIFF) {
     v_diff  = int_var_array((real_op_size*(real_op_size -1))/2, -maxval, maxval);
   }
@@ -94,12 +94,11 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
   }
   // Prepare cycles for hamming distance between registers
-  // if (options->dist_metric() == DIST_REGHAMMING) { // 
   v_reghamm  = int_var_array(temp_size, -1, maxval);
-  // }
+
   if (options->dist_metric() == DIST_HAMMING_REG_GADGET) {
     v_gadget  = int_var_array(size, -maxval, maxval);
-  }  
+  }
 
   // Global cycles array - similar to cycles
   v_gc = int_var_array(op_size, 0, sum_of(input->maxc));
@@ -297,7 +296,7 @@ void DivModel::post_diversification_reg_gadget(void) {
       // if (!is_real_type(o)) continue;
       if (br == o) continue;
       BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
-      IntVar thenb =  var (gc(o));
+      IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval);
       ite(*this, ifb,  thenb, elseb, gadget(k), IPL_DOM);
       k++;
@@ -523,14 +522,14 @@ void DivModel::constrain(const Space & _b) {
       BoolVarArgs btemp;
       for (uint i = g.start; i < g.end; i++) {
         btemp << var (gadget(i) != b.gadget(i));
-	operation o = gadgets_operations[i];
-	for (operand p: input->operands[o]) {
-	  for (temporary t: input->temps[p]) {
-	    if (t >= 0) {
-	      btemp << var (reghamm(t) != b.reghamm(t));
-	    }
-	  }
-	}
+        operation o = gadgets_operations[i];
+        for (operand p: input->operands[o]) {
+          for (temporary t: input->temps[p]) {
+            if (t >= 0) {
+              btemp << var (reghamm(t) != b.reghamm(t));
+            }
+          }
+        }
       }
       if (btemp.size() >0) {
 	rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
