@@ -538,12 +538,33 @@ void DivModel::constrain(const Space & _b) {
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= 1);
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
     }
     break;
+  case DIST_HAMMING_BR_REG:
+    for (operation o : branch_operations) {
+      bh << var (hamm(o) != b.hamm(o));
+      for (operand p: input->operands[o]) {
+        for (temporary t: input->temps[p]) {
+          if (t >= 0) {
+            bh << var (reghamm(t) != b.reghamm(t));
+          }
+        }
+      }
+
+    }
+    if (bh.size() >0) {
+      dist = var( sum(bh));
+      constraint(dist >= 1); // hamming distance on the branches
+    } else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+
   case DIST_DIFF_BR:
     for (int i = 0; i < v_diff.size(); i++) { //
       ih << var (abs (diff(i) - b.diff(i)));
