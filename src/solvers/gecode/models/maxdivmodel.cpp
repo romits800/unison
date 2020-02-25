@@ -374,6 +374,32 @@ void MaxDivModel::post_input_solution_constrain() {
       exit(EXIT_FAILURE);
     }
     break;
+  case DIST_HAMMING_BR_REG:
+    for (MaxDivModel *s: input_solutions) {
+      BoolVarArgs bhs;
+      for (operation o : branch_operations) {
+        bh << var (hamm(o) != s->hamm(o));
+        bhs << var (hamm(o) != s->hamm(o));
+        for (operand p: input->operands[o]) {
+          for (temporary t: input->temps[p]) {
+            if (t >= 0) {
+              bh << var (reghamm(t) != s->reghamm(t));
+              bhs << var (reghamm(t) != s->reghamm(t));
+            }
+          }
+        }
+      }
+      if (bhs.size() >0) {           //
+        constraint(var( sum(bhs)) > 0);
+      }
+    }
+    if (bh.size() >0) {           //
+      constraint(maxdist == var( sum(bh)));
+    } else {
+      exit(EXIT_FAILURE);
+    }
+    break;
+
 
   } // Switch
 
@@ -491,6 +517,29 @@ void MaxDivModel::constrain(const Space & _b) {
       constraint(maxdist > sum(ih));
     } else {
       cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+  case DIST_HAMMING_BR_REG:
+    for (MaxDivModel *s: input_solutions) {
+      BoolVarArgs bhs;
+      for (operation o : branch_operations) {
+        bh << var (b.hamm(o) != s->hamm(o));
+        for (operand p: input->operands[o]) {
+          for (temporary t: input->temps[p]) {
+            if (t >= 0) {
+              bh << var (b.reghamm(t) != s->reghamm(t));
+            }
+          }
+        }
+      }
+      if (bhs.size() >0) {           //
+        constraint(var( sum(bhs)) > 0);
+      }
+    }
+    if (bh.size() >0) {           //
+      constraint(maxdist == var( sum(bh)));
+    } else {
       exit(EXIT_FAILURE);
     }
     break;
