@@ -47,6 +47,8 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
   div_r.seed(p_options->seed());
   div_p = p_options->relax();
+  mindist = p_options->min_dist();
+
   int op_size = O().size();
   int temp_size = T().size();
   int maxval = sum_of(input->maxc);
@@ -113,6 +115,7 @@ DivModel::DivModel(DivModel& cg) :
   GlobalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
+  mindist(cg.mindist),
   branch_operations(cg.branch_operations),
   real_operations(cg.real_operations),
   gadgets(cg.gadgets),
@@ -366,7 +369,7 @@ void DivModel::post_levenshtein(const DivModel & b)
 
   dist = var( mat(sizex-1, sizex-1));
 
-  constraint(dist >= 1); // Levenshtein distance
+  constraint(dist >= mindist); // Levenshtein distance
 }
 
 void DivModel::post_levenshtein_set(const DivModel & b)
@@ -410,7 +413,7 @@ void DivModel::post_levenshtein_set(const DivModel & b)
     }
 
   dist = var( mat(sizex-1, sizex-1));
-  constraint( dist >= 1); // Levenshtein distance
+  constraint( dist >= mindist); // Levenshtein distance
 }
 bool DivModel::is_real_type(int o) {
 
@@ -441,7 +444,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
 
     } else {
       cerr << "No constraints @ constrain";
@@ -454,7 +457,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -477,7 +480,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {
       dist = var(sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -489,7 +492,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance on the branches
+      constraint(dist >= mindist); // hamming distance on the branches
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -508,7 +511,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
 
     } else {
       cerr << "No constraints @ constrain";
@@ -532,13 +535,13 @@ void DivModel::constrain(const Space & _b) {
         }
       }
       if (btemp.size() >0) {
-	rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
+	rel(*this, var(sum(btemp)), IRT_GQ,  var(mindist), var(a(br) == 1));
 	ih << var(sum(btemp));
       }
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
-      constraint(dist >= 1);
+      constraint(dist >= mindist);
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -554,11 +557,10 @@ void DivModel::constrain(const Space & _b) {
           }
         }
       }
-
     }
     if (bh.size() >0) {
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance on the branches
+      constraint(dist >= mindist); // hamming distance on the branches
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -571,7 +573,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
