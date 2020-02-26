@@ -161,7 +161,7 @@ public:
   // Next for relaxing variable for LNS
 
   void next(const DivModel& l);
-
+  void first(void);
 
 };
 

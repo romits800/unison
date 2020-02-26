@@ -593,6 +593,7 @@ bool DivModel::slave(const MetaInfo& mi) {
       // } else
         // return true;
     } else if (mi.restart() == 0) {
+      first();
       return true;
     } else {
       return true;
@@ -600,6 +601,10 @@ bool DivModel::slave(const MetaInfo& mi) {
 
   }
   GECODE_NEVER;
+}
+
+void DivModel::first(void) {
+  return;
 }
 
 void DivModel::next(const DivModel& b) {
