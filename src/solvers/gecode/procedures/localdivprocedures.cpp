@@ -59,6 +59,14 @@ LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel 
   return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
 }
 
+LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl) {
+  return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
+}
+
+LocalDivModel * make_div_local(const DivModel * gs, block b) {
+  return make_div_local(gs, b, gs->ipl);
+}
+
 
 string local(block b) {
   stringstream s;

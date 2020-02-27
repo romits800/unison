@@ -48,6 +48,10 @@ LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
 
 LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl);
 
+LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl);
+
+LocalDivModel * make_div_local(const DivModel * gs, block b);
+
 // Prefix for debug output
 string local(block b);
 

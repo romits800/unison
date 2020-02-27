@@ -34,490 +34,9 @@
 
 #include "divprocedures.hpp"
 
-// void presolve_effective_callee_saved_spilling(GlobalModel * base) {
-//   if (base->options->verbose())
-//     cerr << pre()
-//          << "computing effective callee-saved copies..." << endl;
-//   for (operation o : base->input->callee_saved_stores) {
-//     GlobalModel * g = (GlobalModel*) base->clone();
-//     g->post_effective_callee_saved_spilling(o);
-//     Gecode::SpaceStatus ss = g->status();
-//     if (ss == SS_FAILED) return; // Proof that there is no solution
-//     if (g->a(o).assigned()) {
-//       if (g->a(o).val()) {
-//         base->post_active_operation(o);
-//       } else {
-//         base->post_inactive_operation(o);
-//       }
-//       Gecode::SpaceStatus ss1 = base->status();
-//       if (ss1 == SS_FAILED) return; // Proof that there is no solution
-//     }
-//     delete g;
-//   }
-// }
-
-// void presolve_minimum_consumption(GlobalModel * base) {
-//   resource r = base->input->optimize_resource[0];
-//   assert(r != ISSUE_CYCLES);
-//   for (block b : base->input->B) {
-//     int n = base->input->optional_min[b];
-//     if (n > 0) {
-//       // Minimum total consumption of mandatory operations
-//       int mancon = 0;
-//       for (operation o : base->input->mandatory[b]) {
-//         int mincon = std::numeric_limits<int>::max();
-//         for (IntVarValues ii(base->i(o)); ii(); ++ii) {
-//           instruction i = base->input->instructions[o][ii.val()];
-//           if (base->input->con[i][r] < mincon)
-//             mincon = base->input->con[i][r];
-//         }
-//         mancon += mincon;
-//       }
-//       // Minimum consumption among all instructions that can implement
-//       // non-mandatory operations
-//       int mincon = std::numeric_limits<int>::max();
-//       for (operation o : base->input->ops[b])
-//         if (!contains(base->input->mandatory[b], o)) {
-//           // If the non-mandatory operation is already active, decrease
-//           if (base->a(o).assigned() && base->a(o).val()) {
-//             n--;
-//           } else {
-//             for (IntVarValues ii(base->i(o)); ii(); ++ii) {
-//               if (ii.val() > 0) {
-//                 instruction i = base->input->instructions[o][ii.val()];
-//                 if (base->input->con[i][r] < mincon)
-//                   mincon = base->input->con[i][r];
-//               }
-//             }
-//           }
-//         }
-//       base->constrain_local_cost(b, IRT_GQ, mancon + mincon * n);
-
-//       Gecode::SpaceStatus ss = base->status();
-//       if (ss == SS_FAILED) return; // Proof that there is no solution
-//     }
-//   }
-// }
-
-// class RelaxationResult {
-// public:
-//   SolverResult result;
-//   operation co;
-//   operation oo;
-//   block b;
-//   int lb;
-//   RelaxationResult() :
-//     result(UNKNOWN), co(NULL_OPERATION), oo(NULL_OPERATION), b(-1), lb(0) {}
-//   RelaxationResult(SolverResult result0, operation co0, operation oo0,
-//                    block b0) :
-//     result(result0), co(co0), oo(oo0), b(b0) {}
-// };
-
-// class PresolveRelaxationJob : public Support::Job<RelaxationResult> {
-// public:
-//   LocalModel * ls;
-//   GIST_OPTIONS * lo;
-//   operation co;
-//   activation_class ac;
-//   block b;
-//   PresolveRelaxationJob(LocalModel * ls0, GIST_OPTIONS * lo0,
-//                         operation co0, activation_class ac0, block b0) :
-//     ls(ls0), lo(lo0), co(co0), ac(ac0), b(b0) {}
-//   virtual RelaxationResult run(int) {
-//     operation oo = ac == NULL_ACTIVATION_CLASS ? NULL_OPERATION :
-//       ls->input->activation_class_representative[ac];
-//     RelaxationResult rs(UNKNOWN, co, oo, b);
-//     ls->post_minimum_cost_branchers();
-// #ifdef GRAPHICS
-//     if (ls->options->gist_presolving() && ls->options->gist_block() == b)
-//       Gist::bab(ls, *lo);
-// #endif
-//     Search::Stop * preStop =
-//       new_stop(ls->options->local_relaxation_limit(), ls->options);
-//     Search::Options preOptions;
-//     preOptions.stop = preStop;
-//     BAB<LocalModel> e(ls, preOptions);
-//     bool found_solution = false;
-//     while (LocalModel* nextls = e.next()) {
-//       found_solution = true;
-//       LocalModel * oldls = ls;
-//       ls = nextls;
-//       delete oldls;
-//     }
-//     int lb = 0;
-//     SolverResult result = UNKNOWN;
-//     if (preStop->stop(e.statistics(), preOptions)) {
-//       result = LIMIT;
-//     } else if (found_solution) {
-//         result = OPTIMAL_SOLUTION;
-//         lb = ls->cost()[0].val();
-//     } else {
-//       result = UNSATISFIABLE;
-//     }
-//     rs.result = result;
-//     rs.lb = lb;
-//     if (ls != NULL) delete ls;
-//     delete preStop;
-//     if (rs.result == UNSATISFIABLE) {
-//       throw Support::JobStop<RelaxationResult>(rs);
-//     }
-//     return rs;
-//   }
-// };
-
-// class PresolveRelaxationJobs {
-// protected:
-//   // global space from which the presolving problems are generated
-//   const GlobalModel & base;
-//   // local visualization options (if any)
-//   GIST_OPTIONS * lo;
-//   // current job index
-//   unsigned int k;
-//   // pool of jobs
-//   vector<tuple<operation, activation_class, block> > jobs;
-// public:
-//   PresolveRelaxationJobs(const GlobalModel & base0, GIST_OPTIONS * lo0) :
-//     base(base0), lo(lo0), k(0) {
-//     for (operation co : concat({NULL_OPERATION},
-//                                base.input->callee_saved_stores)) {
-//       for (activation_class ac : concat({NULL_ACTIVATION_CLASS},
-//                                         base.input->AC)) {
-//         if (base.options->verbose()) {
-//           operation oo = ac == NULL_ACTIVATION_CLASS ? NULL_OPERATION :
-//             base.input->activation_class_representative[ac];
-//           cerr << pre() << "computing lower bounds"
-//                << (co == NULL_OPERATION ? "" : (" assuming a(o" + to_string(co) + ")"))
-//                << (oo == NULL_OPERATION ? "" : (" assuming a(o" + to_string(oo) + ")"))
-//                << "..." << endl;
-//         }
-//         set<block> ac_blocks;
-//         if (ac != NULL_ACTIVATION_CLASS)
-//           for (operation o : base.input->activation_class_operations[ac])
-//             ac_blocks.insert(base.input->oblock[o]);
-//         for (block b : base.input->B) {
-//           // If the activation class does not affect b, we can skip the relaxation
-//           if (ac == NULL_ACTIVATION_CLASS || contains(ac_blocks, b)) {
-//             jobs.push_back(make_tuple(co, ac, b));
-//           }
-//         }
-//       }
-//     }
-//   }
-//   bool operator ()(void) const {
-//     return k < jobs.size();
-//   }
-//   PresolveRelaxationJob * job(void) {
-//     auto j = jobs[k];
-//     operation co = get<0>(j);
-//     activation_class ac = get<1>(j);
-//     block b = get<2>(j);
-//     operation oo = ac == NULL_ACTIVATION_CLASS ? NULL_OPERATION :
-//       base.input->activation_class_representative[ac];
-//     // Can share data structures as everything happens within this thread
-//     GlobalModel * g = (GlobalModel*) base.clone();
-//     g->post_active_operation(co);
-//     g->post_active_operation(oo);
-//     g->status();
-//     LocalModel * ls = make_local(g, b, IPL_DOM);
-//     delete g;
-//     ls->status();
-//     PresolveRelaxationJob * psj =
-//       new PresolveRelaxationJob(ls, lo, co, ac, b);
-//     k++;
-//     return psj;
-//   }
-// };
-
-// void presolve_relaxation(GlobalModel * base, GIST_OPTIONS * lo) {
-//   vector<RelaxationResult> results;
-//   PresolveRelaxationJobs pjs(*base, lo);
-//   Support::RunJobs<PresolveRelaxationJobs, RelaxationResult>
-//     p(pjs, base->options->total_threads());
-//   RelaxationResult rr;
-//   while (p.run(rr)) {
-//     int i;
-//     RelaxationResult frr;
-//     if (p.stopped(i, frr)) { // job stopped
-//       results.push_back(frr);
-//       break;
-//     } else { // job finished
-//       results.push_back(rr);
-//     }
-//   }
-
-//   for (RelaxationResult rs : results) {
-//     if (rs.result == OPTIMAL_SOLUTION) {
-//       base->post_lower_bounds(rs.co, rs.oo, rs.b, rs.lb);
-//     } else if (rs.result == UNSATISFIABLE) {
-//       base->post_relaxation_nogood(rs.co, rs.oo);
-//     }
-//     Gecode::SpaceStatus ss = base->status();
-//     if (ss == SS_FAILED) break; // Proof that there is no solution
-//   }
-
-//   return;
-// }
-
-// class ShavingResults {
-// public:
-//   SolverResult result;
-//   block b;
-//   int local_cost_lb;
-//   vector<pair<int, InstructionAssignment> > forbidden;
-//   ShavingResults() : result(UNKNOWN), b(-1), local_cost_lb(0) {}
-//   ShavingResults(block b0) : ShavingResults() {b = b0;}
-// };
-
-// class PresolveShavingJob : public Support::Job<ShavingResults> {
-// public:
-//   const GlobalModel & base;
-//   block b;
-//   PresolveShavingJob(const GlobalModel & base0, block b0) :
-//     base(base0), b(b0) {}
-//   virtual ShavingResults run(int) {
-//     ShavingResults rs(b);
-//     if (base.input->ops[b].size() > base.options->shaving_threshold()) {
-//       if (base.options->verbose())
-//         cerr << pre() << "large block (" << base.input->ops[b].size()
-//              << " operations), skipping shaving" << endl;
-//       return rs;
-//     }
-//     Search::Stop * stop =
-//       new_stop(base.options->global_shaving_limit(), base.options);
-//     Search::Statistics stats;
-//     Search::Options dummyOpts;
-//     LocalModel * l = make_local(&base, b, IPL_DOM);
-//     Gecode::SpaceStatus lss = l->status();
-//     if (lss == SS_FAILED) { // A local problem failed, return
-//       rs.result = UNSATISFIABLE;
-//       delete l;
-//       delete stop;
-//       return rs;
-//     }
-//     for (int cost = l->cost()[0].min() + 1; cost <= l->cost()[0].max(); cost++) {
-//       // Can share data structures as everything happens within a thread
-//       LocalModel * l1 = (LocalModel*) l->clone();
-//       l1->constrain_cost(IRT_LE, cost);
-//       Gecode::SpaceStatus ss = l1->status();
-//       if (ss == SS_FAILED) {
-//         delete l1;
-//         rs.local_cost_lb = cost;
-//       } else {
-//         vector<InstructionAssignment> forbidden =
-//           shave_instructions(l1, stop, stats);
-//         delete l1;
-//         if (forbidden.empty()) break;
-//         for (InstructionAssignment fb : forbidden)
-//           rs.forbidden.push_back(make_pair(cost, fb));
-//       }
-//       if (stop->stop(stats, dummyOpts)) {
-//         if (base.options->verbose())
-//           cerr << pre() << "limit" << endl;
-//         break;
-//       }
-//     }
-//     delete l;
-//     delete stop;
-//     return rs;
-//   }
-// };
-
-// class PresolveShavingJobs {
-// protected:
-//   // global space from which the presolving problems are generated
-//   const GlobalModel & base;
-//   // current block index
-//   unsigned int k;
-// public:
-//   PresolveShavingJobs(const GlobalModel & base0) : base(base0), k(0) {}
-//   bool operator ()(void) const {
-//     return k < base.input->B.size();
-//   }
-//   PresolveShavingJob * job(void) {
-//     if (base.options->verbose())
-//       cerr << pre()
-//            << "computing instruction nogoods for b" << k << "..." << endl;
-//     PresolveShavingJob * psj = new PresolveShavingJob(base, k);
-//     k++;
-//     return psj;
-//   }
-// };
-
-// void presolve_shaving(GlobalModel * base) {
-//   map<block, ShavingResults> local_results;
-//   PresolveShavingJobs pjs(*base);
-//   Support::RunJobs<PresolveShavingJobs, ShavingResults>
-//     p(pjs, base->options->total_threads());
-//   ShavingResults lr;
-//   while (p.run(lr)) {
-//     int i;
-//     ShavingResults flr;
-//     if (p.stopped(i, flr)) { // job stopped
-//       block b = flr.b;
-//       local_results[b] = flr;
-//       break;
-//     } else { // job finished
-//       block b = lr.b;
-//       local_results[b] = lr;
-//     }
-//   }
-
-//   for (block b : base->input->B) {
-//     ShavingResults srs = local_results[b];
-//     // A local problem failed, force failure in global
-//     if (srs.result == UNSATISFIABLE) {
-//       base->constrain_local_cost(b, IRT_LE, -1);
-//     } else {
-//       base->constrain_local_cost(b, IRT_GQ, srs.local_cost_lb);
-//       for (pair<int, InstructionAssignment> fb : srs.forbidden)
-//         base->post_instruction_nogood(fb.first, fb.second);
-//     }
-//     Gecode::SpaceStatus ss = base->status();
-//     if (ss == SS_FAILED) break;
-//   }
-
-//   return;
-// }
-
-// void presolve_global_cluster_impact(GlobalModel * base, GIST_OPTIONS * lo) {
-//   if (base->options->verbose())
-//     cerr << pre()
-//          << "computing lower bounds for cluster connections..." << endl;
-//   for (global_cluster gc : base->input->GC) {
-//     if (base->options->verbose())
-//       cerr << pre() << "computing lower bounds for "
-//            << show(base->input->clusters[gc],",","p","{}") << "..." << endl;
-//     presolve_global_cluster_impact(base, gc, true, lo);
-//     presolve_global_cluster_impact(base, gc, false, lo);
-//   }
-// }
-
-// void presolve_global_cluster_impact(
-//      GlobalModel * base, global_cluster gc, bool connect, GIST_OPTIONS * lo) {
-//   (void)lo;
-//   Parameters * input = base->input;
-//   GlobalModel * g = (GlobalModel*) base->clone();
-//   g->post_cluster_connection_decision(gc, connect);
-//   g->status();
-//   operand p = input->clusters[gc][0];
-
-//   vector<operand> touched;
-//   for (operand p : input->P)
-//     if (!base->x(p).assigned() && g->x(p).assigned())
-//       touched.push_back(p);
-
-//   // blocks with optional non-copy operations related to the touched operands
-//   set<block> affected;
-//     for (operand p : touched) {
-//       for (temporary t : input->real_temps[p]) {
-//         set<operand> qs;
-//         for (operand q : input->users[t]) qs.insert(q);
-//         qs.insert(input->definer[t]);
-//         for (operand q : qs) {
-//           operation o = input->oper[q];
-//           if (input->type[o] != COPY && !input->delimiter[o] &&
-//               input->instructions[o][0] == NULL_INSTRUCTION &&
-//               contains(input->temps[q], t)) {
-//             affected.insert(input->oblock[o]);
-//           }
-//         }
-//       }
-//     }
-
-//   for (block b : affected) {
-//     LocalModel * ls = make_local(g, b, IPL_DOM);
-//     ls->post_minimum_cost_branchers();
-// #ifdef GRAPHICS
-//     if (base->options->gist_presolving() && base->options->gist_block() == b)
-//       Gist::bab(ls, *lo);
-// #endif
-//     Search::Stop * preStop =
-//       new_stop(base->options->local_relaxation_limit(), base->options);
-//     Search::Options preOptions;
-//     preOptions.stop = preStop;
-//     BAB<LocalModel> e(ls, preOptions);
-//     while (LocalModel* nextls = e.next()) {
-//       LocalModel * oldls = ls;
-//       ls = nextls;
-//       delete oldls;
-//     }
-//     int lb = 0;
-//     if (!preStop->stop(e.statistics(), preOptions) &&
-//       ls->status() == SS_SOLVED)
-//       lb = ls->cost()[0].val();
-//     if (ls != NULL) delete ls;
-//     delete preStop;
-//     if (lb > base->f(b, 0).min()) {
-//       base->post_connection_lower_bound(p, connect, b, lb);
-//       base->status();
-//     }
-//   }
-
-//   delete g;
-
-// }
-
-// void presolve_global_shaving(GlobalModel * base) {
-//   int l = base->cost()[0].min(), h = base->cost()[0].max();
-//   while (l != h) {
-//     int m = (l + h)/2;
-//     GlobalModel * g = (GlobalModel*) base->clone();
-//     vector<int> maxf;
-//     maxf.push_back(m);
-//     for (unsigned int n = 1; n < base->input->N; n++)
-//       maxf.push_back(Int::Limits::max);
-//     g->post_upper_bound(maxf);
-//     Gecode::SpaceStatus ss = g->status();
-//     delete g;
-//     if (ss == SS_FAILED) { // cost >= m
-//       l = m + 1;
-//     } else {
-//       h = m;
-//     }
-//   }
-//   if (l > base->cost()[0].min()) {
-//     vector<int> minf;
-//     minf.push_back(l);
-//     for (unsigned int n = 1; n < base->input->N; n++)
-//       minf.push_back(Int::Limits::min);
-//     base->post_lower_bound(minf);
-//     base->status();
-//     if (base->options->verbose())
-//       cerr << "[pre]\t increased cost lower bound: " << l << endl;
-//   }
-// }
-
-// void presolve_global_activation_shaving(GlobalModel * base) {
-
-//   for (activation_class ac : base->input->AC) {
-//     if (base->options->verbose()) {
-//       cerr << pre() << "computing activation nogoods for "
-//            << show(base->input->activation_class_operations[ac],",","o","{}")
-//            << "..." << endl;
-//     }
-//     operation o = base->input->activation_class_representative[ac];
-//     GlobalModel * g = (GlobalModel*) base->clone();
-//     g->post_active_operation(o);
-//     Gecode::SpaceStatus ss = SS_BRANCH;
-//     if (g->status() == SS_FAILED) {
-//       base->post_inactive_operation(o);
-//       ss = base->status();
-//       if (base->options->verbose())
-//         cerr << pre() << "activation class disabled" << endl;
-//     } else if (g->cost()[0].min() > base->cost()[0].min()) {
-//       base->post_activation_nogood(o, g->cost()[0].min());
-//       ss = base->status();
-//       if (base->options->verbose())
-//         cerr << pre() << "activation class increases cost lower bound" << endl;
-//     }
-//     delete g;
-//     if (ss == SS_FAILED) return; // Proof that there is no solution
-//   }
-
-// }
 
 unsigned long int
-global_limit(Parameters * input, ModelOptions * options, int best) {
+global_limit_2(Parameters * input, ModelOptions * options, int best) {
   unsigned long int globalLimit =
     options->global_budget() * input->O.size();
   return globalLimit +
@@ -529,15 +48,12 @@ Solution<DivModel>
 solve_global(DivModel * base, IterationState & state, vector<int> & best,
              GIST_OPTIONS * go, int iteration) {
   (void)go; (void)iteration;
-  cout << "solve_global" << endl;
   // Create global problem with aggressiveness a
   DivModel * g = (DivModel*) base->clone();
-  cout << "after clone" << endl;
 
   g->set_aggressiveness(state.a);
   g->set_connect_first(state.cf);
   g->post_branchers();
-  cout << "after post branchers" << endl;
 
   if (base->input->B.size() == 1) g->post_callee_saved_branchers();
 #ifdef GRAPHICS
@@ -548,31 +64,28 @@ solve_global(DivModel * base, IterationState & state, vector<int> & best,
 
   // cout << "solve_global 1" << endl;
   // Global options
-  Search::Stop * globalStop =
-    new_stop(global_limit(base->input, base->options, best[0]), base->options);
+  // Search::Stop * globalStop =
+  //   new_stop(global_limit_2(base->input, base->options, best[0]), base->options);
   Search::Options globalOptions;
   // globalOptions.stop = globalStop;
 
   // Global search engine
   DFS<DivModel> e(g, globalOptions);
   delete g;
-  // cout << "solve_global3" << endl;
 
   // Solve the global problem
   DivModel * g1 = e.next();
-  // cout << "solve_global2" << endl;
 
   SolverResult r;
   if (g1 == NULL)
-    r = globalStop->stop(e.statistics(), globalOptions) ? LIMIT : UNSATISFIABLE;
+    r = UNSATISFIABLE; //globalStop->stop(e.statistics(), globalOptions) ? LIMIT : UNSATISFIABLE;
   else {
     r = SOME_SOLUTION;
-    // cout << "solve_global some_solution" << endl;
   }
-  delete globalStop;
+  // delete globalStop;
 
   // if (!base->options->disable_global_shaving() && r == SOME_SOLUTION)
-    // r = shave_local_costs(g1);
+  //   r = shave_local_costs(g1);
 
   // Return result, solution (if applicable) and failures
   return Solution<DivModel>(r, g1, e.statistics().fail, e.statistics().node);
@@ -580,4 +93,3 @@ solve_global(DivModel * base, IterationState & state, vector<int> & best,
 
 
 string div() { return "[div]\t "; }
-

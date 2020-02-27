@@ -39,7 +39,6 @@
 #include "divmodel.hpp"
 
 
-
 DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
                    IntPropLevel p_ipl) :
   GlobalModel(p_input, p_options, p_ipl)
@@ -48,6 +47,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   div_r.seed(p_options->seed());
   div_p = p_options->relax();
   mindist = p_options->min_dist();
+
 
   int op_size = O().size();
   int temp_size = T().size();
@@ -111,11 +111,13 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   dist = IntVar(*this, 0, 10000);
 }
 
+
 DivModel::DivModel(DivModel& cg) :
   GlobalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
   mindist(cg.mindist),
+  solver(cg.solver),
   branch_operations(cg.branch_operations),
   real_operations(cg.real_operations),
   gadgets(cg.gadgets),
@@ -134,7 +136,9 @@ DivModel* DivModel::copy(void) {
   return new DivModel(*this);
 }
 
-
+void DivModel::set_solver(JSONVALUE root) {
+  solver = new SolverParameters(root);
+}
 
 void DivModel::post_random_branchers(void) {
   branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
@@ -158,6 +162,8 @@ void DivModel::post_random_branchers(void) {
 
 
 }
+
+
 
 void DivModel::post_clrandom_branchers(void) {
   Rnd r;
@@ -200,7 +206,48 @@ void DivModel::post_cloriginal_branchers(void) {
 }
 
 
+int ibv_r(const Space& _b, IntVar x, int i) {
+  const DivModel& b = static_cast<const DivModel&>(_b);
+  int sr = b.solver->registers[i];
+  if (sr != -1 && x.in(sr)) {
+    return sr;
+  } else {
+    Rnd r;
+    r.seed(b.options->seed());
+    return r(x.max());
+  }
+}
+
+int ibv_c(const Space& _b, IntVar x, int i) {
+  // cout << "ibv_c" << endl;
+  const DivModel& b = static_cast<const DivModel&>(_b);
+  int sr = b.solver->cycles[i];
+  if (sr != -1 && x.in(sr)) {
+    return sr;
+  } else {
+    Rnd r;
+    r.seed(b.options->seed());
+    return r(x.max());
+  }
+}
+
+void ivc(Space &b, unsigned int a, IntVar x, int, int n) {
+  if (a == 0) {
+    rel(b, x == n);
+  } else {
+    rel(b, x!= n);
+  }
+}
+
 void DivModel::post_div_branchers(void) {
+
+  // branch(*this, v_c, INT_VAR_NONE(), INT_VAL(ibv_c, ivc),
+  //        &global_assignable, &print_global_register_decision);
+
+  // branch(*this, v_r, INT_VAR_NONE(), INT_VAL(ibv_r, ivc),
+  //        &global_assignable, &print_global_register_decision);
+
+
   if (options->branching() == BR_RND) {
     post_random_branchers();
   }
@@ -589,12 +636,15 @@ void DivModel::constrain(const Space & _b) {
 
 
 bool DivModel::master(const MetaInfo& mi) {
+  cout << "master" << this << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if (mi.last() != NULL)
+    if (mi.last() != NULL) {
       constrain(*mi.last());
+      cout << "constraint" << endl;
+    }
     mi.nogoods().post(* this);
     return true; // forces a restart even if a solution has been found
   }
@@ -604,11 +654,13 @@ bool DivModel::master(const MetaInfo& mi) {
 
 
 bool DivModel::slave(const MetaInfo& mi) {
+  cout << "slave" << this << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
     if ((mi.restart() > 0) && (div_p > 0.0)) {
+      cout << "next" << endl;
       if (mi.last() != NULL)// {
         next(static_cast<const DivModel&>(*mi.last()));
       return false;
@@ -625,7 +677,31 @@ bool DivModel::slave(const MetaInfo& mi) {
   GECODE_NEVER;
 }
 
+
 void DivModel::first(void) {
+
+  // set_aggressiveness(0.0);
+  // set_connect_first(false);
+  // post_branchers();
+  // for (operation o: input -> O) {
+  //   if (solver->cycles[o] != -1) {
+  //     constraint(c(o) == solver->cycles[o]);
+  //     constraint(a(o) == 1);
+  //   } else {
+  //     constraint(a(o) == 0);
+  //   }
+  // }
+
+  // for (temporary t : input->T) {
+  //   if (solver->registers[t] != -1) {
+  //     constraint(r(t) == solver->registers[t]);
+  //     constraint(l(t) == 1);
+  //   } else {
+  //     constraint(l(t) == 0);
+  //   }
+  // }
+
+  std::cout << "First" << std::endl;
   return;
 }
 

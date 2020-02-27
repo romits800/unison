@@ -56,6 +56,24 @@ LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
 
 }
 
+LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
+                             IntPropLevel p_ipl,
+                             const DivModel * gs, block p_b) :
+  LocalModel(p_input, p_options, p_ipl, gs, p_b)
+{
+  div_r.seed(p_options->seed());
+  div_p = p_options->relax();
+
+  int op_size = O().size();
+
+  int maxval = max_of(input->maxc);
+  // difference between operators
+  v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
+  // Hamming distance between operators
+  v_hamm  = int_var_array(op_size, -1, maxval);
+
+}
+
 LocalDivModel::LocalDivModel(LocalDivModel& cg) :
   LocalModel(cg),
   div_p(cg.div_p),

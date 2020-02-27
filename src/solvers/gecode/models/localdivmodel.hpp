@@ -37,6 +37,7 @@
 
 #include "localmodel.hpp"
 #include "decompdivmodel.hpp"
+#include "divmodel.hpp"
 #include "branchers/filters.hpp"
 #include "branchers/printers.hpp"
 #include "branchers/routingbrancher.hpp"
@@ -49,6 +50,7 @@ using namespace std;
 
 // class GlobalModel;
 class DecompDivModel;                 //
+class DivModel;                 //
 
 class LocalDivModel : public LocalModel {
 
@@ -80,6 +82,9 @@ public:
 
   LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
                 const DecompDivModel * gs, block b);
+
+  LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
+                const DivModel * gs, block b);
 
   LocalDivModel(LocalDivModel& cg);
 

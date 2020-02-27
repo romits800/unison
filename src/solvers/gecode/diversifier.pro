@@ -41,10 +41,8 @@ HEADERS += common/definitions.hpp \
            models/localmodel.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
-           models/localdivmodel.hpp \
            models/divmodel.hpp \
            models/maxdivmodel.hpp \
-           models/decompdivmodel.hpp \
            models/simplemodel.hpp \
            models/relaxedmodel.hpp \
            branchers/filters.hpp \
@@ -55,7 +53,8 @@ HEADERS += common/definitions.hpp \
            branchers/routingbrancher.hpp \
            procedures/commonprocedures.hpp \
            procedures/divprocedures.hpp \
-           procedures/localdivprocedures.hpp
+           procedures/globalprocedures.hpp \
+           procedures/localprocedures.hpp
 
 
 SOURCES += third-party/jsoncpp/json_reader.cpp \
@@ -71,10 +70,8 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            models/localmodel.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
-           models/localdivmodel.cpp \
            models/divmodel.cpp \
            models/maxdivmodel.cpp \
-           models/decompdivmodel.cpp \
            models/simplemodel.cpp \
            models/relaxedmodel.cpp \
            branchers/filters.cpp \
@@ -84,8 +81,9 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/pressureschedulingbrancher.cpp \
            branchers/routingbrancher.cpp \
            procedures/commonprocedures.cpp \
+           procedures/localprocedures.cpp \
+           procedures/globalprocedures.cpp \
            procedures/divprocedures.cpp \
-           procedures/localdivprocedures.cpp \
            diversifier.cpp
 
 ENV_CXX = $$(CXX)
