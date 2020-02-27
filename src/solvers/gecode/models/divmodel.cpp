@@ -47,6 +47,8 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
   div_r.seed(p_options->seed());
   div_p = p_options->relax();
+  mindist = p_options->min_dist();
+
   int op_size = O().size();
   int temp_size = T().size();
   int maxval = sum_of(input->maxc);
@@ -68,7 +70,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
   // Initialize v_diff for diff_hamming and diff_br_hamming
   v_hamm  = int_var_array(op_size, -1, maxval);
-  
+
   if (options->dist_metric() == DIST_HAMMING_DIFF) {
     v_diff  = int_var_array((real_op_size*(real_op_size -1))/2, -maxval, maxval);
   }
@@ -94,12 +96,11 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
   }
   // Prepare cycles for hamming distance between registers
-  // if (options->dist_metric() == DIST_REGHAMMING) { // 
   v_reghamm  = int_var_array(temp_size, -1, maxval);
-  // }
+
   if (options->dist_metric() == DIST_HAMMING_REG_GADGET) {
     v_gadget  = int_var_array(size, -maxval, maxval);
-  }  
+  }
 
   // Global cycles array - similar to cycles
   v_gc = int_var_array(op_size, 0, sum_of(input->maxc));
@@ -114,6 +115,7 @@ DivModel::DivModel(DivModel& cg) :
   GlobalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
+  mindist(cg.mindist),
   branch_operations(cg.branch_operations),
   real_operations(cg.real_operations),
   gadgets(cg.gadgets),
@@ -297,7 +299,7 @@ void DivModel::post_diversification_reg_gadget(void) {
       // if (!is_real_type(o)) continue;
       if (br == o) continue;
       BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
-      IntVar thenb =  var (gc(o));
+      IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval);
       ite(*this, ifb,  thenb, elseb, gadget(k), IPL_DOM);
       k++;
@@ -367,7 +369,7 @@ void DivModel::post_levenshtein(const DivModel & b)
 
   dist = var( mat(sizex-1, sizex-1));
 
-  constraint(dist >= 1); // Levenshtein distance
+  constraint(dist >= mindist); // Levenshtein distance
 }
 
 void DivModel::post_levenshtein_set(const DivModel & b)
@@ -411,7 +413,7 @@ void DivModel::post_levenshtein_set(const DivModel & b)
     }
 
   dist = var( mat(sizex-1, sizex-1));
-  constraint( dist >= 1); // Levenshtein distance
+  constraint( dist >= mindist); // Levenshtein distance
 }
 bool DivModel::is_real_type(int o) {
 
@@ -442,7 +444,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
 
     } else {
       cerr << "No constraints @ constrain";
@@ -455,7 +457,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -478,7 +480,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {
       dist = var(sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -490,7 +492,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance on the branches
+      constraint(dist >= mindist); // hamming distance on the branches
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
@@ -509,7 +511,7 @@ void DivModel::constrain(const Space & _b) {
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
 
     } else {
       cerr << "No constraints @ constrain";
@@ -523,35 +525,55 @@ void DivModel::constrain(const Space & _b) {
       BoolVarArgs btemp;
       for (uint i = g.start; i < g.end; i++) {
         btemp << var (gadget(i) != b.gadget(i));
-	operation o = gadgets_operations[i];
-	for (operand p: input->operands[o]) {
-	  for (temporary t: input->temps[p]) {
-	    if (t >= 0) {
-	      btemp << var (reghamm(t) != b.reghamm(t));
-	    }
-	  }
-	}
+        operation o = gadgets_operations[i];
+        for (operand p: input->operands[o]) {
+          for (temporary t: input->temps[p]) {
+            if (t >= 0) {
+              btemp << var (reghamm(t) != b.reghamm(t));
+            }
+          }
+        }
       }
       if (btemp.size() >0) {
-	rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
+	rel(*this, var(sum(btemp)), IRT_GQ,  var(mindist), var(a(br) == 1));
 	ih << var(sum(btemp));
       }
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist);
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
     }
     break;
+  case DIST_HAMMING_BR_REG:
+    for (operation o : branch_operations) {
+      bh << var (hamm(o) != b.hamm(o));
+      for (operand p: input->operands[o]) {
+        for (temporary t: input->temps[p]) {
+          if (t >= 0) {
+            bh << var (reghamm(t) != b.reghamm(t));
+          }
+        }
+      }
+    }
+    if (bh.size() >0) {
+      dist = var( sum(bh));
+      constraint(dist >= mindist); // hamming distance on the branches
+    } else {
+      cerr << "No constraints @ constrain";
+      exit(EXIT_FAILURE);
+    }
+    break;
+
   case DIST_DIFF_BR:
     for (int i = 0; i < v_diff.size(); i++) { //
       ih << var (abs (diff(i) - b.diff(i)));
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
-      constraint(dist >= 1); // hamming distance
+      constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);

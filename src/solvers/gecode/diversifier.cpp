@@ -822,7 +822,7 @@ int main(int argc, char* argv[]) {
 
       Gecode::RestartMode restart = dd->options->restart();
       Search::Cutoff* c;
-      unsigned long int s_const = dd->options->restart_base();
+      unsigned long int s_const = dd->options->restart_scale();
 
       if (restart == RM_LUBY ){
         c = Search::Cutoff::luby(s_const);
@@ -857,7 +857,7 @@ int main(int argc, char* argv[]) {
 
     Gecode::RestartMode restart = options.restart();
     Search::Cutoff* c;
-    unsigned long int s_const = options.restart_base();
+    unsigned long int s_const = options.restart_scale();
 
     if (restart == RM_LUBY ){
       c = Search::Cutoff::luby(s_const);
@@ -1008,7 +1008,7 @@ int main(int argc, char* argv[]) {
     Gecode::RestartMode restart = options.restart();
     Search::Cutoff* c;
     Search::Options o;
-    unsigned long int s_const = options.restart_base();
+    unsigned long int s_const = options.restart_scale();
 
     if (restart == RM_LUBY ){
       c = Search::Cutoff::luby(s_const);

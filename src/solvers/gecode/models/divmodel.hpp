@@ -86,6 +86,8 @@ public:
   // r: random number for LNS
   Rnd div_r;
 
+  // Minimum allowed distance
+  int mindist;
 
   vector<operation> branch_operations;
   vector<operation> real_operations;

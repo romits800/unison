@@ -156,6 +156,7 @@ protected:
   Driver::StringValueOption _solver_file; // Solver file for best solution (if available)
 
   Driver::StringValueOption _divs_dir; // Solver file for best solution (if available)
+  Driver::UnsignedIntOption _min_dist; // Solver file for best solution (if available)
 
 public:
 
@@ -255,6 +256,7 @@ public:
   string solver_file(void) const {return _solver_file.value();}
 
   string divs_dir(void) const {return _divs_dir.value();}
+  unsigned int min_dist(void) const {return _min_dist.value();}
 
 };
 
