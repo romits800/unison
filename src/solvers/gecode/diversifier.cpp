@@ -887,7 +887,6 @@ int main(int argc, char* argv[]) {
     d->post_div_branchers();
     d->post_diversification_constraints(); // Diversification constraint
 
-    cerr << div() << d->solver->proven << endl;
 
     if (d->status() == SS_FAILED) {
       cerr << div() << "Status failed." << endl;
@@ -911,8 +910,6 @@ int main(int argc, char* argv[]) {
     if (d->status() == SS_FAILED) {
       cerr << div() << "Status failed." << endl;
     }
-
-    cout <<  d->v_r << endl;
 
     t_solver.start();
     t_it.start();

@@ -208,15 +208,16 @@ void DivModel::post_cloriginal_branchers(void) {
 
 void DivModel::post_div_branchers(void) {
 
-  IntArgs sol;
-  IntVarArgs vs;
-  for (int c: solver->cycles) sol << c;
-  for (int r: solver->registers) sol << r;
-  for (IntVar c: v_c) vs << c;
-  for (IntVar r: v_r) vs << r;
-  // solution_branch(*this, v_r, rs); // 
-  solution_branch(*this, vs, sol);
-	  
+  if (options->enable_solver_solution_brancher()) {
+    IntArgs sol;
+    IntVarArgs vs;
+    for (int c: solver->cycles) sol << c;
+    for (int r: solver->registers) sol << r;
+    for (IntVar c: v_c) vs << c;
+    for (IntVar r: v_r) vs << r;
+
+    solution_branch(*this, vs, sol);
+  }
   if (options->branching() == BR_RND) {
     post_random_branchers();
   }
