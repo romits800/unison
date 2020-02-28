@@ -206,46 +206,7 @@ void DivModel::post_cloriginal_branchers(void) {
 }
 
 
-int ibv_r(const Space& _b, IntVar x, int i) {
-  const DivModel& b = static_cast<const DivModel&>(_b);
-  int sr = b.solver->registers[i];
-  if (sr != -1 && x.in(sr)) {
-    return sr;
-  } else {
-    Rnd r;
-    r.seed(b.options->seed());
-    return r(x.max());
-  }
-}
-
-int ibv_c(const Space& _b, IntVar x, int i) {
-  // cout << "ibv_c" << endl;
-  const DivModel& b = static_cast<const DivModel&>(_b);
-  int sr = b.solver->cycles[i];
-  if (sr != -1 && x.in(sr)) {
-    return sr;
-  } else {
-    Rnd r;
-    r.seed(b.options->seed());
-    return r(x.max());
-  }
-}
-
-void ivc(Space &b, unsigned int a, IntVar x, int, int n) {
-  if (a == 0) {
-    rel(b, x == n);
-  } else {
-    rel(b, x!= n);
-  }
-}
-
 void DivModel::post_div_branchers(void) {
-
-  // branch(*this, v_c, INT_VAR_NONE(), INT_VAL(ibv_c, ivc),
-  //        &global_assignable, &print_global_register_decision);
-
-  // branch(*this, v_r, INT_VAR_NONE(), INT_VAL(ibv_r, ivc),
-  //        &global_assignable, &print_global_register_decision);
 
   IntArgs sol;
   IntVarArgs vs;
