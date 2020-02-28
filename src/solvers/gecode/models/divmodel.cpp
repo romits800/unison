@@ -247,7 +247,15 @@ void DivModel::post_div_branchers(void) {
   // branch(*this, v_r, INT_VAR_NONE(), INT_VAL(ibv_r, ivc),
   //        &global_assignable, &print_global_register_decision);
 
-
+  IntArgs sol;
+  IntVarArgs vs;
+  for (int c: solver->cycles) sol << c;
+  for (int r: solver->registers) sol << r;
+  for (IntVar c: v_c) vs << c;
+  for (IntVar r: v_r) vs << r;
+  // solution_branch(*this, v_r, rs); // 
+  solution_branch(*this, vs, sol);
+	  
   if (options->branching() == BR_RND) {
     post_random_branchers();
   }
@@ -377,7 +385,7 @@ void DivModel::post_diversification_hamming(void) {
 
 void DivModel::post_global_cycles(void) {
   // VarInt offset;
-  for(block b: input->B) {
+  for (block b: input->B) {
     for (operation o: input->ops[b]) {
       if (b == 0)
         constraint(gc(o) == c(o));
@@ -636,14 +644,12 @@ void DivModel::constrain(const Space & _b) {
 
 
 bool DivModel::master(const MetaInfo& mi) {
-  cout << "master" << this << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
     if (mi.last() != NULL) {
       constrain(*mi.last());
-      cout << "constraint" << endl;
     }
     mi.nogoods().post(* this);
     return true; // forces a restart even if a solution has been found
@@ -654,18 +660,14 @@ bool DivModel::master(const MetaInfo& mi) {
 
 
 bool DivModel::slave(const MetaInfo& mi) {
-  cout << "slave" << this << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
     if ((mi.restart() > 0) && (div_p > 0.0)) {
-      cout << "next" << endl;
       if (mi.last() != NULL)// {
         next(static_cast<const DivModel&>(*mi.last()));
       return false;
-      // } else
-        // return true;
     } else if (mi.restart() == 0) {
       first();
       return true;
@@ -680,28 +682,6 @@ bool DivModel::slave(const MetaInfo& mi) {
 
 void DivModel::first(void) {
 
-  // set_aggressiveness(0.0);
-  // set_connect_first(false);
-  // post_branchers();
-  // for (operation o: input -> O) {
-  //   if (solver->cycles[o] != -1) {
-  //     constraint(c(o) == solver->cycles[o]);
-  //     constraint(a(o) == 1);
-  //   } else {
-  //     constraint(a(o) == 0);
-  //   }
-  // }
-
-  // for (temporary t : input->T) {
-  //   if (solver->registers[t] != -1) {
-  //     constraint(r(t) == solver->registers[t]);
-  //     constraint(l(t) == 1);
-  //   } else {
-  //     constraint(l(t) == 0);
-  //   }
-  // }
-
-  std::cout << "First" << std::endl;
   return;
 }
 

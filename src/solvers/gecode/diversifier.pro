@@ -51,6 +51,7 @@ HEADERS += common/definitions.hpp \
            branchers/printers.hpp \
            branchers/pressureschedulingbrancher.hpp \
            branchers/routingbrancher.hpp \
+           branchers/solutionbrancher.hpp \
            procedures/commonprocedures.hpp \
            procedures/divprocedures.hpp \
            procedures/globalprocedures.hpp \
@@ -80,6 +81,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/printers.cpp \
            branchers/pressureschedulingbrancher.cpp \
            branchers/routingbrancher.cpp \
+           branchers/solutionbrancher.cpp \
            procedures/commonprocedures.cpp \
            procedures/localprocedures.cpp \
            procedures/globalprocedures.cpp \

@@ -907,10 +907,7 @@ int main(int argc, char* argv[]) {
     }
 
     o.cutoff = c;
-    cout << "rbs" << d << endl;
-    cout <<  d->v_r << endl;
     RBS<DivModel,BAB> e(d, o);
-    cout << "after" << d << endl;
     if (d->status() == SS_FAILED) {
       cerr << div() << "Status failed." << endl;
     }
@@ -923,13 +920,7 @@ int main(int argc, char* argv[]) {
     cerr << div() << "Starting" << endl;
 
     while (DivModel *nextg = e.next()) {
-      cout << "nextg" << nextg << endl;
-      cout <<  nextg->v_r << endl;
-
-      cout << "nextg d" << d << endl;
-      cout <<  d->v_r << endl;
-
-      cerr << div() << "Cloning " << count << endl; //"\r";
+      cerr << div() << "Cloning " << count << "\r";
 
       ResultDivData rd = ResultDivData(nextg,
                                        proven, // false, /*proven*/
@@ -944,8 +935,6 @@ int main(int argc, char* argv[]) {
       fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d->options->output_file());
       fout << produce_json(rd, gd, nextg->input->N, 0);
       fout.close();
-
-      cerr << div() << "done " << count << endl; //"\r";
 
       DivModel *tmpg = d;
       d = nextg;

@@ -39,9 +39,9 @@
 #include "globalmodel.hpp"
 #include "localdivmodel.hpp"
 #include "solver-parameters.hpp"
-#include "branchers/merit.hpp"
-#include "branchers/value.hpp"
-
+// #include "branchers/merit.hpp"
+// #include "branchers/value.hpp"
+#include "branchers/solutionbrancher.hpp"
 #include "time.h"
 
 using namespace Gecode;
