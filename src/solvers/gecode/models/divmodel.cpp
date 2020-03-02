@@ -208,7 +208,7 @@ void DivModel::post_cloriginal_branchers(void) {
 
 void DivModel::post_div_branchers(void) {
 
-  if (options->enable_solver_solution_brancher()) {
+  if (options->enable_solver_solution_brancher() && solver->has_solution) {
     IntArgs sol;
     IntVarArgs vs;
     for (int c: solver->cycles) sol << c;
