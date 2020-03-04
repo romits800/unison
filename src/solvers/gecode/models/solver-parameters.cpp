@@ -51,17 +51,8 @@ SolverParameters::SolverParameters(JSONVALUE root) :
   has_solution               (get_scalar<bool>(getRoot(root, "has_solution"))),
   proven                     (get_scalar<bool>(getRoot(root, "proven"))),
   cost                       (get_vector<int>(getRoot(root, "cost"))),
-  failures                   (get_scalar<int>(getRoot(root, "failures"))),
-  nodes                      (get_scalar<int>(getRoot(root, "nodes"))),
   presolver_time             (get_scalar<int>(getRoot(root, "presolver_time"))),
-  gecode_presolving_time     (get_scalar<int>(getRoot(root, "gecode_presolving_time"))),
-  solver_time                (get_scalar<int>(getRoot(root, "solver_time"))),
-
-  global_int_variables       (get_scalar<int>(getRoot(root, "global_int_variables"))),
-
-  global_bool_variables      (get_scalar<int>(getRoot(root, "global_bool_variables"))),
-
-  global_set_variables       (get_scalar<int>(getRoot(root, "global_set_variables")))
+  solver_time                (get_scalar<int>(getRoot(root, "solver_time")))
 
 {
   if (has_solution) {

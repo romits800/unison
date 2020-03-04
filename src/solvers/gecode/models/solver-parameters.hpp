@@ -78,21 +78,9 @@ public:
 
   vector<int> cost;
 
-  int failures;
-
-  int nodes;
-
   int presolver_time;
 
-  int gecode_presolving_time;
-
   int solver_time;
-
-  int global_int_variables;
-
-  int global_bool_variables;
-
-  int global_set_variables;
 
   SolverParameters(JSONVALUE root);
 
