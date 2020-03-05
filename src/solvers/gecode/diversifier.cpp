@@ -814,7 +814,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  d -> post_lower_bound(best_cost);
+//d -> post_lower_bound(best_cost);
   d -> post_upper_bound(ag_best_cost);
 
   if (d->status() == SS_FAILED) {
