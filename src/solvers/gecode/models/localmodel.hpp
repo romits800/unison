@@ -104,7 +104,6 @@ public:
 
   LocalModel* copy(void);
 
-
   // Changed to Merit because c_activity is IntAction
   double action(int i) const;
 
