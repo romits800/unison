@@ -157,7 +157,7 @@ protected:
 
   Driver::StringValueOption _divs_dir; // Solver file for best solution (if available)
   Driver::UnsignedIntOption _min_dist; // Solver file for best solution (if available)
-
+  Driver::BoolOption _enable_solver_solution_brancher; // Enable a brancher to find the solution first
 public:
 
   ModelOptions(void);
@@ -258,6 +258,7 @@ public:
   string divs_dir(void) const {return _divs_dir.value();}
   unsigned int min_dist(void) const {return _min_dist.value();}
 
+  bool enable_solver_solution_brancher(void) const {return _enable_solver_solution_brancher.value();}
 };
 
 #endif

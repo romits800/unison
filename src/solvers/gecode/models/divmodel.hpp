@@ -38,9 +38,10 @@
 #include "completemodel.hpp"
 #include "globalmodel.hpp"
 #include "localdivmodel.hpp"
-#include "branchers/merit.hpp"
-#include "branchers/value.hpp"
-
+#include "solver-parameters.hpp"
+// #include "branchers/merit.hpp"
+// #include "branchers/value.hpp"
+#include "branchers/solutionbrancher.hpp"
 #include "time.h"
 
 using namespace Gecode;
@@ -89,16 +90,19 @@ public:
   // Minimum allowed distance
   int mindist;
 
+  SolverParameters *solver;
+
+
   vector<operation> branch_operations;
   vector<operation> real_operations;
 
   vector<gadget_t> gadgets;
   vector<int> gadgets_operations;
+  void set_solver(JSONVALUE root);
 
   void set_random(Rnd r) {div_r = r;};
 
   void set_relax(double p) {div_p = p;};
-
 
   // Variable accessors
 
@@ -163,7 +167,7 @@ public:
   // Next for relaxing variable for LNS
 
   void next(const DivModel& l);
-
+  void first(void);
 
 };
 

@@ -42,7 +42,7 @@ SolverParameters::SolverParameters(JSONVALUE root) :
 
   // Program parameters
 
-  // registers                  (get_vector<int>(getRoot(root, "registers"))),
+  // registers                  (get_vector<int>(getRoot(root, "registers")  )),
   // instructions               (get_vector<int>(getRoot(root, "instructions"))),
 
   // cycles                     (get_vector<int>(getRoot(root, "cycles"))),
@@ -51,19 +51,16 @@ SolverParameters::SolverParameters(JSONVALUE root) :
   has_solution               (get_scalar<bool>(getRoot(root, "has_solution"))),
   proven                     (get_scalar<bool>(getRoot(root, "proven"))),
   cost                       (get_vector<int>(getRoot(root, "cost"))),
-  failures                   (get_scalar<int>(getRoot(root, "failures"))),
-  nodes                      (get_scalar<int>(getRoot(root, "nodes"))),
   presolver_time             (get_scalar<int>(getRoot(root, "presolver_time"))),
-  gecode_presolving_time     (get_scalar<int>(getRoot(root, "gecode_presolving_time"))),
-  solver_time                (get_scalar<int>(getRoot(root, "solver_time"))),
-
-  global_int_variables       (get_scalar<int>(getRoot(root, "global_int_variables"))),
-
-  global_bool_variables      (get_scalar<int>(getRoot(root, "global_bool_variables"))),
-
-  global_set_variables       (get_scalar<int>(getRoot(root, "global_set_variables")))
+  solver_time                (get_scalar<int>(getRoot(root, "solver_time")))
 
 {
+  if (has_solution) {
+    registers=get_vector<int>(getRoot(root, "registers"));
+    instructions=get_vector<int>(getRoot(root, "instructions"));
+    cycles=get_vector<int>(getRoot(root, "cycles"));
+    temporaries=get_vector<int>(getRoot(root, "temporaries"));
+  }
   ;
 }
 
@@ -91,37 +88,3 @@ void SolverParameters::get_element(QScriptValue root, string & s) {
   s = root.toString().toStdString();
 }
 
-
-// string Parameters::emit_json() {
-//   stringstream json;
-//   json << emit_json_line("B", B)
-//        << emit_json_line("O", O)
-//        << emit_json_line("P", P)
-//        << emit_json_line("T", T)
-//        << emit_json_line("block", oblock)
-//        << emit_json_line("operands", operands)
-//        << emit_json_line("temps", temps)
-//        << emit_json_line("use", use)
-//        << emit_json_line("adjacent", adjacent)
-//        << emit_json_line("preassign", preassign)
-//        << emit_json_line("width", width)
-//        << emit_json_line("freq", freq)
-//        << emit_json_line("aligned", aligned)
-//        << emit_json_line("adist", adist)
-//        << emit_json_line("minlive", minlive)
-//        << emit_json_line("dep", dep)
-//        << emit_json_line("activators", activators)
-//        << emit_json_line("I", I)
-//        << emit_json_line("R", R)
-//        << emit_json_line("dist", dist)
-//        << emit_json_line("class", rclass)
-//        << emit_json_line("atoms", atoms)
-//        << emit_json_line("instructions", instructions)
-//        << emit_json_line("lat", lat)
-//        << emit_json_line("bypass", bypass)
-//        << emit_json_line("cap", cap)
-//        << emit_json_line("con", con)
-//        << emit_json_line("dur", dur)
-//        << emit_json_line("off", off);
-//   return json.str();
-// }

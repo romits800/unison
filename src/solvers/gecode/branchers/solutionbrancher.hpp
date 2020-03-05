@@ -31,28 +31,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __SOLUTION_BRANCHER__
+#define __SOLUTION_BRANCHER__
 
-#ifndef __LOCAL_DIV_PROCEDURES__
-#define __LOCAL_DIV_PROCEDURES__
-
-#include "models/localdivmodel.hpp"
-#include "procedures/commonprocedures.hpp"
+#include <gecode/int.hh>
 
 using namespace std;
 using namespace Gecode;
 
-// Creates a local problem for block b out of the global solution g1
-Solution<LocalDivModel> local_problem(DecompDivModel * g1, block b);
-
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
-
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl);
-
-LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl);
-
-LocalDivModel * make_div_local(const DivModel * gs, block b);
-
-// Prefix for debug output
-string local(block b);
+void solution_branch(Home home, const IntVarArgs& v, const IntArgs& sol);
 
 #endif

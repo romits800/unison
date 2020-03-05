@@ -39,7 +39,6 @@
 #include "divmodel.hpp"
 
 
-
 DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
                    IntPropLevel p_ipl) :
   GlobalModel(p_input, p_options, p_ipl)
@@ -48,6 +47,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   div_r.seed(p_options->seed());
   div_p = p_options->relax();
   mindist = p_options->min_dist();
+
 
   int op_size = O().size();
   int temp_size = T().size();
@@ -111,11 +111,13 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   dist = IntVar(*this, 0, 10000);
 }
 
+
 DivModel::DivModel(DivModel& cg) :
   GlobalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
   mindist(cg.mindist),
+  solver(cg.solver),
   branch_operations(cg.branch_operations),
   real_operations(cg.real_operations),
   gadgets(cg.gadgets),
@@ -134,7 +136,9 @@ DivModel* DivModel::copy(void) {
   return new DivModel(*this);
 }
 
-
+void DivModel::set_solver(JSONVALUE root) {
+  solver = new SolverParameters(root);
+}
 
 void DivModel::post_random_branchers(void) {
   branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
@@ -158,6 +162,8 @@ void DivModel::post_random_branchers(void) {
 
 
 }
+
+
 
 void DivModel::post_clrandom_branchers(void) {
   Rnd r;
@@ -201,6 +207,17 @@ void DivModel::post_cloriginal_branchers(void) {
 
 
 void DivModel::post_div_branchers(void) {
+
+  if (options->enable_solver_solution_brancher() && solver->has_solution) {
+    IntArgs sol;
+    IntVarArgs vs;
+    for (int c: solver->cycles) sol << c;
+    for (int r: solver->registers) sol << r;
+    for (IntVar c: v_c) vs << c;
+    for (IntVar r: v_r) vs << r;
+
+    solution_branch(*this, vs, sol);
+  }
   if (options->branching() == BR_RND) {
     post_random_branchers();
   }
@@ -330,7 +347,7 @@ void DivModel::post_diversification_hamming(void) {
 
 void DivModel::post_global_cycles(void) {
   // VarInt offset;
-  for(block b: input->B) {
+  for (block b: input->B) {
     for (operation o: input->ops[b]) {
       if (b == 0)
         constraint(gc(o) == c(o));
@@ -593,8 +610,9 @@ bool DivModel::master(const MetaInfo& mi) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if (mi.last() != NULL)
+    if (mi.last() != NULL) {
       constrain(*mi.last());
+    }
     mi.nogoods().post(* this);
     return true; // forces a restart even if a solution has been found
   }
@@ -612,9 +630,8 @@ bool DivModel::slave(const MetaInfo& mi) {
       if (mi.last() != NULL)// {
         next(static_cast<const DivModel&>(*mi.last()));
       return false;
-      // } else
-        // return true;
     } else if (mi.restart() == 0) {
+      first();
       return true;
     } else {
       return true;
@@ -622,6 +639,12 @@ bool DivModel::slave(const MetaInfo& mi) {
 
   }
   GECODE_NEVER;
+}
+
+
+void DivModel::first(void) {
+
+  return;
 }
 
 void DivModel::next(const DivModel& b) {
