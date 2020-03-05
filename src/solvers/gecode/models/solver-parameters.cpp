@@ -42,11 +42,6 @@ SolverParameters::SolverParameters(JSONVALUE root) :
 
   // Program parameters
 
-  // registers                  (get_vector<int>(getRoot(root, "registers")  )),
-  // instructions               (get_vector<int>(getRoot(root, "instructions"))),
-
-  // cycles                     (get_vector<int>(getRoot(root, "cycles"))),
-  // temporaries                (get_vector<int>(getRoot(root, "temporaries"))),
   solver                     (get_scalar<string>(getRoot(root, "solver"))),
   has_solution               (get_scalar<bool>(getRoot(root, "has_solution"))),
   proven                     (get_scalar<bool>(getRoot(root, "proven"))),
