@@ -759,14 +759,12 @@ int main(int argc, char* argv[]) {
 
     bestcost = d->solver->cost[0];
     if (bestcost < 0) {
-      cerr << div() << "Falling back to llvm best solution." << endl;
-
+      cerr << div() << "Falling back to llvm best solution." <<  endl;
 
       // Best cost upper bound
-      bestcost = input.maxf[0];
-      ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-      for (uint i = 1; i < input.N; i++) {
-        ag_best_cost.push_back(input.maxf[i]);
+      for (uint i = 0; i < input.N; i++) {
+        bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
+        ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
       }
 
       // Best cost lower bound
@@ -777,8 +775,7 @@ int main(int argc, char* argv[]) {
     } else {
       cout << div() << "Using optimal cost " << bestcost << endl;
       // Best cost upper bound
-      ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-      for (uint i = 1; i < input.N; i++) {
+      for (uint i = 0; i < input.N; i++) {
         int bcost = d->solver->cost[i];
         ag_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
@@ -803,10 +800,10 @@ int main(int argc, char* argv[]) {
     cerr << div() << "Using llvm best solution" << endl;
 
     // Best cost upper bound
-    bestcost = input.maxf[0];
-    ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-    for (uint i = 1; i < input.N; i++) {
-      ag_best_cost.push_back(input.maxf[i]);
+    for (uint i = 0; i < input.N; i++) {
+      bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
+      // cerr << div() << bestcost <<  "|" << d->cost()[i].max() << "|" << input.maxf[i] << endl;
+      ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
     }
     // Best cost lower bound
     for (uint i = 0; i < input.N; i++) {
@@ -814,7 +811,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-//d -> post_lower_bound(best_cost);
+  d -> post_lower_bound(best_cost);
   d -> post_upper_bound(ag_best_cost);
 
   if (d->status() == SS_FAILED) {
