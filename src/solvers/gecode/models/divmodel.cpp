@@ -556,7 +556,7 @@ void DivModel::constrain(const Space & _b) {
 	  res << var( sum(btemp) >= mindist);
 	}
 	if (rtemp.size() >0) {
-	  res << var( sum(rtemp) >= mindist + 4);
+	  res << var( sum(rtemp) >= mindist + 1);
 	}
 	if (res.size() > 0) {
 	  rel(*this, var(sum(res)), IRT_GQ,  var(1), var(a(br) == 1));
