@@ -539,22 +539,30 @@ void DivModel::constrain(const Space & _b) {
     for (uint j = 0; j < gadgets.size(); j++) {
       gadget_t g = gadgets[j];
       operation br = branch_operations[j];
-      BoolVarArgs btemp;
+      BoolVarArgs btemp, rtemp;
       for (uint i = g.start; i < g.end; i++) {
         btemp << var (gadget(i) != b.gadget(i));
         operation o = gadgets_operations[i];
         for (operand p: input->operands[o]) {
           for (temporary t: input->temps[p]) {
             if (t >= 0) {
-              btemp << var (reghamm(t) != b.reghamm(t));
+              rtemp << var (reghamm(t) != b.reghamm(t));
             }
           }
         }
       }
-      if (btemp.size() >0) {
-	rel(*this, var(sum(btemp)), IRT_GQ,  var(mindist), var(a(br) == 1));
-	ih << var(sum(btemp));
-      }
+	BoolVarArgs res;
+	if (btemp.size() >0) {
+	  res << var( sum(btemp) >= mindist);
+	}
+	if (rtemp.size() >0) {
+	  res << var( sum(rtemp) >= mindist + 4);
+	}
+	if (res.size() > 0) {
+	  rel(*this, var(sum(res)), IRT_GQ,  var(1), var(a(br) == 1));
+	  ih << var(sum(btemp) + sum(rtemp));
+	}
+
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
