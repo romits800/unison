@@ -551,18 +551,17 @@ void DivModel::constrain(const Space & _b) {
           }
         }
       }
-	BoolVarArgs res;
-	if (btemp.size() >0) {
-	  res << var( sum(btemp) >= mindist);
-	}
-	if (rtemp.size() >0) {
-	  res << var( sum(rtemp) >= mindist + 1);
-	}
-	if (res.size() > 0) {
-	  rel(*this, var(sum(res)), IRT_GQ,  var(1), var(a(br) == 1));
-	  ih << var(sum(btemp) + sum(rtemp));
-	}
-
+      BoolVarArgs res;
+      if (btemp.size() >0) {
+	res << var( sum(btemp) >= mindist);
+      }
+      if (rtemp.size() >0) {
+	res << var( sum(rtemp) >= mindist + rtemp.size()/3);
+      }
+      if (res.size() > 0) {
+	rel(*this, var(sum(res)), IRT_GQ,  var(1), var(a(br) == 1));
+	ih << var(sum(btemp) + sum(rtemp));
+      }
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
