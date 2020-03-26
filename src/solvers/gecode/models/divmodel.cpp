@@ -50,7 +50,8 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 
 
   int op_size = O().size();
-  int temp_size = T().size();
+  
+  int operand_size = P().size();
   int maxval = sum_of(input->maxc);
   // difference between operations
 
@@ -95,9 +96,9 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     v_diff  = int_var_array(size, -maxval, maxval);
 
   }
-  // Prepare cycles for hamming distance between registers
-  v_reghamm  = int_var_array(temp_size, -1, maxval);
-
+  // Prepare register for hamming distance between registers
+  v_reghamm  = int_var_array(operand_size, -1, input->RA.size() - 1);
+ 
   if (options->dist_metric() == DIST_HAMMING_REG_GADGET) {
     v_gadget  = int_var_array(size, -maxval, maxval);
   }
@@ -238,6 +239,7 @@ void DivModel::post_diversification_constraints(void) {
   post_global_cycles();
   post_diversification_hamming();
   post_diversification_reghamming();
+  post_diversification_channel();
   if (options->dist_metric() == DIST_HAMMING_DIFF)
     post_diversification_diffs();
   if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) || (options->dist_metric() == DIST_DIFF_BR)) {
@@ -249,8 +251,8 @@ void DivModel::post_diversification_constraints(void) {
     post_diversification_reg_gadget();
   }
 
-  if (options->dist_metric() == DIST_LEVENSHTEIN || options->dist_metric() == DIST_LEVENSHTEIN_SET )
-    post_diversification_channel();
+  //if (options->dist_metric() == DIST_LEVENSHTEIN || options->dist_metric() == DIST_LEVENSHTEIN_SET )
+  //  post_diversification_channel();
 
 }
 
@@ -258,14 +260,18 @@ void DivModel::post_diversification_constraints(void) {
 void DivModel::post_diversification_channel(void) {
   IntVarArgs bs;
   uint smaxc = sum_of(input->maxc);
-  for (operation i : real_operations) {
-    BoolVar ifb = var ( a(i) == 1 );
-    IntVar thenb = var ( gc(i) );
-    IntVar elseb = var(smaxc); //IntVar(*this, 0, smaxc); //
-    // max(*this, v_gc, elseb);
-    IntVar res = IntVar(*this, 0, smaxc);
-    ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
-    bs << res;
+  for (operation i : input->O) { //real_operations) {
+    if (is_real_type(i)) {
+        BoolVar ifb = var ( a(i) == 1 );
+        IntVar thenb = var ( gc(i) );
+        IntVar elseb = var(smaxc); //IntVar(*this, 0, smaxc); //
+        // max(*this, v_gc, elseb);
+        IntVar res = IntVar(*this, 0, smaxc);
+        ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
+        bs << res;
+    } else {
+        bs << var(smaxc);
+    }
   }
 
   channel(*this, bs, v_oc);
@@ -289,11 +295,10 @@ void DivModel::post_diversification_diffs(void) {
 
 void DivModel::post_diversification_br_diffs(void) {
   int maxval = max_of(input->maxc);
-  int prevbr = 0; //branch_operations[0];
+  int prevbr = 0; 
   int k=0;
   for (operation br: branch_operations) {
-    for (operation o: real_operations) { //int o = prevbr; o < br; o++) {
-      // if (!is_real_type(o)) continue;
+    for (operation o: real_operations) { 
       if (br == o) continue;
       BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
       IntVar thenb =  var (gc(br) - gc(o));
@@ -309,32 +314,29 @@ void DivModel::post_diversification_br_diffs(void) {
 
 void DivModel::post_diversification_reg_gadget(void) {
   int maxval = max_of(input->maxc);
-  int prevbr = 0; //branch_operations[0];
+  //int prevbr = 0; 
   int k=0;
   for (operation br: branch_operations) {
-    for (operation o: real_operations) { //int o = prevbr; o < br; o++) {
-      // if (!is_real_type(o)) continue;
+    for (operation o: real_operations) { 
       if (br == o) continue;
-      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
+      BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) < gc(br))); //(gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
       IntVar thenb =  var (gc(br) - gc(o));
       IntVar elseb = var (maxval);
       ite(*this, ifb,  thenb, elseb, gadget(k), IPL_DOM);
       k++;
     }
-    prevbr = br;
+    //prevbr = br;
   }
 
 }
 
 
 void DivModel::post_diversification_reghamming(void) {
-  for (temporary t : input->T) {
-    BoolVar ifb = var (l(t) == 1);
-    IntVar thenb = var ( r(t) );
-    IntVar elseb = var ( -1 );
-    ite(*this, ifb,  thenb, elseb, reghamm(t), IPL_DOM);
+  for (operand p: input->P) {
+    constraint(reghamm(p) == ry(p));
   }
 }
+
 
 void DivModel::post_diversification_hamming(void) {
   for (operation i : real_operations) {
@@ -451,6 +453,7 @@ bool DivModel::is_branch_type(int o) {
 void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
 
+  int maxval = max_of(input->maxc);
   BoolVarArgs bh;
   IntVarArgs ih;
 
@@ -523,8 +526,8 @@ void DivModel::constrain(const Space & _b) {
     post_levenshtein_set(b);
     break;
   case DIST_REGHAMMING:
-    for (temporary t : input->T) {
-      bh << var (reghamm(t) != b.reghamm(t));
+    for (operand p : input->P) {
+      bh << var (reghamm(p) != b.reghamm(p));
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
@@ -536,32 +539,71 @@ void DivModel::constrain(const Space & _b) {
     }
     break;
   case DIST_HAMMING_REG_GADGET:
+    {int order = 0;
+    IntArgs cycleorder = IntArgs::create(v_c.size(),-1,0);
+    for (int i = 0; i < b.v_oc.size(); i++) {
+        if (b.v_oc[i].assigned() && (b.v_oc[i].lubSize() == 1 || b.v_oc[i].lubSize() == 2)) {
+            int oper = b.v_oc[i].lubMin();
+            int oper2 = b.v_oc[i].lubMax();
+            if (oper < cycleorder.size()) {
+              cycleorder[oper] = order;
+              if ((oper2 < cycleorder.size()) && (oper!= oper2) ) {
+                 cycleorder[oper2] = order;
+              }
+              order++;
+            }
+        } 
+    }
+    for (int i: cycleorder) {
+        cout << i << " ";
+    }
+    cout << endl;
     for (uint j = 0; j < gadgets.size(); j++) {
       gadget_t g = gadgets[j];
       operation br = branch_operations[j];
+      if (cycleorder[br] == -1) {
+            cout << "No branch" << br << endl;
+            continue;
+      }
       BoolVarArgs btemp, rtemp;
+      IntArgs bweight;
+      IntArgs rweight;
       for (uint i = g.start; i < g.end; i++) {
-        btemp << var (gadget(i) != b.gadget(i));
         operation o = gadgets_operations[i];
+        if (cycleorder[o] == -1) continue;
+        int weight = (cycleorder[br] - cycleorder[o]);
+        weight = weight == 0 ? 1 : weight;
+        if (weight < 0) continue;
+        
         for (operand p: input->operands[o]) {
-          for (temporary t: input->temps[p]) {
-            if (t >= 0) {
-              rtemp << var (reghamm(t) != b.reghamm(t));
-            }
-          }
+           btemp << var (reghamm(p) != b.reghamm(p));
+           bweight << maxval/(2*weight); 
         }
+        btemp << var (gadget(i) != b.gadget(i));
+        bweight << maxval/weight; //b.gadget(i).val();
       }
-      BoolVarArgs res;
+      for (operand p: input->operands[br]) {
+         btemp << var (reghamm(p) != b.reghamm(p));
+         bweight << maxval;
+      }
+
+      //BoolVarArgs res;
       if (btemp.size() >0) {
-	res << var( sum(btemp) >= mindist);
+        //IntVar lin(*this, 0, maxval*maxval);
+        BoolVar rb = var(a(br) == 1);
+        Reify r(rb, RM_IMP);
+        linear(*this, bweight, btemp, IRT_GQ, maxval, r);
+	ih << var(sum(btemp));
       }
-      if (rtemp.size() >0) {
-	res << var( sum(rtemp) >= mindist + rtemp.size()/3);
-      }
-      if (res.size() > 0) {
-	rel(*this, var(sum(res)), IRT_GQ,  var(1), var(a(br) == 1));
-	ih << var(sum(btemp) + sum(rtemp));
-      }
+//    if (rtemp.size() >0) {
+//      IntVar lin(*this, 0, maxval*maxval);
+//      linear(*this, rweight, rtemp, IRT_EQ, lin);
+//      res << var(lin >= maxval);
+//    }
+//      if (res.size() > 0) {
+//	rel(*this, var(sum(res)), IRT_GQ,  1, var(a(br) == 1));
+//	ih << var(sum(btemp) + sum(rtemp));
+//      }
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
@@ -570,16 +612,13 @@ void DivModel::constrain(const Space & _b) {
       cerr << "No constraints @ constrain";
       exit(EXIT_FAILURE);
     }
+    }
     break;
   case DIST_HAMMING_BR_REG:
     for (operation o : branch_operations) {
       bh << var (hamm(o) != b.hamm(o));
       for (operand p: input->operands[o]) {
-        for (temporary t: input->temps[p]) {
-          if (t >= 0) {
-            bh << var (reghamm(t) != b.reghamm(t));
-          }
-        }
+            bh << var (reghamm(p) != b.reghamm(p));
       }
     }
     if (bh.size() >0) {

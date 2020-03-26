@@ -64,7 +64,7 @@ public:
   // Hamming distance between operations
   IntVarArray v_hamm;
 
-  // Register Hamming distance between operations
+  // Register Hamming distance between operands
   IntVarArray v_reghamm;
 
   // Gadgets distance between operations
@@ -110,9 +110,9 @@ public:
 
   IntVar hamm(operation o) const {return v_hamm[o]; }
   
-  IntVar reghamm(temporary t) const {return v_reghamm[t]; }
+  IntVar reghamm(operand p) const {return v_reghamm[p]; }
 
-  IntVar gadget(temporary t) const {return v_gadget[t]; }
+  IntVar gadget(operation o) const {return v_gadget[o]; }
 
   IntVar gc(operation o) const {return v_gc[o]; }
 
