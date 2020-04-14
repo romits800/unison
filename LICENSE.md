@@ -30,7 +30,7 @@ DivCon includes code from the following projects:
 
 - [Unison](http://unison-code.github.io) (DivCon uses 
   the Unison Code). The code is licensed under
-  [BSD3](https://github.com/romits800/divCon/blob/master/LICENSE.md).
+  [BSD3](https://github.com/unison-code/unison/blob/master/LICENSE.md).
 
 - [Graphalyze](https://hackage.haskell.org/package/Graphalyze) (in some graph
   algorithms of the `unison` package). The code is licensed under
