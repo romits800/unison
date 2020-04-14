@@ -1,6 +1,6 @@
-Unison is licensed under the BSD3 license:
+DivCon is licensed under the BSD3 license:
 
->  Copyright (c) 2016, RISE SICS AB
+>  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
 >  All rights reserved.
 >
 >  Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,11 @@ Unison is licensed under the BSD3 license:
 >  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 >  POSSIBILITY OF SUCH DAMAGE.
 
-Unison includes code from the following projects:
+DivCon includes code from the following projects:
+
+- [Unison](http://unison-code.github.io) (DivCon uses 
+  the Unison Code). The code is licensed under
+  [BSD3](https://github.com/romits800/divCon/blob/master/LICENSE.md).
 
 - [Graphalyze](https://hackage.haskell.org/package/Graphalyze) (in some graph
   algorithms of the `unison` package). The code is licensed under
