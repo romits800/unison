@@ -2,6 +2,9 @@
  *  Main authors:
  *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
  *
+ *  Contributors:
+ *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
+ *
  *  This file is part of Unison, see http://unison-code.github.io
  *
  *  Copyright (c) 2016, RISE SICS AB

@@ -2,8 +2,10 @@
  *  Authors:
  *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
  *
- *  Copyright:
- *    Rodothea Myrsini Tsoupidi, 2020
+ *  This file is part of DivCon
+ *
+ *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
+ *  All rights reserved.
  *
  *  Permission is hereby granted, free of charge, to any person obtaining
  *  a copy of this software, to deal in the software without restriction,

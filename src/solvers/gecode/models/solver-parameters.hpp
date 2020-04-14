@@ -1,15 +1,10 @@
 /*
  *  Main authors:
- *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
- *    Mats Carlsson <mats.carlsson@ri.se>
  *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
  *
- *  Contributing authors:
- *    Daniel Lundén <daniel.lunden@sics.se>
+ *  This file is part of DivCon
  *
- *  This file is part of Unison, see http://unison-code.github.io
- *
- *  Copyright (c) 2016, RISE SICS AB
+ *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
