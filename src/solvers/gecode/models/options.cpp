@@ -233,6 +233,8 @@ ModelOptions::ModelOptions(void)
 
   _distance.add(DIST_REGHAMMING, "reg_hamming");
   _distance.add(DIST_HAMMING_REG_GADGET, "hamm_reg_gadget");
+  _distance.add(DIST_REG_GADGET, "reg_gadget");
+  _distance.add(DIST_CYC_GADGET, "cyc_gadget");
   _distance.add(DIST_DIFF_BR, "diff_br");
   _distance.add(DIST_HAMMING_BR_REG, "br_reg_hamming");
 

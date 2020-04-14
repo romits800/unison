@@ -1,15 +1,10 @@
-
 /*
  *  Main authors:
- *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
  *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
  *
- *  Contributing authors:
- *    Mats Carlsson <mats.carlsson@ri.se>
+ *  This file is part of DivCon
  *
- *  This file is part of Unison, see http://unison-code.github.io
- *
- *  Copyright (c) 2016, RISE SICS AB
+ *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -324,7 +319,10 @@ void MaxDivModel::post_input_solution_constrain() {
       exit(EXIT_FAILURE);
     }
     break;
+  // TODO(Romy): Update    
   case DIST_HAMMING_REG_GADGET:
+  case DIST_REG_GADGET:
+  case DIST_CYC_GADGET:
     for (MaxDivModel *s: input_solutions) {
       IntVarArgs ihs;
       for (uint j = 0; j < gadgets.size(); j++) {

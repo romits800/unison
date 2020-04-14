@@ -1,10 +1,10 @@
 /*
  *  Main authors:
- *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+ *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
  *
- *  This file is part of Unison, see http://unison-code.github.io
+ *  This file is part of DivCon
  *
- *  Copyright (c) 2016, RISE SICS AB
+ *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -39,10 +39,7 @@
 #include "globalmodel.hpp"
 #include "localdivmodel.hpp"
 #include "solver-parameters.hpp"
-// #include "branchers/merit.hpp"
-// #include "branchers/value.hpp"
 #include "branchers/solutionbrancher.hpp"
-#include "time.h"
 
 using namespace Gecode;
 using namespace std;
