@@ -13,14 +13,32 @@ Unison has the following dependencies:
 [Gecode](http://www.gecode.org/) (version 6.2.0).
 To get the first three dependencies in Debian-based distributions, just run:
 
-```
+```bash
 apt-get install haskell-platform libqt4-dev libgraphviz-dev
+cabal update
 ```
 
 The source of Gecode can be fetched with:
 
-```
+```bash
 wget https://github.com/Gecode/gecode/archive/release-6.2.0.tar.gz
+
+```
+
+and installed from the sources (a simple procedure is as follows):
+
+```bash
+tar xzfv release-6.2.0.tar.gz
+cd gecode-release-6.2.0
+./configure
+make
+sudo make install
+```
+## Cloning
+Clone the code from Github:
+
+```bash
+git clone https://github.com/romits800/divCon.git
 ```
 
 ## Building
@@ -28,6 +46,7 @@ wget https://github.com/Gecode/gecode/archive/release-6.2.0.tar.gz
 Just go to the `src` directory and run:
 
 ```
+cd ${DIVCON_FOLDER}/src/
 make build
 ```
 
