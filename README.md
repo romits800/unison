@@ -1,6 +1,6 @@
-# Getting Started with Unison
+# Getting Started with DivCon
 
-Unison is a simple, flexible, and potentially optimal software tool that
+DivCon is based on [Unison](https://unison-code.github.io/), a software tool that
 performs register allocation and instruction scheduling in integration using
 combinatorial optimization.
 
@@ -10,7 +10,7 @@ Unison has the following dependencies:
 [Haskell platform](http://hackage.haskell.org/platform/),
 [Qt](https://www.qt.io/) (version 4.x, optional see [#33](https://github.com/unison-code/unison/issues/33)),
 [Graphviz library](http://www.graphviz.org/), and
-[Gecode](http://www.gecode.org/) (version 6.0.0).
+[Gecode](http://www.gecode.org/) (version 6.2.0).
 To get the first three dependencies in Debian-based distributions, just run:
 
 ```
@@ -20,7 +20,7 @@ apt-get install haskell-platform libqt4-dev libgraphviz-dev
 The source of Gecode can be fetched with:
 
 ```
-wget https://github.com/Gecode/gecode/archive/release-6.0.0.tar.gz
+wget https://github.com/Gecode/gecode/archive/release-6.2.0.tar.gz
 ```
 
 ## Building
@@ -59,14 +59,9 @@ make install PREFIX=$DIR
 
 ## Running
 
-Unison can be run as a standalone tool but is only really useful as a complement
-to a full-fledged compiler such as [LLVM](http://llvm.org/). [Our LLVM
-fork](https://github.com/unison-code/llvm) includes a Unison driver built on top
-of LLVM's `llc` code generator. To try it out, just clone the LLVM fork and
-follow the instructions in the `README.md` file from any of the branches with a
-`-unison` suffix.
-
 ## Documentation
+
+### Unison
 
 Check out Unison's work-in-progress
 [manual](https://unison-code.github.io/doc/manual.pdf). The manual's source can
@@ -82,13 +77,11 @@ make doc
 
 ## Contact
 
-[Roberto Castañeda Lozano](https://robcasloz.github.io/) [<rcas@sics.se>]
+[Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/)[<tsoupidi@kth.se>]
 
 ## License
 
 Unison is licensed under the BSD3 license, see the [LICENSE.md](LICENSE.md) file
 for details.
 
-## Further Reading
 
-Check [the Unison website](https://unison-code.github.io/).
