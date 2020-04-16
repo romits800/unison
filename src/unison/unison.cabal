@@ -260,17 +260,18 @@ Library
                   Unison.Target.Mips.SpecsGen.AllInstructions
                   Unison.Target.Mips.SpecsGen.Parent
 
-  if impl(ghc <= 7.4.2)
+  if impl(ghc < 8.0.2)
+   if impl(ghc <= 7.4.2)
     Build-Depends: transformers-compat == 0.5.*,
                    cmdargs == 0.10.14,
                    yaml == 0.8.27,
                    parsec == 3.1.11
-  else
+   else
     Build-Depends: cmdargs >= 0.10,
                    yaml >= 0.8,
                    parsec >= 3.1
 
-  Build-Depends: base >= 4.0,
+   Build-Depends: base >= 4.0,
                  fgl >= 5.6.0,
                  pretty >= 1.0,
                  graphviz >= 2999.17,
@@ -286,6 +287,29 @@ Library
                  directory >= 1.2,
                  process >= 1.2,
                  HUnit
+  else
+   Build-Depends: cmdargs,
+                  yaml,
+                  parsec,
+                  base,
+                  fgl ,
+                  pretty,
+                  graphviz,
+                  split,
+                  containers ,
+                  hoopl,
+                  filepath,
+                  text,
+                  aeson,
+                  aeson-pretty,
+                  bytestring,
+                  unordered-containers,
+                  directory,
+                  process,
+                  HUnit
+
+
+
 
   Ghc-options: -fwarn-dodgy-exports -fwarn-dodgy-imports -fwarn-unused-matches
                -fwarn-unused-imports -fwarn-unused-binds
