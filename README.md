@@ -77,7 +77,7 @@ make doc
 
 ## Contact
 
-[Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/)[<tsoupidi@kth.se>]
+[Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/) [<tsoupidi@kth.se>]
 
 ## License
 
