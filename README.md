@@ -81,7 +81,7 @@ make doc
 
 ## License
 
-Unison is licensed under the BSD3 license, see the [LICENSE.md](LICENSE.md) file
+DivCon is licensed under the BSD3 license, see the [LICENSE.md](LICENSE.md) file
 for details.
 
 
