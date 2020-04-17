@@ -14,8 +14,7 @@ Unison has the following dependencies:
 To get the first three dependencies in Debian-based distributions, just run:
 
 ```bash
-apt-get install haskell-platform libqt4-dev libgraphviz-dev
-cabal update
+sudo apt-get install haskell-platform libqt4-dev libgraphviz-dev
 ```
 
 The source of Gecode can be fetched with:
@@ -43,10 +42,15 @@ git clone https://github.com/romits800/divCon.git
 
 ## Building
 
+If it is the first time you run `cabal` run:
+
+```bash
+cabal update
+```
+
 Just go to the `src` directory and run:
 
 ```
-cd ${DIVCON_FOLDER}/src/
 make build
 ```
 
