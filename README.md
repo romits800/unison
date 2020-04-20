@@ -54,15 +54,6 @@ Just go to the `src` directory and run:
 make build
 ```
 
-## Testing
-
-Unison contains a test suite with a few functions where different targets and
-optimization goals are exercised. To execute the tests just run:
-
-```
-make test
-```
-
 ## Installing
 
 The building process generates three binaries. The installation process consists
