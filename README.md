@@ -79,7 +79,6 @@ uni import --target=mips factorial.mir -o factorial.uni --function=$func --maxbl
 uni linearize --target=mips factorial.uni -o factorial.lssa.uni
 uni extend --target=mips  factorial.lssa.uni -o factorial.ext.uni
 uni augment --target=mips factorial.ext.uni -o factorial.alt.uni
-#uni normalize --target=mips $fullnamenoext.asm.mir -o factorial.llvm.mir
 uni model --target=mips factorial.alt.uni -o factorial.json 
 gecode-presolver -o factorial.ext.json -dzn factorial.dzn --verbose factorial.json
 ```
