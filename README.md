@@ -75,7 +75,7 @@ make install PREFIX=$DIR
 
 If you have a .mir file you can run DivCon as follows:
 ```bash
-uni import --target=mips factorial.mir -o factorial.uni --function=$func --maxblocksize=50 --goal=speed
+uni import --target=mips factorial.mir -o factorial.uni --function=factorial --maxblocksize=50 --goal=speed
 uni linearize --target=mips factorial.uni -o factorial.lssa.uni
 uni extend --target=mips  factorial.lssa.uni -o factorial.ext.uni
 uni augment --target=mips factorial.ext.uni -o factorial.alt.uni
