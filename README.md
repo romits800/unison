@@ -73,6 +73,46 @@ make install PREFIX=$DIR
 
 ## Running
 
+If you have a .mir file you can run DivCon as follows:
+```bash
+uni import --target=mips factorial.mir -o factorial.uni --function=$func --maxblocksize=50 --goal=speed
+uni linearize --target=mips factorial.uni -o factorial.lssa.uni
+uni extend --target=mips  factorial.lssa.uni -o factorial.ext.uni
+uni augment --target=mips factorial.ext.uni -o factorial.alt.uni
+#uni normalize --target=mips $fullnamenoext.asm.mir -o factorial.llvm.mir
+uni model --target=mips factorial.alt.uni -o factorial.json 
+gecode-presolver -o factorial.ext.json -dzn factorial.dzn --verbose factorial.json
+```
+Run the gecode solver:
+```bash
+gecode-solver  -o factorial.out.json --verbose factorial.ext.json
+```
+or the portfolio solver (requires installing [MiniZincIDE-2.2.3-bundle-linux](https://github.com/MiniZinc/MiniZincIDE/releases/tag/2.2.3)):
+
+```bash
+export DIVCON_PATH=/path/to/divCon
+export MINIZINC_PATH=/path/to/minizincIDE/bin
+export PATH=${PATH}:${DIVCON_PATH}/src/solvers/gecode:${DIVCON_PATH}/src/solvers/multi_backend/minizinc/:${DIVCON_PATH}/src/solvers/multi_backend/:${MINIZINC_PATH}:${DIVCON_PATH}/src/solvers/multi_backend/common/ UNISON_DIR=${DIVCON_PATH}
+${DIVCON_PATH}/src/solvers/multi_backend/portfolio-solver -o factorial.out.json --verbose factorial.ext.json
+```
+
+And run the diversifier for:
+* Gap to optimal = 10%
+* Diversification algorithm = LNS
+..* Relax rate = 70%
+..* Restart sequence = constant
+..* Restart scale = 500
+* Random seed = 123
+* Distance = Hamming
+* Number of variants = 100
+
+```bash
+flags="--disable-copy-dominance-constraints --disable-infinite-register-dominance-constraints --disable-operand-symmetry-breaking-constraints --disable-register-symmetry-breaking-constraints --disable-temporary-symmetry-breaking-constraints --disable-wcet-constraints"
+
+gecode-diversify  ${flags} --acceptable-gap 10 --relax 0.7 --seed 123 --distance hamming --div-method monolithic_lns --restart constant --restart-scale 500 --number-divs 100 --solver-file factorial.out.json --use-optimal-for-diversification  --divs-dir $DIVS_DIR -o factorial.out.json --enable-solver-solution-brancher --branching clrandom  factorial.ext.json
+```
+This will generate 99 files with names `{0..99}.factorial.out.json`.
+
 ## Documentation
 
 ### Unison
