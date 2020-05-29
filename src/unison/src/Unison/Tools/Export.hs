@@ -39,6 +39,7 @@ import Unison.Tools.Export.RemoveRedundancies
 import Unison.Tools.Export.BundleOperations
 import Unison.Tools.Export.SelectInstructions
 import Unison.Tools.Export.LiftFrameObjects
+-- import Unison.Tools.Export.LiftFixedFrameObjects
 import Unison.Tools.Export.ComputeFrameOffsets
 import Unison.Tools.Export.LowerFrameSize
 import Unison.Tools.Export.DirectFrame
@@ -74,12 +75,14 @@ run (removeReds, keepNops, baseFile, tight, mirVersion, debug, outJsonFile,
          mfBase = case baseMir of
                  (Just base) -> base
                  Nothing     -> ""
+     -- putStr ("lala" ++ (showSimple f))
      when (debug && (isJust sol)) $
           putStr (toPlainText (partialFs ++ partialMfs))
      when (isJust sol) $
           emitOutput unisonMirFile (show mf')
      when (not $ isJust sol) $
           emitOutput unisonMirFile mfBase
+         -- Just (showSimple o))
 
 parseSolution json =
     let sol          = case decode (BSL.pack json) of
@@ -109,10 +112,11 @@ uniTransformations (cycles, instructions, registers, temporaries)
      (selectInstructions instructions, "selectInstructions", True),
      (runTargetTransforms ExportPreOffs, "runTargetTransforms", True),
      (liftFrameObjects, "liftFrameObjects", True),
+     -- (liftFixedFrameObjects, "liftfixedFrameObjects", True), -- Added by Mats
      (computeFrameOffsets, "computeFrameOffsets", True),
      (runTargetTransforms ExportPostOffs, "runTargetTransforms", True),
-     (lowerFrameSize, "lowerFrameSize", True),
-     (directFrame, "directFrame", True),
+     (lowerFrameSize, "lowerFrameSize", True), -- Fixes the stack sp=sp-16
+     -- (directFrame, "directFrame", True), -- Destroys stuff
      (bundleOperations cycles, "bundleOperations", True),
      (removeRedundancies, "removeRedundancies", removeReds),
      (runTargetTransforms ExportPreLow, "runTargetTransforms", True),

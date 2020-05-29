@@ -249,7 +249,7 @@ mkOprMipsSP = Register $ mkTargetRegister SP
 
 mkBoundMachineFrameObject i (Register r) =
     let size = stackSize i
-    in mkBound (mkMachineFrameObject (infRegPlace r) (Just size) size False)
+    in mkBound (mkMachineFrameObject (infRegPlace r*8) (Just size) size False)
 
 stackSize op
   | op `elem` [STORE, STORE_F, LOAD, LOAD_F] = 4
@@ -447,6 +447,7 @@ transforms AugmentPostRW = [mapToOperation markBarriers,
 transforms ExportPreLow = [cleanClobbers]
 
 transforms _ = []
+
 
 -- | Latency of read-write dependencies
 
