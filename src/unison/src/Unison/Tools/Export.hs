@@ -116,7 +116,7 @@ uniTransformations (cycles, instructions, registers, temporaries)
      (computeFrameOffsets, "computeFrameOffsets", True),
      (runTargetTransforms ExportPostOffs, "runTargetTransforms", True),
      (lowerFrameSize, "lowerFrameSize", True), -- Fixes the stack sp=sp-16
-     -- (directFrame, "directFrame", True), -- Destroys stuff
+     (directFrame, "directFrame", True), -- Destroys stuff
      (bundleOperations cycles, "bundleOperations", True),
      (removeRedundancies, "removeRedundancies", removeReds),
      (runTargetTransforms ExportPreLow, "runTargetTransforms", True),

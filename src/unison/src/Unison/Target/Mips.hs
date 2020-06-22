@@ -249,7 +249,7 @@ mkOprMipsSP = Register $ mkTargetRegister SP
 
 mkBoundMachineFrameObject i (Register r) =
     let size = stackSize i
-    in mkBound (mkMachineFrameObject (infRegPlace r*8) (Just size) size False)
+    in mkBound (mkMachineFrameObject (infRegPlace r * 4) (Just size) size False)
 
 stackSize op
   | op `elem` [STORE, STORE_F, LOAD, LOAD_F] = 4
@@ -444,7 +444,8 @@ transforms AugmentPreRW = [peephole insertGPDisp]
 transforms AugmentPostRW = [mapToOperation markBarriers,
                             peephole enforceMandatoryFrame]
 
-transforms ExportPreLow = [cleanClobbers]
+transforms ExportPreLow = [cleanClobbers,
+                          shiftFrameOffsets]
 
 transforms _ = []
 
