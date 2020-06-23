@@ -445,7 +445,7 @@ transforms AugmentPostRW = [mapToOperation markBarriers,
                             peephole enforceMandatoryFrame]
 
 transforms ExportPreLow = [cleanClobbers,
-                          shiftFrameOffsets]
+                           shiftFrameOffsets]
 
 transforms _ = []
 

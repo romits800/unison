@@ -267,9 +267,10 @@ mkPushRegs i = map (Register . TargetRegister) (pushRegs i)
 
 mkOprArmSP = Register $ mkTargetRegister SP
 
+-- infRegPlace r * 4 indicates that each memory register represents 4 bytes
 mkBoundMachineFrameObject i (Register r) =
     let size = stackSize i
-    in mkBound (mkMachineFrameObject (infRegPlace r) (Just size) size False)
+    in mkBound (mkMachineFrameObject (infRegPlace r * 4) (Just size) size False)
 
 stackSize i
   | i `elem` [STORE, STORE_T, LOAD, LOAD_T] = 1
@@ -811,6 +812,8 @@ transforms AugmentPreRW = [peephole combinePushPops,
                            reorderCalleeSavedSpills]
 
 transforms AugmentPostRW = [enforceStackFrame]
+
+-- transforms ExportPreLow = [shiftFrameOffsets]
 
 transforms _ = []
 

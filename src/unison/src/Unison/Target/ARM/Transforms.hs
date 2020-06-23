@@ -20,7 +20,8 @@ module Unison.Target.ARM.Transforms
      normalizeLoadStores,
      combineLoadStores,
      reorderCalleeSavedSpills,
-     enforceStackFrame) where
+     enforceStackFrame,
+     shiftFrameOffsets) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -714,3 +715,28 @@ activateSPAdjusts
 activateSPAdjusts o = o
 
 isSPAdjustInstr i = i `elem` [TSUBspi_pseudo, TADDspi_pseudo]
+
+
+shiftFrameOffsets f @ Function {fCode = code,
+                                fFixedStackFrame = fobjs,
+                                fStackFrame = objs} =
+  let d     = maximum $ (map (abs . foOffset) (fobjs ++ objs)) ++ [0]
+      code' = map (shiftFrameOffsetsInBlock d) code
+  in f {fCode = code'}
+
+shiftFrameOffsetsInBlock d b @ Block {bCode = code} =
+  let ini = if isEntryBlock b then -8 else d
+      (_, code') = mapAccumL (shiftFrameOffsetsInOpr d) ini code
+  in b {bCode = code'}
+
+shiftFrameOffsetsInOpr d off o =
+  let o'   = mapToOperandIf always (shiftFrameOffset off) o
+      off' = if any isAllocFrameOpr (linearizeOpr o) then d else off
+  in (off', o')
+
+shiftFrameOffset off (Bound mfi @ (MachineFrameIndex {})) =
+  Bound $ mfi {mfiOffset = off}
+shiftFrameOffset _ p = p
+
+isAllocFrameOpr o =
+  isNatural o && targetInst (oInstructions o) == TSUBspi_pseudo
