@@ -20,14 +20,23 @@ module Unison.Target.Mips.Transforms
      insertGPDisp,
      markBarriers,
      enforceMandatoryFrame,
+     replaceFis,
      cleanClobbers,
-     shiftFrameOffsets) where
+     specialLowerFrameSize,
+     shiftFrameOffsets,
+     reverseFixedFrameOffsets) where
 
 import Unison
 import MachineIR
 import Unison.Target.Mips.Common
 import Unison.Target.Mips.MipsRegisterDecl
 import Unison.Target.Mips.SpecsGen.MipsInstructionDecl
+import qualified Unison.Target.Mips.SpecsGen as SpecsGen
+import Data.Maybe
+
+-- Imported for lowerFrameSize for MIPS - maybe a bit hacky
+import qualified Data.Map as M
+import Unison.Analysis.FrameOffsets
 
 -- import qualified Data.Map as M
 -- import Data.Word
@@ -435,28 +444,85 @@ cleanClobber o @ SingleOperation {}
 cleanClobber o @ Bundle {bundleOs = os} =
   o {bundleOs = filter (not . isClobberRA) os}
 
--- Offset frame indices before (-8) and after (+d) 'allocframe'
+
+replaceFis f = mapToOperation replaceFi f
+
+replaceFi o @ SingleOperation {oOpr = opr}  = o {oOpr = replaceFiOne opr}
+replaceFi o @ Bundle {bundleOs = bops}  = o { bundleOs = map replaceFi bops}
+
+
+replaceFiOne o @ Natural {oNatural = Linear {oIs = [TargetInstruction i],
+                                             oUs = (Bound (MachineFrameIndex ind isfixed off)):(Bound (MachineImm imm)):[],
+                                             oDs = d }}
+  | i `elem` [LW_fi] =
+      let
+        spreg = Register $ mkTargetRegister SP
+        addimm = mkBound (MachineFrameIndex ind isfixed (off + imm))
+      in
+        o {oNatural = Linear {oIs = [TargetInstruction (fromJust $ SpecsGen.parent i)],
+                               oUs  = [spreg, addimm],
+                               oDs  = d}
+          }
+replaceFiOne o @ Natural {oNatural = Linear {oIs = [TargetInstruction i],
+                                             oUs = sr:(Bound (MachineFrameIndex ind isfixed off)):(Bound (MachineImm imm)):[],
+                                             oDs = d }}
+  | i `elem` [SW_fi] =
+      let
+        spreg = Register $ mkTargetRegister SP
+        addimm = mkBound (MachineFrameIndex ind isfixed (off + imm))
+      in
+        o {oNatural = Linear {oIs = [TargetInstruction (fromJust $ SpecsGen.parent i)],
+                              oUs = [sr, spreg, addimm],
+                              oDs = d}
+                         }
+replaceFiOne o = o
+
+
+
+specialLowerFrameSize f @ Function {fCode = code,
+                                    fFixedStackFrame = fobjs,
+                                    fStackFrame = objs} =
+  let size     = (frameSize objs - frameSize fobjs)
+      mfsToImm = M.fromList
+                 [(mkBound mkMachineFrameSize, mkBound (mkMachineImm size))]
+      code'    = mapToOperationInBlocks (applyMapToOperands mfsToImm) code
+  in f {fCode = code'}
+
+
+
+reverseFixedFrameOffsets f @ Function {fFixedStackFrame = fobjs,
+                                       fStackFrame = objs} =
+  let
+    fd = maximum $ (map (abs . foOffset) (fobjs)) ++ [0]
+    fobjs' = map (addFixedFrameOff fd) fobjs
+    objs' = map (addFixedFrameOff fd) objs
+  in f {fFixedStackFrame = fobjs',
+        fStackFrame = objs'}
+
+
+addFixedFrameOff off fo @ FrameObject {foOffset = off'}
+  | off >= abs(off') =
+      let off'' = -(off + off' + foMaybeSize fo)
+      in fo {foOffset = off''}
+  | otherwise = fo
+
 
 shiftFrameOffsets f @ Function {fCode = code,
                                 fFixedStackFrame = fobjs,
                                 fStackFrame = objs} =
-  let d     = maximum $ (map (abs . foOffset) (fobjs ++ objs)) ++ [0]
-      code' = map (shiftFrameOffsetsInBlock d) code
+  let
+    d = maximum $ (map (abs . foOffset) (objs ++ fobjs)) ++ [0]
+    code' = map (shiftFrameOffsetsInBlock d) code
   in f {fCode = code'}
 
 shiftFrameOffsetsInBlock d b @ Block {bCode = code} =
-  let ini = if isEntryBlock b then -8 else d
-      (_, code') = mapAccumL (shiftFrameOffsetsInOpr d) ini code
+  let (_, code') = mapAccumL shiftFrameOffsetsInOpr d code
   in b {bCode = code'}
 
-shiftFrameOffsetsInOpr d off o =
+shiftFrameOffsetsInOpr off o =
   let o'   = mapToOperandIf always (shiftFrameOffset off) o
-      off' = if any isAllocFrameOpr (linearizeOpr o) then d else off
-  in (off', o')
+  in (off, o')
 
-shiftFrameOffset off (Bound mfi @ (MachineFrameIndex {})) =
-  Bound $ mfi {mfiOffset = off}
+shiftFrameOffset off (Bound mfi @ (MachineFrameIndex {mfiOffset = off'})) =
+  Bound $ mfi {mfiOffset = off + off'}
 shiftFrameOffset _ p = p
-
-isAllocFrameOpr o =
-  isNatural o && targetInst (oInstructions o) == ADDiu_negsp

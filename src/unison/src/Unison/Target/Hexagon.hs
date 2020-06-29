@@ -541,6 +541,7 @@ constantDeExtendInstr mi @ MachineSingle {msOpcode = opcode,
         msProperties = ps ++ [mkMachineInstructionPropertyCustom "ce"]}
 constantDeExtendInstr mi = mi
 
+--- Remove fi:s
 removeFrameIndex = mapToTargetMachineInstruction removeFrameIndexInstr
 
 removeFrameIndexInstr

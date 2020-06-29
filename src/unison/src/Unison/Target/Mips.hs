@@ -242,6 +242,9 @@ fromCopy o @ Copy {oCopyIs = [TargetInstruction i], oCopyS = s, oCopyD = d}
     Linear {oIs = [TargetInstruction (fromCopyInstr i)],
             oUs  = [mkOprMipsSP, mkBoundMachineFrameObject i s],
             oDs  = [d]}
+-- For function arguments
+-- Move this after shift or in shift
+
 fromCopy (Natural o) = o
 fromCopy o = error ("unmatched pattern: fromCopy " ++ show o)
 
@@ -338,6 +341,39 @@ liftToTOpc f = mkMachineTargetOpc . f . mopcTarget
 
 postProcess to = [expandPseudosEarly to, if keepNops to then id else cleanNops,
                   expandPseudos, unbundleSingletons, normalizeDelaySlots to]
+
+-- fiInstrs = filter (\i -> "_fi" `isSuffixOf` (show i)) SpecsGen.allInstructions
+
+-- removeFrameIndex = mapToTargetMachineInstruction removeFrameIndexInstr
+-- removeFrameIndexInstr
+--   mi @ MachineSingle {msOpcode = MachineTargetOpc TFR_FI_fi,
+--                       msOperands = [r,
+--                                     off @ MachineImm {},
+--                                     MachineImm {miValue = 0}]} =
+--   mi {msOpcode = mkMachineTargetOpc A2_addi,
+--       msOperands = [r, mkMachineRegSP, off]}
+-- removeFrameIndexInstr mi @ MachineSingle {msOpcode = MachineTargetOpc i,
+--                                           msOperands = mops}
+--   | i `elem` fiInstrs =
+--       let mopc' = mkMachineTargetOpc $ read $ dropSuffix "_fi" (show i)
+--           mops' = case mops of
+--                     [off @ MachineImm {}, MachineImm {miValue = 0},
+--                      r @ MachineReg {}] -> [mkMachineRegSP, off, r]
+--                     -- Example: L2_loadri_io_fi [dst, base, off]
+--                     [r @ MachineReg {},
+--                      MachineImm {miValue = base}, MachineImm {miValue = off}] ->
+--                             [r, mkMachineRegSP, mkMachineImm (base + off)]
+--                     -- TODO: what do we do with the non-offset value? (which is
+--                     -- non-zero)
+--                     [off @ MachineImm {}, MachineImm {}, r @ MachineReg {}] ->
+--                       [mkMachineRegSP, off, r]
+--                     [p @ MachineReg {}, off @ MachineImm {},
+--                      MachineImm {miValue = 0}, r @ MachineReg {}] ->
+--                       [p, mkMachineRegSP, off, r]
+--                     _ -> error ("unmatched: removeFrameIndexInstr " ++ show mi)
+--       in mi {msOpcode = mopc', msOperands = mops'}
+--   | otherwise = mi
+
 
 expandPseudosEarly to = mapToMachineBlock (expandBlockPseudos
                                            (expandPseudoEarly to))
@@ -444,8 +480,13 @@ transforms AugmentPreRW = [peephole insertGPDisp]
 transforms AugmentPostRW = [mapToOperation markBarriers,
                             peephole enforceMandatoryFrame]
 
+transforms ExportPreOffs = [replaceFis]
+
+transforms ExportPostOffs = [specialLowerFrameSize]
+
 transforms ExportPreLow = [cleanClobbers,
-                          shiftFrameOffsets]
+                           reverseFixedFrameOffsets,
+                           shiftFrameOffsets]
 
 transforms _ = []
 
