@@ -24,7 +24,9 @@ module Unison.Target.Mips.Transforms
      cleanClobbers,
      specialLowerFrameSize,
      shiftFrameOffsets,
-     reverseFixedFrameOffsets) where
+     shiftStackPointer,
+     reverseFixedFrameOffsets
+    ) where
 
 import Unison
 import MachineIR
@@ -478,6 +480,13 @@ replaceFiOne o @ Natural {oNatural = Linear {oIs = [TargetInstruction i],
 replaceFiOne o = o
 
 
+-- Move stack pointer after fixed point
+shiftStackPointer f @ Function {fFixedStackFrame = fobjs,
+                                fStackPointerOffset = sp} =
+  let size     = frameSize fobjs in
+    f {fStackPointerOffset = sp + size}
+
+
 
 specialLowerFrameSize f @ Function {fCode = code,
                                     fFixedStackFrame = fobjs,
@@ -489,7 +498,7 @@ specialLowerFrameSize f @ Function {fCode = code,
   in f {fCode = code'}
 
 
-
+-- Need to fix the actual stack with a0, a1, a2, a3, ...
 reverseFixedFrameOffsets f @ Function {fFixedStackFrame = fobjs,
                                        fStackFrame = objs} =
   let
@@ -505,7 +514,6 @@ addFixedFrameOff off fo @ FrameObject {foOffset = off'}
       let off'' = -(off + off' + foMaybeSize fo)
       in fo {foOffset = off''}
   | otherwise = fo
-
 
 shiftFrameOffsets f @ Function {fCode = code,
                                 fFixedStackFrame = fobjs,

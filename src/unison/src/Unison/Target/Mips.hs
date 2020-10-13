@@ -387,7 +387,7 @@ expandPseudoEarly to mi @ MachineSingle {msOpcode = MachineTargetOpc LoadGPDisp}
   in [[mi1],[mi2]]
 
 expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc PseudoCVT_S_W,
-                                   msOperands = [fi, ri]} =
+                                        msOperands = [fi, ri]} =
   let mi1 = mi {msOpcode = mkMachineTargetOpc MTC1, msOperands = [fi, ri]}
       mi2 = mi {msOpcode = mkMachineTargetOpc CVT_S_W, msOperands = [fi, fi]}
   in [[mi1],[mi2]]
@@ -481,8 +481,10 @@ transforms AugmentPostRW = [mapToOperation markBarriers,
                             peephole enforceMandatoryFrame]
 
 transforms ExportPreOffs = [replaceFis]
+                            -- shiftStackPointer]
 
-transforms ExportPostOffs = [specialLowerFrameSize]
+transforms ExportPostOffs = [specialLowerFrameSize,
+                             shiftStackPointer]
 
 transforms ExportPreLow = [cleanClobbers,
                            reverseFixedFrameOffsets,

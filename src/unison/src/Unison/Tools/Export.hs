@@ -75,14 +75,12 @@ run (removeReds, keepNops, baseFile, tight, mirVersion, debug, outJsonFile,
          mfBase = case baseMir of
                  (Just base) -> base
                  Nothing     -> ""
-     -- putStr ("lala" ++ (showSimple f))
      when (debug && (isJust sol)) $
           putStr (toPlainText (partialFs ++ partialMfs))
      when (isJust sol) $
           emitOutput unisonMirFile (show mf')
      when (not $ isJust sol) $
           emitOutput unisonMirFile mfBase
-         -- Just (showSimple o))
 
 parseSolution json =
     let sol          = case decode (BSL.pack json) of
@@ -111,8 +109,8 @@ uniTransformations (cycles, instructions, registers, temporaries)
      (selectTemporaries temporaries, "selectTemporaries", True),
      (selectInstructions instructions, "selectInstructions", True),
      (runTargetTransforms ExportPreOffs, "runTargetTransforms", True),
-     (liftVarFrameObjects, "liftVarFrameObjects", True), -- vazei pragmata sto fixframe
-     (liftFixedFrameObjects, "liftFixedFrameObjects", True), -- vazei pragmata sto fixframe
+     (liftVarFrameObjects, "liftVarFrameObjects", True),  -- puts staff to var frame
+     (liftFixedFrameObjects, "liftFixedFrameObjects", True), -- puts staff to fixed frame
      (computeFrameOffsets, "computeFrameOffsets", True),
      (runTargetTransforms ExportPostOffs, "runTargetTransforms", True),
      (lowerFrameSize, "lowerFrameSize", True), -- Fixes the stack sp=sp-16
