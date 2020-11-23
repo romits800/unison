@@ -248,7 +248,8 @@ void DivModel::post_diversification_constraints(void) {
   post_diversification_channel();
   if (options->dist_metric() == DIST_HAMMING_DIFF)
     post_diversification_diffs();
-  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) || (options->dist_metric() == DIST_DIFF_BR)) {
+  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) ||
+      (options->dist_metric() == DIST_DIFF_BR)) {
     // post_diversification_channel();
     post_diversification_br_diffs();
   }

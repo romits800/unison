@@ -35,43 +35,39 @@
 #ifndef __DECOMP_DIV_MODEL__
 #define __DECOMP_DIV_MODEL__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
-#include "localdivmodel.hpp"
-#include "branchers/merit.hpp"
-#include "branchers/value.hpp"
+#include "divmodel.hpp"
+// #include "branchers/merit.hpp"
+// #include "branchers/value.hpp"
 
 using namespace Gecode;
 using namespace std;
 
-class LocalDivModel;
-
-class DecompDivModel : public GlobalModel {
+class DecompDivModel : public DivModel {
 
 public:
 
   // Diff array
-  IntVarArray v_diff;
+  // IntVarArray v_diff;
+  
+  // // Hamming distance between operations
+  // IntVarArray v_hamm;
+  
 
-  // Hamming distance between operations
-  IntVarArray v_hamm;
+  // // p: relax parameter for LNS
+  // double div_p;
+  // // r: random number for LNS
+  // Rnd div_r;
 
+  // void set_random(Rnd r) {div_r = r;};
 
-  // p: relax parameter for LNS
-  double div_p;
-  // r: random number for LNS
-  Rnd div_r;
-
-  void set_random(Rnd r) {div_r = r;};
-
-  void set_relax(double p) {div_p = p;};
+  // void set_relax(double p) {div_p = p;};
 
 
   // Variable accessors
 
-  IntVar diff(operation o) const {return v_diff[o]; }
+  // IntVar diff(operation o) const {return v_diff[o]; }
 
-  IntVar hamm(operation o) const {return v_hamm[o]; }
+  // IntVar hamm(operation o) const {return v_hamm[o]; }
 
 
 
@@ -83,18 +79,33 @@ public:
 
   DecompDivModel* copy(void);
 
-  // Constraints
-  void post_diversification_constraints(void); // Diversification constraints
-  void post_diversification_diffs(void); // Diversification constraints
-  void post_diversification_hamming(void); // Diversification constraints
+  // Branchers
+  // void post_div_branchers(void);
+  // void post_random_branchers(void);
+  // void post_clrandom_branchers(void);
+  // void post_cloriginal_branchers(void);
+  
+  // // Diversification Constraints
+  // void post_diversification_constraints(void); // Diversification constraints
+  // void post_diversification_diffs(void); // Diversification constraints
+  // void post_diversification_hamming(void); // Diversification constraints
+  // void post_diversification_channel(void);
+  // void post_diversification_br_diffs(void);
+  // void post_diversification_reghamming(void);
+  // void post_diversification_reg_gadget(void);
+  // void post_global_cycles(void);
+  // void post_levenshtein(const DecompDivModel & b);
+  // void post_levenshtein_set(const DecompDivModel & b);
 
+
+  
   // Branch types
-  bool is_branch_type(int o);
-  bool is_real_type(int o);
+  // bool is_branch_type(int o);
+  // bool is_real_type(int o);
 
   // Constrain function
 
-  void constrain(const Space & _b);
+  void constrain(const Space & _b); // 
   // The same constraints as the constrain function
   void post_constrain(DecompDivModel* b);
 

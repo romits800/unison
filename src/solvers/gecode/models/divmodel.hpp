@@ -37,7 +37,7 @@
 
 #include "completemodel.hpp"
 #include "globalmodel.hpp"
-#include "localdivmodel.hpp"
+//#include "localdivmodel.hpp"
 #include "solver-parameters.hpp"
 #include "branchers/solutionbrancher.hpp"
 

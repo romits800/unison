@@ -44,13 +44,13 @@ using namespace Gecode;
 // Creates a local problem for block b out of the global solution g1
 Solution<LocalDivModel> local_problem(DecompDivModel * g1, block b);
 
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
+// LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
+
+// LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl);
 
 LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl);
 
-LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl);
-
-LocalDivModel * make_div_local(const DivModel * gs, block b);
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
 
 // Prefix for debug output
 string local(block b);

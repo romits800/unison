@@ -59,12 +59,12 @@
 #include "models/globalmodel.hpp"
 #include "models/divmodel.hpp"
 #include "models/maxdivmodel.hpp"
-// #include "models/decompdivmodel.hpp"
-// #include "models/localdivmodel.hpp"
+#include "models/decompdivmodel.hpp"
+#include "models/localdivmodel.hpp"
 #include "models/localmodel.hpp"
 #include "procedures/divprocedures.hpp"
 #include "procedures/globalprocedures.hpp"
-// #include "procedures/localdivprocedures.hpp"
+#include "procedures/localdivprocedures.hpp"
 #include "procedures/localprocedures.hpp"
 
 #ifndef GRAPHICS
@@ -180,6 +180,11 @@ public:
     global_n_set_vars(global_n_set_vars0) {}
 
 };
+
+
+
+
+
 
 string produce_json(const ResultData& rd,
                     const GlobalData& gd,
@@ -306,84 +311,55 @@ string produce_json(const ResultDivData& rd,
 
 
 
-class LocalJob : public Support::Job<Solution<LocalModel> > {
+
+class LocalJob : public Support::Job<LocalDivModel * > {
 protected:
-  // Base local space to accumulate bounds while the portfolio is applied
-  Solution<LocalModel> ls;
-  // visualization options (if any)
-  GIST_OPTIONS * lo;
-  // current iteration
-  int iteration;
-  // local solutions in earlier iterations
-  vector<vector<LocalModel *> > * local_solutions;
+
+  LocalDivModel * l;
+  RBS<LocalDivModel,BAB> * e;
+  int b;
 public:
-  LocalJob(Solution<LocalModel> ls0, GIST_OPTIONS * lo0, int iteration0,
-           vector<vector<LocalModel *> > * local_solutions0) :
-    ls(ls0), lo(lo0), iteration(iteration0),
-    local_solutions(local_solutions0) {}
-  virtual Solution<LocalModel> run(int) {
-    block b = ls.solution->b;
-    if (ls.result != UNSATISFIABLE) {
-      LocalModel * base_local = ls.solution;
-      Gecode::SpaceStatus lss = base_local->status();
-      assert(lss != SS_FAILED);
-      bool single_block = base_local->input->B.size() == 1;
-      ls = solved(base_local, (*local_solutions)[b]) && !single_block ?
-        // if the local problem is already solved, fetch the cached solution
-        fetch_solution(base_local, (*local_solutions)[b]) :
-        // otherwise solve
-        solve_local_portfolio(base_local, lo, iteration);
-      delete base_local;
-    }
-    if (ls.solution->options->verbose()) {
-      if (ls.result == LIMIT) {
-        cerr << local(b) << "could not find solution" << endl;
-      } else if (ls.result == UNSATISFIABLE) {
-        cerr << local(b) << "could not find solution (unsatisfiable)" << endl;
-      } else if (ls.result == CACHED_SOLUTION) {
-        cerr << local(b) << "repeated solution" << endl;
-      }
-    }
-    if (ls.result == LIMIT || ls.result == UNSATISFIABLE) {
-      throw Support::JobStop<Solution<LocalModel> >(ls);
-    }
-    return ls;
+  LocalJob(LocalDivModel *l0,
+           RBS<LocalDivModel,BAB> * e0,
+	   int b0):
+    l(l0), e(e0), b(b0) {}
+  virtual LocalDivModel * run(int) {
+    // return 3;
+    LocalDivModel * nextl = e->next();
+    // cerr << div() << "LocalJob: found next: " << b << endl;
+
+    return nextl;
+
   }
 };
 
 class LocalJobs {
 protected:
-  // global solution from which the local problems are generated
-  Solution<DivModel> gs;
-  // visualization options (if any)
-  GIST_OPTIONS * lo;
-  // current iteration
-  int iteration;
-  // local solutions in earlier iterations
-  vector<vector<LocalModel *> > * local_solutions;
-  // blocks sorted in descending priority
+  map<block, LocalDivModel*> l;
+  map<block, RBS<LocalDivModel,BAB> *> e;
   vector<block> blocks;
-  // current block index
   unsigned int k;
 public:
-  LocalJobs(Solution<DivModel> gs0, GIST_OPTIONS * lo0, int iteration0,
-            vector<vector<LocalModel *> > * local_solutions0,
+  LocalJobs(map<block, LocalDivModel*> l0,
+            map<block, RBS<LocalDivModel,BAB> *> e0,
             vector<block> blocks0) :
-    gs(gs0), lo(lo0), iteration(iteration0), local_solutions(local_solutions0),
+    l(l0), e(e0),
     blocks(blocks0), k(0) {}
   bool operator ()(void) const {
     return k < blocks.size();
   }
   LocalJob * job(void) {
+    // cerr << div() << "LocalJobs: job: " << k << endl;
     // FIXME: fork jobs in the order of blocks[b], use blocks[k] instead of k
     block b = k;
     // Base local space to accumulate bounds while the portfolio is applied
-    Solution<LocalModel> ls = local_problem(gs.solution, b);
+    // Solution<LocalDivModel> ls = local_problem(gs.solution, b);
+    LocalDivModel * lb = l[b];
+    RBS<LocalDivModel,BAB> * eb = e[b];
     k++;
-    return new LocalJob(ls, lo, iteration, local_solutions);
+    return new LocalJob(lb, eb, b); //, local_solutions);
   }
 };
-
 
 
 string cost_status_report(DivModel * base, const DivModel * sol) {
@@ -472,7 +448,8 @@ int main(int argc, char* argv[]) {
   options.branching(BR_ORIGINAL_COSTLAST, "cloriginal");
 
   // options for LNS
-  if (options.div_method() == DIV_MONOLITHIC_LNS || options.div_method() == DIV_DECOMPOSITION_LNS) {
+  if (options.div_method() == DIV_MONOLITHIC_LNS
+      || options.div_method() == DIV_DECOMPOSITION_LNS) {
     options.iterations(10);
     options.relax(0.7);
     options.seed(3);
@@ -907,7 +884,7 @@ int main(int argc, char* argv[]) {
     t_solver.start();
     t_it.start();
 
-    cerr << div() << "Starting" << endl;
+    cerr << div() << "Start generating solutions" << endl;
 
     while (DivModel *nextg = e.next()) {
       cerr << div() << "Cloning " << count << "\r";
@@ -1062,10 +1039,308 @@ int main(int argc, char* argv[]) {
 
       } // Not first time
     } // While true
-  }
+  } else if (options.div_method() == DIV_DECOMPOSITION_LNS) {
+
+    // cerr << div() << "Starting decomp" << endl;
+    DecompDivModel *dd = new DecompDivModel(&input, &options, IPL_DOM);
+
+    t_solver.start();
+
+    if (dd->status() == SS_FAILED) {
+      cerr << div() << "No better solution!" << endl;
+      return -1;
+    }
+
+    // Initialize the global solver
+    DecompDivModel * g = (DecompDivModel*) dd -> clone();
+
+    // Branchers for decomposition (TODO(Romy):Check with solver)
+    g -> post_branchers(); // 
+
+    // Not sure about that
+    //g -> post_diversification_constraints(); // Diversification constraints
+    if (g->status() == SS_FAILED) {
+      cerr << div() << "DivModel g failed." << endl;
+      return 0;
+    }
+
+    // Run the global solver before defining the local problems.
+    DFS<DecompDivModel> e(g);
+
+    DecompDivModel *g3 = e.next();
+
+    if (!g3) {
+      cerr << div() << "G3 failed" << endl;
+    }
+
+    vector<block> blocks(g->input->B);
+    map<block, LocalDivModel *> local_problems;
+    map<block, RBS<LocalDivModel,BAB> *> local_engines;
+
+    double ag = 100. + (double)d->options->acceptable_gap()*2; 
+    // Initialize the local_problems with an engine
+    for (block b: blocks) {	// 
+
+      Search::Options localOptions;
+      Gecode::RestartMode restart = g3->options->restart();
+      Search::Cutoff* c;
+      unsigned long int s_const = g3->options->restart_scale();
+
+      if (restart == RM_LUBY ){
+        c = Search::Cutoff::luby(s_const);
+      } else if (restart == RM_CONSTANT) {
+        c = Search::Cutoff::constant(s_const);
+      } else {
+        c = Search::Cutoff::constant(1000);
+      }
+
+      localOptions.cutoff = c;
+      local_problems[b] = (LocalDivModel *) make_div_local(g3, b);
+      local_problems[b]-> post_div_branchers();
+      local_problems[b]-> post_diversification_constraints();
+
+      
+      // local_problems[b]-> constrain_cost(IRT_LE, 
+      // 					 ceil((ag*(float)(local_problems[b] -> f(b, 0).max()))/100.) );
+
+      // cerr << div() << "Local Problem: " << b << "cost: " << local_problems[b]->f(b,0)<< endl;
+      // (float)g->input->freq[b]));
+
+      // Restart-based meta-engine
+      local_engines[b] = new  RBS<LocalDivModel,BAB>(local_problems[b], localOptions);
+      // local_engines.push_back(e);
+      if (local_problems[b]->status() == SS_FAILED) {
+	cerr << div() << "Local Problem: " << b << " failed." << endl;
+	return -1;
+      }
+
+    }
 
 
+    vector<DecompDivModel*> solutions;
+    DecompDivModel * g1 = NULL;
+
+
+    // Test block 2 - factorial
+//     {
+
+// //      g1 = e.next();
+//       g1 = (DecompDivModel *) g->clone();
+//       // g1 = dd.clone();
+//       LocalDivModel * l0;
+//       LocalDivModel * l1;
+//       LocalDivModel * l2;
+//       LocalDivModel * l3;
+
+
+//       // Search::Options lo;
+//       // Gecode::RestartMode restart = dd->options->restart();
+//       // Search::Cutoff* c;
+//       // unsigned long int s_const = dd->options->restart_scale();
+
+//       // if (restart == RM_LUBY ){
+//       //   c = Search::Cutoff::luby(s_const);
+//       // } else if (restart == RM_CONSTANT) {
+//       //   c = Search::Cutoff::constant(s_const);
+//       // } else {
+//       //   c = Search::Cutoff::constant(1000);
+//       // }
+
+//       cout << "dd" << dd-> v_c << endl;
+
+//       cout << "B0" << endl;
+//       l0 = (LocalDivModel *) make_div_local(g1, 0);
+//       l0-> post_trivial_branchers();
+//       l0-> post_diversification_constraints();
+//       if (l0->status() == SS_FAILED) {
+//     	cout << "L0 status failes" << endl;
+//       }
+//       cout << "l0" << l0->v_c << endl;
+//       BAB<LocalDivModel> e0(l0);
+//       LocalDivModel *nextg0 = e0.next();
+
+//       // lo.cutoff = c;
+//       cout << "B1" << endl;
+//       l1 = (LocalDivModel *) make_div_local(dd, 1);
+//       l1-> post_div_branchers();
+//       l1-> post_diversification_constraints();
+//       if (l1->status() == SS_FAILED) {
+//     	cout << "L1 status failes" << endl;
+//       }
+//       BAB<LocalDivModel> e1(l1);
+//       LocalDivModel *nextg1 = e1.next();
+
+//       cout << "B2" << endl;
+//       // lo.cutoff = c;
+//       l2 = (LocalDivModel *) make_div_local(dd, 2);
+//       l2-> post_div_branchers();
+//       l2-> post_diversification_constraints();
+//       // l2 = make_local (dd, 2);
+
+//       if (l2->status() == SS_FAILED) {
+//     	cout << "L2 status failed" << endl;
+//       }
+
+//       BAB<LocalDivModel> e2(l2);
+//       LocalDivModel *nextg2 = e2.next();
+
+//       cout << "B3" << endl;
+//       l3 = (LocalDivModel *) make_div_local(dd, 3);
+//       l3-> post_div_branchers();
+//       l3-> post_diversification_constraints();
+
+//       if (l3->status() == SS_FAILED) {
+//     	cout << "L3 status failes" << endl;
+//       }
+
+//       BAB<LocalDivModel> e3(l3);
+//       LocalDivModel *nextg3 = e3.next();
+      
+      
+//       if (nextg0 != NULL && nextg0-> status() != SS_FAILED) {
+// 	cout << "g1" << g1-> v_c << endl;
+// 	for (int i: g1->input->ops[0]) 
+// 	  cout << " ," << i;
+// 	cout << endl;
+// 	cout << "nextg0" << nextg0->v_c << endl;
+// 	g1->apply_solution(nextg0);
+// 	if (g1->status() == SS_FAILED) {
+// 	  cerr << div() << "Applying solution failed: " << nextg0->b << endl;
+// 	}
+
+// 	// Search::Options globalOptions;
+	
+// 	// Gecode::RestartMode restart = options.restart();
+// 	// Search::Cutoff* c;
+// 	// unsigned long int s_const = options.restart_scale();
+
+// 	// if (restart == RM_LUBY ){
+// 	//   c = Search::Cutoff::luby(s_const);
+// 	// } else if (restart == RM_CONSTANT) {
+// 	//   c = Search::Cutoff::constant(s_const);
+// 	// } else {
+// 	//   c = Search::Cutoff::constant(1000);
+// 	// }
+
+// 	// globalOptions.cutoff = c;
+
+// 	DFS<DecompDivModel> e(g1, globalOptions);
+
+// 	DecompDivModel * g2 = e.next();
+
+// 	if (g2->status() == SS_FAILED) {
+// 	  cerr << div() << "Finding next solution failed: " << endl;
+// 	}
+
+// 	cout << "g2" << g2->v_c << endl;
+// 	cout << "g2" << g2->v_a << endl;
+//       }
+
+//       return 0;
+      
+//     }
+
+    //   End of test block 2 - factorial
+
+
+    while(count < maxcount) {
+
+      // cerr << div() << "Decomp: " << count << endl;
+      // g1 = e.next();
+
+      g1 = (DecompDivModel *) g->clone();
+      if (g1 == NULL || g1->status() == SS_FAILED) {
+        cerr << div() << "DivModel g.clone() failed." << endl;
+        return 0;
+      }
+
+      bool found_local_solution = true;
+      //Here
+      LocalJobs ljs(local_problems, local_engines, blocks);
+      unsigned int threads = options.total_threads();
+      Support::RunJobs<LocalJobs, LocalDivModel *> js(ljs, threads);
+
+      LocalDivModel *ls;
+      while(js.run(ls)) {
+        int i;
+        LocalDivModel *fls;
+        if (js.stopped(i,fls)) {
+	  // cerr << div() << "Stopped: " << fls->b << endl;
+          block b = fls->b;
+          local_problems[b] = fls;
+          found_local_solution = false;
+          break;
+        } else {
+          block b = ls->b;
+	  // cerr << div() << "Not stopped: " << ls->b << endl;
+          local_problems[b] = ls;
+          if (ls && ls->status() != SS_FAILED) {
+	    // cerr << "Cycles" << endl;
+	    // cerr << g1 -> v_c << endl;
+	    // cerr << g1 -> v_a << endl;
+	    // cerr << g1 -> v_y << endl;
+	    // cerr << g1 -> v_i << endl;
+	    // cerr << g1 -> v_r << endl;
+	    // cerr << "local" << endl;
+	    // cerr << ls -> v_c << endl;
+	    // cerr << ls -> v_a << endl;
+	    // cerr << ls -> v_y << endl;
+	    // cerr << ls -> v_i << endl;
+	    // cerr << ls -> v_r << endl;
+	    // cerr << g1 -> cost() << endl;
+	    // cerr << ls -> f(b,0) << endl;
+	    // for (int i: g1->input->ops[b]) 
+	    //   cout << " ," << i;
+	    // cout << endl;
+	    g1->apply_solution(ls);
+	    if (g1->status() == SS_FAILED) {
+	      cerr << div() << "Applying solution failed: " << ls->b << endl;
+	    }
+	    // else {
+	      // cerr << div() << "Not failed: " << ls->b << endl;
+	      // cerr << g1 -> v_c << endl;
+	      // cerr << g1 -> cost() << endl;
+	    // }
+          }
+        }
+
+      }
+
+      if (!found_local_solution) {
+        cerr << div() << "Cannot find more solutions." << endl;
+        return 0;
+      }
+
+      DFS<DecompDivModel> e(g1);
+
+      DecompDivModel *g3 = g1; // e.next();
+
+      
+      if (g3 == NULL || g3->status() == SS_FAILED) {
+	cerr << div() << "DecompDivModel e.next() failed." << endl;
+	if (g3 != NULL) delete g3;
+      } else {
+	
+        cerr << div() << "Cloning " << count << "\r";
+        solutions.push_back(g1);
+        ResultData rd = ResultData(g3, false, 0,
+                                   0, 0,
+                                   0, t_solver.stop(),
+                                   t_it.stop());
+
+        ofstream fout;
+        fout.open(to_string(count) + "." + g1->options->output_file());
+        fout << produce_json(rd, gd, g3->input->N, 0);
+        fout.close();
+        count++;
+        // g->post_constrain(g1);
+      } 
+      if (g1 != NULL) delete g1;
+
+    }
+    cerr << endl;
+  } //decomposition
+   
 
   if (d!=NULL) delete d;
-  // }
 }

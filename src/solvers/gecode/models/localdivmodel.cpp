@@ -35,27 +35,27 @@
 #include "localdivmodel.hpp"
 
 
-LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
-                       IntPropLevel p_ipl,
-                       const DecompDivModel * gs, block p_b) :
-  LocalModel(p_input, p_options, p_ipl, gs, p_b)
-{
-  div_r.seed(p_options->seed());
-  div_p = p_options->relax();
+// LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
+//                        IntPropLevel p_ipl,
+//                        const DecompDivModel * gs, block p_b) :
+//   LocalModel(p_input, p_options, p_ipl, gs, p_b)
+// {
+//   div_r.seed(p_options->seed());
+//   div_p = p_options->relax();
 
-  int op_size = O().size();
+//   int op_size = O().size();
 
-  int maxval = max_of(input->maxc);
-  // difference between operators
-  v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
-  // Hamming distance between operators
-  v_hamm  = int_var_array(op_size, -1, maxval);
+//   int maxval = max_of(input->maxc);
+//   // difference between operators
+//   v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
+//   // Hamming distance between operators
+//   v_hamm  = int_var_array(op_size, -1, maxval);
 
-}
+// }
 
 LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
                              IntPropLevel p_ipl,
-                             const DivModel * gs, block p_b) :
+                             const DecompDivModel * gs, block p_b) :
   LocalModel(p_input, p_options, p_ipl, gs, p_b)
 {
   div_r.seed(p_options->seed());
@@ -75,7 +75,6 @@ LocalDivModel::LocalDivModel(LocalDivModel& cg) :
   LocalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r)
-
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
@@ -179,8 +178,9 @@ bool LocalDivModel::master(const MetaInfo& mi) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if (mi.last() != NULL)
+    if (mi.last() != NULL) {
       constrain(*mi.last());
+    }
     mi.nogoods().post(* this);
     return true; // forces a restart even if a solution has been found
   }
@@ -199,8 +199,9 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
     return true;
   } else if (mi.type() == MetaInfo::RESTART) {
     if ((mi.restart() > 0) && (div_p > 0.0)) {
-      if (mi.last() != NULL)// {
-        next(static_cast<const LocalDivModel&>(*mi.last()));
+      if (mi.last() != NULL) {
+	next(static_cast<const LocalDivModel&>(*mi.last()));
+      }
       return false;
     } else {
       return true;
@@ -211,7 +212,6 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
 }
 
 void LocalDivModel::next(const LocalDivModel& l) {
-
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;
     for (operation o : input->ops[b]) {
@@ -275,13 +275,34 @@ void LocalDivModel::post_div_branchers(void) {
   // branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
   //        &print_register_decision);
   branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_MIN());
-
-  branch(*this, v_y, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+  branch(*this, v_i, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+  IntVarArgs ts;
+  for (operand p : input->groupcopyrel[b]) ts << y(p);
+  branch(*this, ts, INT_VAR_MIN_MIN(), INT_VAL_MIN());
 
   branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN());
   branch(*this, v_r, INT_VAR_MIN_MIN(), INT_VAL_MIN());
 
-  branch(*this, v_i, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+
+  // TO CHECK: trivial branchers
+  // branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
+  //        NULL, &print_inactive_decision);
+
+  // branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
+  //        NULL, &print_instruction_decision);
+
+  // IntVarArgs ts;
+  // for (operand p : input->groupcopyrel[b]) ts << y(p);
+  // branch(*this, ts, INT_VAR_NONE(), INT_VAL_MIN(),
+  //        NULL, &print_temporary_decision);
+
+  // branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
+
+  // branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN(),
+  //        &schedulable, &print_cycle_decision);
+
+  // branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
+  //        &print_register_decision);
 
 
 }

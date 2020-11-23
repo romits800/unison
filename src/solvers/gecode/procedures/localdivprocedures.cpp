@@ -51,25 +51,25 @@ Solution<LocalDivModel> local_problem(DecompDivModel * g1, block b) {
 
 
 
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b) {
-  return make_div_local(gs, b, gs->ipl);
-}
+// LocalDivModel * make_div_local(const DecompDivModel * gs, block b) {
+//   return make_div_local(gs, b, gs->ipl);
+// }
+
+// LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl) {
+//   return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
+// }
 
 LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl) {
   return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
 }
 
-LocalDivModel * make_div_local(const DivModel * gs, block b, IntPropLevel p_ipl) {
-  return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
-}
-
-LocalDivModel * make_div_local(const DivModel * gs, block b) {
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b) {
   return make_div_local(gs, b, gs->ipl);
 }
 
 
-string local(block b) {
-  stringstream s;
-  s << "[b" << b << "]\t ";
-  return s.str();
-}
+// string local(block b) {
+//   stringstream s;
+//   s << "[b" << b << "]\t ";
+//   return s.str();
+// }
