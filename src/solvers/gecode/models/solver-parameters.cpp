@@ -33,10 +33,8 @@
 
 #include "solver-parameters.hpp"
 
-SolverParameters::SolverParameters(JSONVALUE root) :
-
+SolverParameters::SolverParameters(Json::Value root) :
   // Program parameters
-
   solver                     (get_scalar<string>(getRoot(root, "solver"))),
   has_solution               (get_scalar<bool>(getRoot(root, "has_solution"))),
   proven                     (get_scalar<bool>(getRoot(root, "proven"))),
@@ -54,27 +52,27 @@ SolverParameters::SolverParameters(JSONVALUE root) :
   ;
 }
 
-QScriptValue SolverParameters::getRoot(QScriptValue root, string p) {
-  return root.property(p.c_str());
+Json::Value SolverParameters::getRoot(Json::Value root, string p) {
+  return root.get(p, "null");
 }
 
-void SolverParameters::get_element(QScriptValue root, bool & b) {
-  assert(root.isBoolean());
-  b = root.toBoolean();
+void SolverParameters::get_element(Json::Value root, bool & b) {
+  assert(root.isBool());
+  b = root.asBool();
 }
 
-void SolverParameters::get_element(QScriptValue root, int & i) {
-  assert(root.isNumber());
-  i = root.toInt32();
+void SolverParameters::get_element(Json::Value root, int & i) {
+  assert(root.isInt());
+  i = root.asInt();
 }
 
-void SolverParameters::get_element(QScriptValue root, double & d) {
-  assert(root.isNumber());
-  d = root.toNumber();
+void SolverParameters::get_element(Json::Value root, double & d) {
+  assert(root.isDouble());
+  d = root.asDouble();
 }
 
-void SolverParameters::get_element(QScriptValue root, string & s) {
+void SolverParameters::get_element(Json::Value root, string & s) {
   assert(root.isString());
-  s = root.toString().toStdString();
+  s = root.asString();
 }
 

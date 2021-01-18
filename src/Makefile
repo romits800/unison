@@ -1,6 +1,6 @@
 #
 #  Main authors:
-#    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+#    Roberto Castaneda Lozano <rcas@acm.org>
 #
 #  This file is part of Unison, see http://unison-code.github.io
 #
@@ -30,7 +30,7 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-CABALBIN := cabal
+STACKBIN := stack
 
 PREFIX := /usr/local
 BINDIR := $(PREFIX)/bin
@@ -61,34 +61,28 @@ build-presolver: $(PRESOLVERBIN)
 
 build-diversifier: $(DIVERSIFIERBIN)
 
-build-unison: prepare-unison
-	cd $(UNISONDIR); $(CABALBIN) build --ghc-options="$(UNISON_GHC_CONFIG)"
+#build-unison: prepare-unison
+#	cd $(UNISONDIR); $(CABALBIN) build --ghc-options="$(UNISON_GHC_CONFIG)"
+build-unison:
+	$(STACKBIN) build unison \
+	--ghc-options="$(UNISON_GHC_CONFIG)" \
+	--copy-bins --local-bin-path $(UNISONDIR)/build
 
-prepare-unison:
-	$(MAKE) install-deps-unison
-	$(MAKE) configure-unison
-
-install-deps-unison:
-	cd $(UNISONDIR); $(CABALBIN) install --only-dependencies --enable-tests
-
-configure-unison:
-	cd $(UNISONDIR); $(CABALBIN) configure --enable-tests
-
-doc-unison: prepare-unison
-	cd $(UNISONDIR); $(CABALBIN) haddock
+doc-unison:
+	$(STACKBIN) haddock unison
+	$(STACKBIN) haddock --open unison
 
 test:
-	cd $(UNISONDIR); \
-	$(CABALBIN) test --show-details=$(UNISON_SHOW_DETAILS) \
-	--test-option=--directory=$(CURDIR)/$(UNISONDIR)/test/fast \
-	--test-option=--presolver=$(CURDIR)/$(PRESOLVERBIN) \
-	--test-option=--solver=$(CURDIR)/$(SOLVERBIN) \
-	--test-option=--showprogress
+	$(STACKBIN) test unison \
+	--test-arguments="--directory=$(CURDIR)/$(UNISONDIR)/test/fast \
+	--presolver=$(CURDIR)/$(PRESOLVERBIN) \
+	--solver=$(CURDIR)/$(SOLVERBIN) \
+	--showprogress"
 
 install: install-unison install-diversifier install-solver install-presolver
 
 install-unison:
-	cp $(UNISONDIR)/dist/build/uni/uni $(BINDIR)
+	cp $(UNISONDIR)/build/uni $(BINDIR)
 
 install-solver:
 	cp $(SOLVERBIN) $(BINDIR)
@@ -105,8 +99,8 @@ include $(SOLVERDIR)/solver.mk
 include $(SOLVERDIR)/diversifier.mk
 
 clean:
-	cd $(UNISONDIR); $(CABALBIN) clean
-	cd $(UNISONSPECSGENDIR); $(CABALBIN) clean
+	$(STACKBIN) clean unison
+	$(STACKBIN) clean unison-specsgen
 	$(MAKE) veryclean-diversifier veryclean-solver veryclean-presolver
 
 doc: doc-unison doc-specsgen
@@ -134,27 +128,23 @@ SGARMINPUTYAML = $(SGARMROOTDIR)/input/arm.yaml
 SGARMAUXYAML   = $(SGARMROOTDIR)/input/arm-manual.yaml
 SGARMREMATYAML = $(SGARMROOTDIR)/input/arm-remat.yaml
 
+SGMINIMALROOTDIR   = $(UNISONDIR)/src/Unison/Target/Minimal/SpecsGen
+SGMINIMALINPUTYAML = $(SGMINIMALROOTDIR)/input/minimal.yaml
 
-build-specsgen: prepare-specsgen
-	cd $(UNISONSPECSGENDIR); $(CABALBIN) build
+build-specsgen:
+	$(STACKBIN) build unison-specsgen \
+	--ghc-options="$(UNISON_GHC_CONFIG)" \
+	--copy-bins --local-bin-path $(UNISONSPECSGENDIR)/build
 
-prepare-specsgen:
-	$(MAKE) install-deps-specsgen
-	$(MAKE) configure-specsgen
-
-install-deps-specsgen:
-	cd $(UNISONSPECSGENDIR); $(CABALBIN) install --only-dependencies
-
-configure-specsgen:
-	cd $(UNISONSPECSGENDIR); $(CABALBIN) configure
-
-doc-specsgen: prepare-specsgen
-	cd $(UNISONSPECSGENDIR); $(CABALBIN) haddock
+doc-specsgen:
+	$(STACKBIN) haddock unison-specsgen
+	$(STACKBIN) haddock --open unison-specsgen
 
 install-specsgen:
-	cp $(UNISONSPECSGENDIR)/dist/build/specsgen/specsgen $(BINDIR)
+	cp $(UNISONSPECSGENDIR)/build/specsgen $(BINDIR)
 
-run-specsgen: run-specsgen-hexagon run-specsgen-mips run-specsgen-arm
+run-specsgen: run-specsgen-hexagon run-specsgen-mips run-specsgen-arm \
+	            run-specsgen-minimal
 
 run-specsgen-hexagon:
 	specsgen --targetname=Hexagon $(SGHEXAGONINPUTYAML) $(SGHEXAGONAUXYAML) \
@@ -176,7 +166,12 @@ run-specsgen-arm:
 	         --outputdir=$(SGARMROOTDIR) \
 	         --regclass p2:CCR --infiniteregclass M32 --infiniteregclass M32t \
 	         --infiniteregclass M64 --infiniteregclass M128 \
-		 --infiniteregclass M512 \
+	         --infiniteregclass M512 \
 	         --promoteeffect CPSR \
 	         --infiniteregclass RM32 --infiniteregclass RM64 \
 	         --rematfile=$(SGARMREMATYAML)
+
+run-specsgen-minimal:
+	specsgen --targetname=Minimal $(SGMINIMALINPUTYAML) $(SGMINIMALAUXYAML) \
+	         --outputdir=$(SGMINIMALROOTDIR) \
+	         --infiniteregclass M32

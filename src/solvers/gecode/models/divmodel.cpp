@@ -135,7 +135,7 @@ DivModel* DivModel::copy(void) {
   return new DivModel(*this);
 }
 
-void DivModel::set_solver(JSONVALUE root) {
+void DivModel::set_solver(Json::Value root) {
   solver = new SolverParameters(root);
 }
 

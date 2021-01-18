@@ -498,10 +498,6 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-#ifdef GRAPHICS
-  QApplication *app = new QApplication(argc, argv, false);
-#endif
-
   string name(options.instance());
   string prefix = name.substr(0,name.find(".json"))
                       .substr(0,name.find(".ext"));
@@ -509,10 +505,6 @@ int main(int argc, char* argv[]) {
   fin.open(name.c_str(), ios::in);
   if (fin.fail()) {
     cerr << "Failed to open " << name << ": " << strerror(errno) << endl;
-#ifdef GRAPHICS
-    cerr << "Working directory: "
-         << QDir::currentPath().toStdString() << endl;
-#endif
     exit(EXIT_FAILURE);
   }
   string json_input ((std::istreambuf_iterator<char>(fin)),
@@ -523,25 +515,6 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-#ifdef GRAPHICS
-  QScriptValue root;
-  QScriptEngine engine;
-  root = engine.evaluate("(" + QString::fromStdString(json_input) + ")");
-  if (engine.hasUncaughtException()) {
-    QScriptValue val = engine.uncaughtException();
-    if (val.isError()) {
-      cerr << "Failed to parse " << name << ": "
-           << val.toString().toStdString() << " at line "
-           << engine.uncaughtExceptionLineNumber() << endl
-           << "Backtrace: "
-           << engine.uncaughtExceptionBacktrace().join("\n").toStdString()
-           << endl;
-    }
-    exit(EXIT_FAILURE);
-  }
-  app->exit();
-  delete app;
-#else
   Json::Value root;
   Json::CharReaderBuilder reader;
   std::stringstream json_input_stream;
@@ -551,7 +524,6 @@ int main(int argc, char* argv[]) {
     cerr << "Failed to parse " << name << endl << errs;
     exit(EXIT_FAILURE);
   }
-#endif
 
   Parameters input(root);
 
@@ -692,10 +664,6 @@ int main(int argc, char* argv[]) {
 
   if (options.use_optimal_for_diversification()) {
 
-#ifdef GRAPHICS
-    QApplication *app = new QApplication(argc, argv, false);
-#endif
-
     string name(options.solver_file());
     string prefix = name.substr(0,name.find(".json")).substr(0,name.find(".out"));
     ifstream fin;
@@ -711,25 +679,7 @@ int main(int argc, char* argv[]) {
       cerr << "Failed to close " << name << ": " << strerror(errno) << endl;
       exit(EXIT_FAILURE);
     }
-#ifdef GRAPHICS
-    QScriptValue root;
-    QScriptEngine engine;
-    root = engine.evaluate("(" + QString::fromStdString(json_input) + ")");
-    if (engine.hasUncaughtException()) {
-      QScriptValue val = engine.uncaughtException();
-      if (val.isError()) {
-        cerr << "Failed to parse " << name << ": "
-             << val.toString().toStdString() << " at line "
-             << engine.uncaughtExceptionLineNumber() << endl
-             << "Backtrace: "
-             << engine.uncaughtExceptionBacktrace().join("\n").toStdString()
-             << endl;
-      }
-      exit(EXIT_FAILURE);
-    }
-    app->exit();
-    delete app;
-#else
+
 
     Json::Value root;
     Json::CharReaderBuilder reader;
@@ -740,7 +690,6 @@ int main(int argc, char* argv[]) {
       cerr << "Failed to parse " << name << endl << errs;
       exit(EXIT_FAILURE);
     }
-#endif
     // SolverParameters solver(root);
     d->set_solver(root);
 

@@ -7,14 +7,20 @@ combinatorial optimization.
 ## Prerequisites
 
 Unison has the following dependencies:
-[Haskell platform](http://hackage.haskell.org/platform/),
-[Qt](https://www.qt.io/) (version 4.x, optional see [#33](https://github.com/unison-code/unison/issues/33)),
-[Graphviz library](http://www.graphviz.org/), and
-[Gecode](http://www.gecode.org/) (version 6.2.0).
+[Stack](http://www.haskellstack.org/),
+[Qt](https://www.qt.io/) (version 5.x, optional see [#33](https://github.com/unison-code/unison/issues/33)),
+[Graphviz library](http://www.graphviz.org/) (also optional), and
+[Gecode](http://www.gecode.org/) (version 6.0.0).
 To get the first three dependencies in Debian-based distributions, just run:
 
-```bash
-sudo apt-get install haskell-platform libqt4-dev libgraphviz-dev
+```
+apt-get install haskell-stack qtbase5-dev libgraphviz-dev
+```
+
+Upgrade Slack after installing it:
+
+```
+stack upgrade
 ```
 
 The source of Gecode can be fetched with:
@@ -122,7 +128,7 @@ be found in the `doc` directory.
 
 Source-level documentation is also available for the core Haskell modules of
 Unison (`MachineIR.Base`, `Unison.Base`, and `Unison.Target.API`). To generate
-this documentation in HTML format, just run:
+this documentation in HTML format and open it with a web browser, just run:
 
 ```
 make doc
@@ -130,7 +136,11 @@ make doc
 
 ## Contact
 
+<<<<<<< HEAD
 [Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/) [<tsoupidi@kth.se>]
+=======
+[Roberto Castañeda Lozano](https://robcasloz.github.io/) [<rcas@acm.org>]
+>>>>>>> upstream/master
 
 ## License
 
