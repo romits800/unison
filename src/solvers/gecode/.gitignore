@@ -8,3 +8,4 @@ presolver-generated.mk
 div-generated.mk
 *.o
 moc_*.cpp
+moc_*.h

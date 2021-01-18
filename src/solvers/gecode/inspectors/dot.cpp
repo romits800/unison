@@ -1,6 +1,6 @@
 /*
  *  Main authors:
- *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+ *    Roberto Castaneda Lozano <rcas@acm.org>
  *
  *  This file is part of Unison, see http://unison-code.github.io
  *
@@ -57,8 +57,7 @@ Dot::Dot() :
     setGlobalNodeAttribute("width", "0.2");
     setGlobalNodeAttribute("height", "0.2");
     setGlobalNodeAttribute("fixedsize", "true");
-    QString w("%1");
-    w.arg(50/DPI);
+    QString w = QString("%1").arg(50/DPI);
     setGlobalNodeAttribute("width", w.replace('.', ","));
     setGlobalEdgeAttribute("dir", "forward");
 }

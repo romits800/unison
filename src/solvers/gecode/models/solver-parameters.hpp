@@ -77,50 +77,33 @@ public:
 
   int solver_time;
 
-  SolverParameters(JSONVALUE root);
+  SolverParameters(Json::Value root);
 
 protected:
 
   SolverParameters() {};
-  void get_element(JSONVALUE root, bool & b);
-  void get_element(JSONVALUE root, double & d);
-  void get_element(JSONVALUE root, int & i);
-  void get_element(JSONVALUE root, string & s);
+  void get_element(Json::Value root, bool & b);
+  void get_element(Json::Value root, double & d);
+  void get_element(Json::Value root, int & i);
+  void get_element(Json::Value root, string & s);
 
 
-  JSONVALUE getRoot(JSONVALUE root, string p);
+  Json::Value getRoot(Json::Value root, string p);
 
   template<class T>
-  T get_scalar(JSONVALUE root) {
+  T get_scalar(Json::Value root) {
     T i;
     get_element(root, i);
     return i;
   }
 
   template<class T>
-  vector<T> get_vector(JSONVALUE root) {
+  vector<T> get_vector(Json::Value root) {
     vector<T> vi;
     get_element(root, vi);
     return vi;
   }
 
-#ifdef GRAPHICS
-
-  template<class T>
-  void get_element(QScriptValue root, vector<T> & vi) {
-    assert(root.isArray());
-    QScriptValueIterator iti(root);
-    while (iti.hasNext()) {
-      iti.next();
-      if (iti.name() != "length") {
-        T e;
-        get_element(iti.value(), e);
-        vi.push_back(e);
-      }
-    }
-  }
-
-#else
 
   template<class T>
   void get_element(Json::Value root, vector<T> & vi) {
@@ -133,9 +116,6 @@ protected:
       iti++;
     }
   }
-
-#endif
-
 
 
 };

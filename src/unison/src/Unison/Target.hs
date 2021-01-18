@@ -1,11 +1,11 @@
 {-|
 Copyright   :  Copyright (c) 2016, RISE SICS AB
 License     :  BSD3 (see the LICENSE file)
-Maintainer  :  roberto.castaneda@ri.se
+Maintainer  :  rcas@acm.org
 -}
 {-
 Main authors:
-  Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+  Roberto Castaneda Lozano <rcas@acm.org>
 
 This file is part of Unison, see http://unison-code.github.io
 -}
@@ -15,8 +15,10 @@ import Unison.Target.API (Any(..))
 import Unison.Target.Hexagon as Hexagon (target)
 import Unison.Target.ARM as ARM (target)
 import Unison.Target.Mips as Mips (target)
+import Unison.Target.Minimal as Minimal (target)
 
 unisonTargets =
     [("Hexagon", Any Hexagon.target),
      ("ARM", Any ARM.target),
-     ("Mips", Any Mips.target)]
+     ("Mips", Any Mips.target),
+     ("Minimal", Any Minimal.target)]

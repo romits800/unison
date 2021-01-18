@@ -1,14 +1,14 @@
 {-|
 Copyright   :  Copyright (c) 2016, RISE SICS AB
 License     :  BSD3 (see the LICENSE file)
-Maintainer  :  roberto.castaneda@ri.se
+Maintainer  :  rcas@acm.org
 
 Dependency Graph.
 
 -}
 {-
 Main authors:
-  Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+  Roberto Castaneda Lozano <rcas@acm.org>
 
 This file is part of Unison, see http://unison-code.github.io
 -}
@@ -194,12 +194,7 @@ inDistances dg =
         cg  = emap (const (-1)) dg
     in map (inDistance cg inn) (nodes dg)
 
-inDistance cg inn n = (n, length $ justSp inn n cg)
-
-justSp s d g =
-    case sp s d g of
-      Just p  -> p
-      Nothing -> error ("justSp: did not find any path")
+inDistance cg inn n = (n, length $ sp inn n cg)
 
 toNodeId = fromIntegral . oId
 

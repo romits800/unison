@@ -183,7 +183,7 @@ For further license detail on these components, please check their websites.
 Unison is designed, developed, and maintained by
 
 \begin{itemize}
-\item Roberto Castañeda Lozano (\href{mailto:roberto.castaneda@ri.se}{roberto.castaneda@ri.se})
+\item Roberto Castañeda Lozano (\href{mailto:rcas@acm.org}{rcas@acm.org})
 \item Mats Carlsson (\href{mailto:mats.carlsson@ri.se}{mats.carlsson@ri.se})
 \item Gabriel Hjort Blindell (\href{mailto:ghb@kth.se}{ghb@kth.se})
 \item Christian Schulte (\href{mailto:cschulte@kth.se}{cschulte@kth.se})
@@ -231,8 +231,8 @@ git clone https://github.com/unison-code/unison.git
 Unison has the following direct dependencies:
 %
 \begin{itemize}
-\item \href{http://hackage.haskell.org/platform/}{Haskell platform}
-\item \href{https://www.qt.io/}{Qt (version 4.x)}
+\item \href{http://www.haskellstack.org/}{Stack}
+\item \href{https://www.qt.io/}{Qt (version 5.x)}
 \item \href{http://www.graphviz.org/}{Graphviz library}
 \item \href{http://www.gecode.org/}{Gecode (version 6.0.0)}
 \end{itemize}
@@ -240,7 +240,13 @@ Unison has the following direct dependencies:
 To get the first three dependencies in Debian-based distributions, just run:
 %
 \begin{command}
-apt-get install haskell-platform libqt4-dev libgraphviz-dev
+apt-get install haskell-stack qtbase5-dev libgraphviz-dev
+\end{command}
+%
+Upgrade Slack after installing it:
+%
+\begin{command}
+stack upgrade
 \end{command}
 
 The source of Gecode can be fetched with:
@@ -957,11 +963,34 @@ To do this, just go to the \code{src} directory and run:
 make doc
 \end{command}
 
-The generated HTML documentation can be found under the \code{dist/doc/html}
+The generated HTML documentation can be found under the \code{.stack-work/dist}
 directory within the Unison package.
 %
 The \code{TargetDescription} data type can be found in the module
 \code{Unison/Target/API}.
+
+Unison includes a minimal, compilable target (\code{Minimal}) that can be used
+as a template to create new targets, see the module \code{Unison.Target.Minimal}
+in the Unison package.
+%
+A simple MIR version of our running example with Minimal instructions is
+included in \code{doc/code/factorial.mir}.
+%
+%
+To execute Unison on this function and obtain the optimal register allocation
+and instruction schedule for Minimal, run the following command from the top of
+the Git repository:
+%
+\begin{command}
+uni run doc/code/minimal.mir --goal=speed --target=Minimal
+\end{command}
+%
+By default, Minimal is defined as a single-issue processor, but an arbitrary
+issue width \code{N} can be specified using the following target option:
+%
+\begin{command}
+uni run doc/code/minimal.mir ... --targetoption=issue-width:N
+\end{command}
 
 The rest of this section explains the key abstractions used in the processor
 description and how different parts of it can be generated automatically.

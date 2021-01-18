@@ -95,7 +95,7 @@ public:
 
   vector<gadget_t> gadgets;
   vector<int> gadgets_operations;
-  void set_solver(JSONVALUE root);
+  void set_solver(Json::Value root);
 
   void set_random(Rnd r) {div_r = r;};
 

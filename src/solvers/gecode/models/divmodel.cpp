@@ -135,7 +135,7 @@ DivModel* DivModel::copy(void) {
   return new DivModel(*this);
 }
 
-void DivModel::set_solver(JSONVALUE root) {
+void DivModel::set_solver(Json::Value root) {
   solver = new SolverParameters(root);
 }
 
@@ -208,6 +208,7 @@ void DivModel::post_cloriginal_branchers(void) {
 }
 
 
+// int  DivModel::commit(IntVar x, int i) 
 void DivModel::post_div_branchers(void) {
 
   if (options->enable_solver_solution_brancher() && solver->has_solution) {
@@ -215,9 +216,13 @@ void DivModel::post_div_branchers(void) {
     IntVarArgs vs;
     for (int c: solver->cycles) sol << c;
     for (int r: solver->registers) sol << r;
+    for (int t: solver->temporaries) sol << t;
     for (IntVar c: v_c) vs << c;
     for (IntVar r: v_r) vs << r;
-
+    for (IntVar t: v_y) vs << t;
+    
+    // TODO(Romy):
+    // assign(*this, vs, INT_ASSIGN(v,c*));
     solution_branch(*this, vs, sol);
   }
   if (options->branching() == BR_RND) {

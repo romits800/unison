@@ -90,7 +90,7 @@ public:
 
   // Check status of brancher, return true if alternatives left
   virtual bool status(const Space&) const {
-    if (invoked == 0){
+    if (invoked == 0) {
       for (int i=0; i < v.size(); i++)
 	if ((sol[i] != -1) && (!v[i].assigned())) {
 	  return true;
@@ -107,7 +107,7 @@ public:
   virtual const Choice* choice(Space&) {
     for (int i=0; i<v.size(); i++)
       if ((sol[i]!= -1) && (! v[i].assigned()))
-	return new Description(*this, 2, i, sol[i]);
+	return new Description(*this, 1, i, sol[i]);
 
     GECODE_NEVER;
     return NULL;
@@ -118,7 +118,7 @@ public:
     // Again, you have to take care of the additional information
     int pos, sol;
     e >> pos >> sol;
-    return new Description(*this, 2, pos, sol);
+    return new Description(*this, 1, pos, sol);
   }
   // Perform commit for choice c and alternative a
   virtual ExecStatus commit(Space& home,
@@ -128,11 +128,7 @@ public:
 
     int pos = d.pos, sol = d.sol;
 
-    if (a==0)
-      return me_failed(v[pos].eq(home, sol)) ? ES_FAILED: ES_OK;
-    else
-      return me_failed(v[pos].nq(home, sol)) ? ES_FAILED: ES_OK;
-
+    return me_failed(v[pos].eq(home, sol)) ? ES_FAILED: ES_OK;
 
   }
   // Print some information on stream o (used by Gist, from Gecode 4.0.1 on)
@@ -141,11 +137,9 @@ public:
 
     const Description& d = static_cast<const Description&>(c);
 
-    int pos = d.pos, sol = d.sol;
-    if (a==0)
-      o << "v[" << pos << "] = " << sol; 
-    else
-      o << "v[" << pos << "] != " << sol;
+    int pos = d.pos, sol = d.sol; // 
+
+    o << "v[" << pos << "] = " << sol; 
 
   }
 };
@@ -166,5 +160,5 @@ void solution_branch(Home home, const IntVarArgs& v, const IntArgs& sol) {
   for (int i=sol.size(); i--; )
     vsol[i]=sol[i];
   // Post the brancher
-    SolutionBrancher::post(home,vv,vsol);
+  SolutionBrancher::post(home,vv,vsol);
 }
