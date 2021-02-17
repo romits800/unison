@@ -72,30 +72,38 @@ LocalDivModel * make_div_local(const DecompDivModel * gs, block b) {
 
 
 LocalDivModel *
-init_local_problem(DecompDivModel *g, block b) {
+init_local_problem(DecompDivModel *g, block b, bool estimate_cost, int* ud) {
 
 
   LocalDivModel * l = (LocalDivModel *) make_div_local(g, b);
   l -> post_div_branchers();
   l -> post_diversification_constraints();
 
+  if (estimate_cost) {
+    double sumf = 0;
+    for (int i = 0; i< g->input->freq.size(); i++)
+      sumf += g->input->freq[i];
 
-  double sumf = 0;
-  for (int i = 0; i< g->input->freq.size(); i++)
-    sumf += g->input->freq[i];
+    double correction = l->f(b, 0).max() - l->f(b, 0).min();
+    correction = ((double)g->options->acceptable_gap() * correction )/100.;
+    int max_cost1 = l->f(b, 0).min() + correction; 
 
-  double correction = l->f(b, 0).max() - l->f(b, 0).min();
-  correction = ((double)g->options->acceptable_gap() * correction )/100.;
-  int max_cost1 = l->f(b, 0).min() + correction; 
+    double correction2 = (1. - (g->input->freq[b] / sumf))*20; // 
+    double ag = 100. + ((double)g->options->acceptable_gap() + correction2);
+    int max_cost2 = ceil((ag*(float)(l->f(b, 0).min()))/100.);
 
-  double correction2 = (1. - (g->input->freq[b] / sumf))*20; // 
-  double ag = 100. + ((double)g->options->acceptable_gap() + correction2);
-  int max_cost2 = ceil((ag*(float)(l->f(b, 0).min()))/100.);
+    int max_cost = max_cost1>max_cost2 ? max_cost1 : max_cost2;
 
-  int max_cost = max_cost1>max_cost2 ? max_cost1 : max_cost2;
-
-  l-> constrain_total_cost(max_cost);
-
+    l-> constrain_total_cost(max_cost);
+  } else {
+    if (ud[b] > 0) {
+      std::cerr << "Inside init_local_prob" << std::endl;
+      std::cerr << ud[b] << std::endl;
+      std::cerr << l->f(b,0) << std::endl;
+      l-> constrain_total_cost(ud[b]);
+    }
+  }
+  
   if (l->status() == SS_FAILED) {
     std::cerr << "Init_local_problem failed." << std::endl;
     return NULL;

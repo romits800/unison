@@ -668,7 +668,7 @@ int main(int argc, char* argv[]) {
 
 
   vector<int> ag_best_cost;
-  vector<int> dd_best_cost;
+
   // double d_mul = 2.;
   vector<int> best_cost;
   int bestcost;
@@ -1074,14 +1074,14 @@ int main(int argc, char* argv[]) {
     }
 
 
-    // Initialize the decomposition solver
     DecompDivModel * g = (DecompDivModel*) dd -> clone();
+    DecompDivModel * dtmp = (DecompDivModel*) d -> clone();
 
-    map<block, LocalDivModel *> local_problems;    
+    //    map<block, LocalDivModel *> local_problems;    
 
 
     if (options.use_optimal_for_diversification()) 
-      if (find_optimal_solution(d, g, &options) != 0)
+      if (find_optimal_solution(dtmp, g, &options) != 0)
 	cerr << "Fail to find optimal solution" << endl;
     
     g -> post_branchers(); // 
@@ -1091,6 +1091,18 @@ int main(int argc, char* argv[]) {
       return 0;
     }
 
+    //    int first_time = 0;
+
+    int *local_cost_upper_bounds = (int*) malloc(g->input->N*sizeof(int));
+    
+    //    while (first_time < 2) {
+
+    if (options.verbose()) {
+      cerr << div() << "Printing cost status report..." << endl;
+      cerr << div() << cost_status_report(g, g) << endl;
+    }
+
+    // cout << "Firsttime: " << first_time << endl;
     Gecode::RestartMode restart = options.restart();
     Search::Cutoff* c;
     Search::Options o;
@@ -1110,57 +1122,140 @@ int main(int argc, char* argv[]) {
 
     // DecompDivModel *g3 = e.next(); //
 
-    Rnd r(options.seed());
+    DecompDivModel *g3 = e.next();
+    std::cout << g3 -> v_oa << std::endl;
 
-    // ////////////////////// Initialize the cost /////////////////////////////
+    if (!g3) {
+      cerr << div() << "G3 failed" << endl;
+    }
 
-    //   DecompDivModel *g3 = e.next();
-    // for (block b:  g->input->B) {
+    vector<block> blocks(g->input->B);
+    map<block, LocalDivModel *> local_problems;
+    map<block, RBS<LocalDivModel,BAB> *> local_engines;
 
-    //   local_problems[b] = (LocalDivModel *) make_div_local(g, b);
+
+    for (block b: blocks) {	// 
+
+      local_problems[b] =
+	(LocalDivModel *) init_local_problem(g3, b,
+					     true,
+					     local_cost_upper_bounds);
+
+
+      if (local_problems[b] == NULL) {	
+	cerr << div() << "Failed init.." << endl;
+	return -1;
+      }
+	    
+      if (options.verbose()) {
+	cerr << div() << "Printing local cost status report..." << endl;
+	cerr << div() << local_problems[b]->f(b,0) << endl;
+      }
+
+	      
+      local_engines[b] =
+	(RBS<LocalDivModel,BAB> *) init_local_engine(local_problems[b],
+						     &options);
+    }
 	
-    //   double correction = local_problems[b]->f(b, 0).max() - local_problems[b]->f(b, 0).min();
-    //   correction = ((double)d->options->acceptable_gap() * correction )/100.;
-    //   int max_cost1 = local_problems[b]->f(b, 0).min() + correction; 
+	  
+    DecompDivModel * g1 = (DecompDivModel*) dd -> clone();
 
-    //   double correction2 = (1. - (input.freq[b] / sumf))*20; // 
-    //   double ag = 100. + ((double)d->options->acceptable_gap() + correction2);
-	
-    //   cerr << div() << "Before: Local Problem: " << b << "cost: " << local_problems[b]->f(b,0)<< endl; // 
+    if (calculate_global_cost(g1, local_problems, local_cost_upper_bounds) == 0) {
+      cerr << div() << "Setting global cost.." << endl;
+      for (block b: g1 -> input -> B) {
+	  cout << b << local_cost_upper_bounds[b] << endl;
+	}
+    }
 
-    //   int max_cost2 = ceil((ag*(float)(local_problems[b]->f(b, 0).min()))/100.);
 
-    //   int max_cost = max_cost1>max_cost2 ? max_cost1 : max_cost2;
-    //   // int max_cost = local_problems[b]->f(b, 0).max() - 1;
-    //   local_problems[b]-> constrain_total_cost(max_cost);
+    if (options.verbose()) {
+      cerr << div() << "Printing cost status report..." << endl;
+      cerr << div() << cost_status_report(g, g) << endl;
+    }
 
-    //   if (local_problems[b]->status() == SS_FAILED) {
-    // 	cerr << div() << "Local Problem: " << b << " failed." << endl;
-    // 	return -1;
-    //   }
-    // }
+    if (g) 
+      delete g;
+    if (g3) 
+      delete g3;
 
-    // for (uint i = 0; i < input.N; i++) {
-    //   int cost = 0;
-    //   for (block b: g->input->B) {	// 
-    // 	cost += input.freq[b] * local_problems[b]->f(b,i).max();
-    //   }
-    //   dd_best_cost.push_back(cost);
-    // }
-    // g->post_upper_bound(dd_best_cost);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ///////////////////////////// END OF INIT ///////////////////////////
+
+    // Initialize the decomposition solver
+    // DecompDivModel * g = (DecompDivModel*) dd -> clone();
+    DecompDivModel * dtmp2 = (DecompDivModel*) d -> clone();
+
+    //    map<block, LocalDivModel *> local_problems;    
+
+
+    if (options.use_optimal_for_diversification()) 
+      if (find_optimal_solution(dtmp2, g1, &options) != 0)
+	cerr << "Fail to find optimal solution" << endl;
     
+    g1 -> post_branchers(); // 
 
-    // if (g->status() == SS_FAILED) {
-    //   cerr << div() << "Status failed after applying upper bound." << endl;
-    //   return -1;
+    if (g1->status() == SS_FAILED) {
+      cerr << div() << "DivModel g1 failed." << endl;
+      return 0;
+    }
+
+
+    // if (options.verbose()) {
+    //   cerr << div() << "Printing cost status report..." << endl;
+    //   cerr << div() << cost_status_report(g1, g1) << endl;
     // }
 
-    // ////////////////////// Initialize the cost /////////////////////////////
+    // cout << "Firsttime: " << first_time << endl;
+    // Gecode::RestartMode restart1 = options.restart();
+    // Search::Cutoff* c1;
+    // unsigned long int s_const1 = options.restart_scale();
+    Search::Options o1;
+    // if (restart == RM_LUBY ){
+    //   c = Search::Cutoff::luby(s_const);
+    // } else if (restart == RM_CONSTANT) {
+    //   c = Search::Cutoff::constant(s_const);
+    // } else {
+    //   c = Search::Cutoff::constant(1000);
+    // }
+
+    o1.cutoff = c;
+
+    RBS<DecompDivModel,BAB> e1(g1,o1);
+
+    // DecompDivModel *g3 = e.next(); //
+
+    Rnd r(options.seed());
 
     while(count < maxcount) {
     
       //cerr << div() << "Before e.next()." << endl; // 
-      DecompDivModel *g3 = e.next();
+      DecompDivModel *g3 = e1.next();
       std::cout << g3 -> v_oa << std::endl;
       //cerr << div() << "After e.next()." << endl;
       //    cerr << div() << "After next solution" << endl; // 
@@ -1170,7 +1265,7 @@ int main(int argc, char* argv[]) {
 
       //    cout << g3->v_c << endl;	// 
 
-      vector<block> blocks(g->input->B);
+      vector<block> blocks(g3->input->B);
       map<block, LocalDivModel *> local_problems;
       map<block, RBS<LocalDivModel,BAB> *> local_engines;
 
@@ -1179,12 +1274,23 @@ int main(int argc, char* argv[]) {
       // Initialize the local_problems with an engine
       for (block b: blocks) {	// 
 
-	local_problems[b] = (LocalDivModel *) init_local_problem(g3, b);
+	local_problems[b] =
+	  (LocalDivModel *) init_local_problem(g3, b,
+					       false,
+					       local_cost_upper_bounds);
+
+
 	if (local_problems[b] == NULL) {
 	  found_local_problem  = false;
 	  break;
 	}
+	    
+	if (options.verbose()) {
+	  cerr << div() << "Printing local cost status report..." << endl;
+	  cerr << div() << local_problems[b]->f(b,0) << endl;
+	}
 
+	      
 	local_engines[b] =
 	  (RBS<LocalDivModel,BAB> *) init_local_engine(local_problems[b],
 						       &options);
@@ -1192,21 +1298,20 @@ int main(int argc, char* argv[]) {
 	
       if (!found_local_problem) continue;
 
+	  
       vector<DecompDivModel*> solutions;
-      DecompDivModel * g1 = NULL;
-
-
       //   End of test block 2 - factorial
 
       int rn = r(maxcount);
+      
       while(count < maxcount && rn > 0) {
 	// g1 = e.next();
 	rn--;
 	cout << "count:" << count << "rnd: " << rn  << endl;
       
-	g1 = (DecompDivModel *) g->clone();
-	if (g1 == NULL || g1->status() == SS_FAILED) {
-	  cerr << div() << "DivModel g.clone() failed." << endl;
+	DecompDivModel * g2 = (DecompDivModel *) g3->clone();
+	if (g2 == NULL || g2->status() == SS_FAILED) {
+	  cerr << div() << "DivModel g1.clone() failed." << endl;
 	  return 0;
 	}
 
@@ -1237,8 +1342,8 @@ int main(int argc, char* argv[]) {
 	    local_problems[b] = ls;
 	    if (ls && ls->status() != SS_FAILED) {
 	      cerr << div() << "Applying solution " << ls->b << endl; // 
-	      g1->apply_solution(ls);
-	      if (g1->status() == SS_FAILED) {
+	      g2->apply_solution(ls);
+	      if (g2->status() == SS_FAILED) {
 		cerr << div() << "Applying solution failed " << ls->b << endl; // 
 		found_local_solution = false;
 		break;
@@ -1259,32 +1364,32 @@ int main(int argc, char* argv[]) {
 
 	// DFS<DecompDivModel> e(g1);
 
-	DecompDivModel *g3 = g1; // e.next();
-
       
-	if (g3 == NULL || g3->status() == SS_FAILED) {
+	if (g2 == NULL || g2->status() == SS_FAILED) {
 	  cerr << div() << "DecompDivModel e.next() failed." << endl;
 	  //if (g3 != NULL) delete g3; // 
 	} else {
 	
 	  cerr << div() << "Cloning " << count << "\r";
-	  solutions.push_back(g1);
-	  ResultData rd = ResultData(g3, false, 0,
+	  solutions.push_back(g2);
+	  ResultData rd = ResultData(g2, false, 0,
 				     0, 0,
 				     0, t_solver.stop(),
 				     t_it.stop());
 
 	  ofstream fout;
-	  fout.open(options.divs_dir() +  "/" + to_string(count) + "." + g3->options->output_file());
-	  fout << produce_json(rd, gd, g3->input->N, 0);
+	  fout.open(options.divs_dir() +  "/" + to_string(count) + "." + g2->options->output_file());
+	  fout << produce_json(rd, gd, g2->input->N, 0);
 	  fout.close();
 	  count++;
 	  // g->post_constrain(g1);
 	} 
-	if (g1 != NULL) delete g1;
+	if (g2 != NULL) delete g2;
 
       }
     }
+      //      first_time++;
+      //} 
     cerr << endl;
   } //decomposition
    

@@ -53,7 +53,7 @@ LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel 
 LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
 
 
-LocalDivModel * init_local_problem(DecompDivModel * g, block b);
+LocalDivModel * init_local_problem(DecompDivModel * g, block b, bool calc_cost, int* ud);
 
 
 RBS<LocalDivModel,BAB> *

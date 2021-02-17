@@ -37,6 +37,7 @@
 
 #include "models/divmodel.hpp"
 #include "models/decompdivmodel.hpp"
+#include "models/localdivmodel.hpp"
 #include "procedures/commonprocedures.hpp"
 
 using namespace std;
@@ -53,5 +54,9 @@ find_optimal_solution(DivModel *base, DecompDivModel *dm, ModelOptions *options)
 
 // Prefix for debug output
 string div();
+
+
+int
+calculate_global_cost(DecompDivModel *dm, map<block, LocalDivModel *> l, int * ub);
 
 #endif

@@ -152,7 +152,28 @@ solve_global(DivModel * base, IterationState & state, vector<int> & best,
 
 
 
+int
+calculate_global_cost(DecompDivModel *dm,
+		      map<block, LocalDivModel *> local_problems,
+		      int * ub) {
 
+  vector<int> dd_best_cost;
+  for (uint i = 0; i < dm->input->N; i++) {
+    int cost = 0;
+    for (block b: dm->input->B) {	//
+      ub[b] = local_problems[b]->f(b,i).max();
+      cost += dm->input->freq[b] * ub[b];
+    }
+    dd_best_cost.push_back(cost);
+  }
+  dm->post_upper_bound(dd_best_cost);
 
+  if (dm->status() == SS_FAILED) {
+    cerr << div() << "Calculate_global_cost: Status failed." << endl;
+    return -1;
+  }
+  return 0;
+  
+}
 
 string div() { return "[div]\t "; }

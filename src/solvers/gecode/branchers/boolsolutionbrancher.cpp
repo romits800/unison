@@ -161,6 +161,6 @@ void solution_branch(Home home, const BoolVarArgs& v, const IntArgs& sol) {
   for (int i=sol.size(); i--; )
     vsol[i]=sol[i];
   // Post the brancher
-  //  BoolSolutionBrancher::invoked = 0;
+  BoolSolutionBrancher::invoked = 0;
   BoolSolutionBrancher::post(home,vv,vsol);
 }
