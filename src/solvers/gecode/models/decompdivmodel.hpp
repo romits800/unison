@@ -36,6 +36,7 @@
 #define __DECOMP_DIV_MODEL__
 
 #include "divmodel.hpp"
+#include "branchers/boolsolutionbrancher.hpp"
 // #include "branchers/merit.hpp"
 // #include "branchers/value.hpp"
 
@@ -80,6 +81,8 @@ public:
   DecompDivModel* copy(void);
 
   // Branchers
+  void post_div_decomp_branchers(DivModel * sol);
+  void apply_div_solution(DivModel * d);
   // void post_div_branchers(void);
   // void post_random_branchers(void);
   // void post_clrandom_branchers(void);

@@ -54,6 +54,7 @@ HEADERS += common/definitions.hpp \
            branchers/pressureschedulingbrancher.hpp \
            branchers/routingbrancher.hpp \
            branchers/solutionbrancher.hpp \
+           branchers/boolsolutionbrancher.hpp \
            procedures/localdivprocedures.hpp \
            procedures/commonprocedures.hpp \
            procedures/divprocedures.hpp \
@@ -87,6 +88,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/pressureschedulingbrancher.cpp \
            branchers/routingbrancher.cpp \
            branchers/solutionbrancher.cpp \
+           branchers/boolsolutionbrancher.cpp \
            procedures/localdivprocedures.cpp \
            procedures/commonprocedures.cpp \
            procedures/localprocedures.cpp \

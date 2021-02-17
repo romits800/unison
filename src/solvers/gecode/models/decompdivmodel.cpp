@@ -41,7 +41,7 @@ DecompDivModel::DecompDivModel(Parameters * p_input, ModelOptions * p_options,
 {
 
   // div_r.seed(p_options->seed());
-  // div_p = p_options->relax();
+  div_p = 0.9;
 
   // int op_size = O().size();
 
@@ -67,326 +67,59 @@ DecompDivModel* DecompDivModel::copy(void) {
 }
 
 
-// void DecompDivModel::post_random_branchers(void) {
-//   branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-//          NULL, &print_global_cost_decision);
-//   Rnd r;
-//   r.seed(options->seed());
-//   branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
-//          NULL, &print_global_inactive_decision);
-
-//   branch(*this, v_c, INT_VAR_RND(r), INT_VAL_RND(r),
-//          &schedulable, &print_global_cycle_decision);
-
-//   branch(*this, v_i, INT_VAR_RND(r), INT_VAL_MIN(),
-//          NULL, &print_global_instruction_decision);
-
-//   branch(*this, v_y, INT_VAR_RND(r), INT_VAL_MIN(),
-//          NULL, &print_global_temporary_decision);
-
-//   branch(*this, v_r, INT_VAR_RND(r), INT_VAL_RND(r),
-//          &global_assignable, &print_global_register_decision);
-
-
-// }
-
-
-
-// void DecompDivModel::post_clrandom_branchers(void) {
-//   Rnd r;
-//   r.seed(options->seed());
-//   //branch(*this, v_gadget, INT_VAR_RND(r), INT_VAL_RND(r),
-//   //       NULL, NULL);
-
-//   branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
-//          NULL, &print_global_inactive_decision);
-
-//   branch(*this, v_i, INT_VAR_RND(r), INT_VAL_MIN(),
-//          NULL, &print_global_instruction_decision);
-
-//   branch(*this, v_y, INT_VAR_RND(r), INT_VAL_MIN(),
-//          NULL, &print_global_temporary_decision);
-
-//   branch(*this, v_c, INT_VAR_RND(r), INT_VAL_RND(r),
-//          &schedulable, &print_global_cycle_decision);
-
-//   branch(*this, v_r, INT_VAR_RND(r), INT_VAL_RND(r),
-//          &global_assignable, &print_global_register_decision);
-
-// }
-
-// void DecompDivModel::post_cloriginal_branchers(void) {
-//   Rnd r;
-//   r.seed(options->seed());
-//   branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
-//          NULL, &print_global_inactive_decision);
-
-//   branch(*this, v_c, INT_VAR_NONE(), INT_VAL_MIN(),
-//          &schedulable, &print_global_cycle_decision);
-
-//   branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
-//          NULL, &print_global_instruction_decision);
-
-//   branch(*this, v_y, INT_VAR_NONE(), INT_VAL_MIN(),
-//          NULL, &print_global_temporary_decision);
-
-//   branch(*this, v_r, INT_VAR_NONE(), INT_VAL_RND(r),
-//          &global_assignable, &print_global_register_decision);
-
-// }
-
-
-// // int  DivModel::commit(IntVar x, int i) 
-// void DecompDivModel::post_div_branchers(void) {
-
-//   // if (options->enable_solver_solution_brancher() && solver->has_solution) {
-//   //   IntArgs sol;
-//   //   IntVarArgs vs;
-//   //   for (int c: solver->cycles) sol << c;
-//   //   for (int r: solver->registers) sol << r;
-//   //   for (int t: solver->temporaries) sol << t;
-//   //   for (IntVar c: v_c) vs << c;
-//   //   for (IntVar r: v_r) vs << r;
-//   //   for (IntVar t: v_y) vs << t;
-    
-//   //   // TODO(Romy):
-//   //   // assign(*this, vs, INT_ASSIGN(v,c*));
-//   //   solution_branch(*this, vs, sol);
-//   // }
-//   if (options->branching() == BR_RND) {
-//     post_random_branchers();
-//   }
-//   else if (options->branching() == BR_RND_COSTLAST) {
-//     post_clrandom_branchers();
-//   }
-//   else if (options->branching() == BR_ORIGINAL_COSTLAST) {
-//     post_cloriginal_branchers();
-//   }
-//   else if (options->branching() == BR_ORIGINAL) {
-//     GlobalModel::post_complete_branchers(options->seed()) ;
-//   }
-// }
-
-
-// void DecompDivModel::post_diversification_constraints(void) {
-//   post_global_cycles();
-//   post_diversification_hamming();
-//   post_diversification_reghamming();
-//   post_diversification_channel();
-//   if (options->dist_metric() == DIST_HAMMING_DIFF)
-//     post_diversification_diffs();
-//   if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) ||
-//       (options->dist_metric() == DIST_DIFF_BR)) {
-//     post_diversification_br_diffs();
-//   }
- 
-//   if (options->dist_metric() == DIST_HAMMING_REG_GADGET ||
-//       options->dist_metric() == DIST_REG_GADGET         ||
-//       options->dist_metric() == DIST_CYC_GADGET) {
-//     post_diversification_reg_gadget();
-//   }
-// }
-
-// void DecompDivModel::post_diversification_channel(void) {
-//   // IntVarArgs bs;
-//   // uint smaxc = sum_of(input->maxc);
-//   // for (operation i : input->O) { //real_operations) {
-//   //   if (is_real_type(i)) {
-//   //       BoolVar ifb = var ( a(i) == 1 );
-//   //       IntVar thenb = var ( gc(i) );
-//   //       IntVar elseb = var(smaxc); //IntVar(*this, 0, smaxc); //
-//   //       // max(*this, v_gc, elseb);
-//   //       IntVar res = IntVar(*this, 0, smaxc);
-//   //       ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
-//   //       bs << res;
-//   //   } else {
-//   //       bs << var(smaxc);
-//   //   }
-//   // }
-
-//   // channel(*this, bs, v_oc);
-
-// }
-
-// void DecompDivModel::post_diversification_diffs(void) {
-//   // int k=0;
-//   // int maxval = max_of(input->maxc);
-//   // for (uint i = 0; i < real_operations.size(); i++) {
-//   //   for (uint j = i+1; j< real_operations.size(); j++) {
-//   //     // If then else constraint
-//   //     BoolVar ifb = var ((a(i) == 1) && (a(j) == 1));
-//   //     IntVar elseb = var (maxval) ;
-//   //     IntVar thenb =  var (gc(i) - gc(j));
-//   //     ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
-//   //     k++;
-//   //   }
-//   // }
-// }
-
-// void DecompDivModel::post_diversification_br_diffs(void) {
-//   // int maxval = max_of(input->maxc);
-//   // int prevbr = 0; 
-//   // int k=0;
-//   // for (operation br: branch_operations) {
-//   //   for (operation o: real_operations) { 
-//   //     if (br == o) continue;
-//   //     BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) > gc(prevbr)) && (gc(o) <= gc(br)));
-//   //     IntVar thenb =  var (gc(br) - gc(o));
-//   //     IntVar elseb = var (maxval);
-//   //     ite(*this, ifb,  thenb, elseb, diff(k), IPL_DOM);
-//   //     k++;
-//   //   }
-//   //   prevbr = br;
-//   // }
-
-// }
-
-
-// void DecompDivModel::post_diversification_reg_gadget(void) {
-//   // int maxval = max_of(input->maxc);
-//   // //int prevbr = 0; 
-//   // int k=0;
-//   // for (operation br: branch_operations) {
-//   //   for (operation o: real_operations) { 
-//   //     if (br == o) continue;
-//   //     BoolVar ifb = var ((a(br) == 1) && (a(o) == 1) && (gc(o) <= gc(br))); //(gc(o) > gc(prevbr)) && (gc(o) < gc(br)));
-//   //     //IntVar thenb =  gc(o);
-//   //     IntVar thenb =  var (gc(br) - gc(o));
-//   //     IntVar elseb = var (maxval);
-//   //     ite(*this, ifb,  thenb, elseb, gadget(k), IPL_DOM);
-//   //     k++;
-//   //   }
-//   //   //prevbr = br;
-//   // }
-
-// }
-
-
-// void DecompDivModel::post_diversification_reghamming(void) {
-//   // for (operand p: input->P) {
-//   //   constraint(reghamm(p) == ry(p));
-//   // }
-// }
-
-
-// void DecompDivModel::post_diversification_hamming(void) {
-//   // for (operation i : real_operations) {
-//   //   BoolVar ifb = var (a(i) == 1);
-//   //   IntVar thenb = var ( gc(i) );
-//   //   IntVar elseb = var ( -1 );
-//   //   ite(*this, ifb,  thenb, elseb, hamm(i), IPL_DOM);
-//   // }
-// }
-
-// void DecompDivModel::post_global_cycles(void) {
-//   // VarInt offset;
-//   // for (block b: input->B) {
-//   //   for (operation o: input->ops[b]) {
-//   //     if (b == 0)
-//   //       constraint(gc(o) == c(o));
-//   //     else
-//   //       constraint(gc(o) == c(o) + gc(input->out[b-1]));
-//   //   }
-//   // }
-// }
-
-
-
-
-// void DecompDivModel::post_levenshtein(const DecompDivModel & b)
-// {
-//   // uint sizex = v_oc.size(); // size of maxc
-//   // // uint num_gadgets = branch_operations.size();
-
-//   // IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
-//   // Matrix<IntVarArray> mat(x, sizex, sizex);
-
-//   // mat(0,0) = var(0);
-//   // for (uint i = 1; i < sizex; i++) {
-//   //   mat(i,0) = var(i);
-//   //   mat(0,i) = var(i);
-//   // }
-//   // for (uint i = 1; i < sizex; i++)
-//   //   for (uint j = 1; j < sizex; j++) {
-
-//   //     BoolVar res = var ( oc(i-1) != b.oc(j-1) );
-//   //     IntVarArgs v;
-//   //     v << var (mat(i-1,j) + 1);
-//   //     v << var (mat(i,j-1) + 1);
-//   //     v << var (mat(i-1,j-1) + res);
-//   //     min(*this, v, mat(i,j));
-//   //   }
-
-//   // dist = var( mat(sizex-1, sizex-1));
-
-//   // constraint(dist >= mindist); // Levenshtein distance
-// }
-
-// void DecompDivModel::post_levenshtein_set(const DecompDivModel & b)
-// {
-//   // uint sizex = v_oc.size();// + 1; // size of maxc
-//   // // int op_size = O().size();
-//   // IntVarArray x = int_var_array(sizex*sizex, 0, sizex);
-//   // Matrix<IntVarArray> mat(x, sizex, sizex);
-//   // uint maxcap = max_of(input->cap);
-
-//   // IntVarArray cap = int_var_array(sizex-1, 0, maxcap);
-//   // IntVarArray bcap = int_var_array(sizex-1, 0, maxcap);
-
-
-//   // for (uint i = 0; i < sizex-1; i++) {
-//   //   cap[i] = var(cardinality(oc(i)));
-//   //   bcap[i] = var(cardinality(b.oc(i)));
-//   // }
-
-//   // mat(0,0) = var(0);
-//   // for (uint i = 1; i < sizex; i++) {
-//   //   IntVar nw = cap[i-1]; //var(cardinality(oc(i-1)));
-//   //   IntVar old = bcap[i-1]; //var(cardinality(b.oc(i-1)));
-//   //   mat(i,0) = var( mat(i-1,0) +  nw);
-//   //   mat(0,i) = var( mat(0,i-1) + old);
-//   // }
-
-//   // for (uint i = 1; i < sizex; i++)
-//   //   for (uint j = 1; j < sizex; j++) {
-//   //     IntVarArgs cs;
-//   //     cs << var (cardinality (oc(i-1) - b.oc(j-1)));
-//   //     cs << var (cardinality (b.oc(j-1) - oc(i-1)));
-//   //     IntVar res = IntVar(*this, 0, maxcap);
-//   //     max(*this, cs, res);
-
-//   //     IntVarArgs v;
-//   //     v << var (mat(i-1,j) + cap[i-1]); //cardinality(oc(i-1)));
-//   //     v << var (mat(i,j-1) + bcap[i-1]); //cardinality(b.oc(j-1)));
-//   //     v << var (mat(i-1,j-1) + res);
-//   //     min(*this, v, mat(i,j));
-//   //   }
-
-//   // dist = var( mat(sizex-1, sizex-1));
-//   // constraint( dist >= mindist); // Levenshtein distance
-// }
-
-
-// bool DecompDivModel::is_real_type(int o) {
-
-//   return (input->type[o] == BRANCH ||
-//           input->type[o] == LINEAR ||
-//           input->type[o] == CALL ||
-//           input->type[o] == TAILCALL ||
-//           input->type[o] == COPY);
-
-// }
-
-// bool DecompDivModel::is_branch_type(int o) {
-
-//   return (input->type[o] == BRANCH ||
-//           input->type[o] == TAILCALL ||
-//           input->type[o] == CALL);
-
-// }
+void DecompDivModel::post_div_decomp_branchers(DivModel* solm) {
+
+  std::cout << solm -> v_oa << std::endl;
+  std::cout << v_oa << std::endl;
+  IntArgs sol;
+  BoolVarArgs vs;
+  // for (IntVar p: v_pal) vs << p;
+  // for (IntVar p: v_pals) vs << p;
+  // // for (BoolVar p: v_oa) vs << p; // 
+  // for (IntVar p: v_ali) vs << p;
+
+  for (int i=0; i < solm->v_pal.size(); i++) {
+    if (solm->v_pal[i].assigned()) {
+  	sol << solm->v_pal[i].val();
+  	vs << v_pal[i];
+    }
+  }
+  for (int i=0; i < solm->v_oa.size(); i++) {
+    if (solm->v_oa[i].assigned()) {
+      sol << solm->v_oa[i].val();
+      vs << v_oa[i];
+    }
+  }
+
+  solution_branch(*this, vs, sol);
+}
 
 void DecompDivModel::constrain(const Space & _b) {
-  // const DecompDivModel& b = static_cast<const DecompDivModel&>(_b);
+  const DecompDivModel& b = static_cast<const DecompDivModel&>(_b);
+
+  BoolVarArgs bh;
+  for (int i = 0; i < v_oa.size(); i++) {
+    if (b.v_oa[i].assigned())
+      bh << var (b.v_oa[i] != v_oa[i]);
+  }
+  for (int i = 0; i < v_pal.size(); i++) {
+    if (b.v_pal[i].assigned())
+      bh << var (b.v_pal[i] != v_pal[i]);
+  }
+
+  for (int i = 0; i < v_pals.size(); i++) {
+    if (b.v_pals[i].assigned())
+      bh << var (b.v_pals[i] != v_pals[i]);
+  }
+
+  for (int i = 0; i < v_ali.size(); i++) {
+    if (b.v_ali[i].assigned())
+      bh << var (b.v_ali[i] != v_ali[i]);
+  }
+
+  if (bh.size() > 0)
+    constraint(sum(bh) >= 1);
+  
 
   // BoolVarArgs bh;
 
@@ -421,47 +154,91 @@ void DecompDivModel::constrain(const Space & _b) {
 }
  
 
-void DecompDivModel::post_constrain(DecompDivModel* _b) {
+void DecompDivModel::apply_div_solution(DivModel * d) {
 
-  const DecompDivModel& b = static_cast<const DecompDivModel&>(*_b);
+  // for (int i = 0; i < v_pal.size(); i++) {
+  //   if (d->v_pal[i].assigned())
+  //     constraint(d->v_pal[i] == v_pal[i]);
+  // }
 
-  BoolVarArgs bh;
+  // for (int i = 0; i < v_pals.size(); i++) {
+  //   if (d->v_pals[i].assigned())
+  //     constraint(d->v_pals[i] == v_pals[i]);
+  // }
 
-  switch (options->dist_metric()) {
-  case DIST_HAMMING:
-    for (operation o: input -> O) {
-      bh << var (hamm(o) != b.hamm(o));
-    }
-    if (bh.size() >0)           //
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_DIFF:
-
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_DIFF_BR:
-
-    for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
-  case DIST_HAMMING_BR:
-    for (operation o : input -> O) {
-      if (is_branch_type(o))
-        bh << var (hamm(o) != b.hamm(o));
-    }
-    if (bh.size() >0)
-      constraint(sum(bh) >= 1); // hamming distance
-    break;
+  for (int i = 0; i < v_oa.size(); i++) {
+    if (d->v_oa[i].assigned())
+      constraint(d->v_oa[i] == v_oa[i]);
   }
 
-  return;
+  // for (int i = 0; i < v_ali.size(); i++) {
+  //   if (d->v_ali[i].assigned())
+  //     constraint(d->v_ali[i] == v_ali[i]);
+  // }
+
+  
+  // for (temporary t1 : input->tmp[b]) {
+  //   if (!ls->is_dead(t1)) {
+  //     constraint(r(t1) == ls->r(t1));
+  //   }
+  // }
+  
+  // for (operation o : input->ops[b]) {
+  //   constraint(i(o) == ls->i(o));
+  // }
+  
+  // for (operation o : input->ops[b])
+  //   if (!ls->is_inactive(o)) {
+  //     constraint(c(o) == ls->c(o));
+  //   }
+  // for (operand p : input->ope[b]) {
+  //   constraint(y(p) == ls->y(p));
+  // }
+
+}
+
+
+void DecompDivModel::post_constrain(DecompDivModel* _b) {
+
+  // const DecompDivModel& b = static_cast<const DecompDivModel&>(*_b);
+
+  // BoolVarArgs bh;
+
+  // switch (options->dist_metric()) {
+  // case DIST_HAMMING:
+  //   for (operation o: input -> O) {
+  //     bh << var (hamm(o) != b.hamm(o));
+  //   }
+  //   if (bh.size() >0)           //
+  //     constraint(sum(bh) >= 1); // hamming distance
+  //   break;
+  // case DIST_HAMMING_DIFF:
+
+  //   for (int i = 0; i < v_diff.size(); i++) {
+  //     bh << var (diff(i) != b.diff(i));
+  //   }
+  //   if (bh.size() >0)
+  //     constraint(sum(bh) >= 1); // hamming distance
+  //   break;
+  // case DIST_HAMMING_DIFF_BR:
+
+  //   for (int i = 0; i < v_diff.size(); i++) {
+  //     bh << var (diff(i) != b.diff(i));
+  //   }
+  //   if (bh.size() >0)
+  //     constraint(sum(bh) >= 1); // hamming distance
+  //   break;
+  // case DIST_HAMMING_BR:
+  //   for (operation o : input -> O) {
+  //     if (is_branch_type(o))
+  //       bh << var (hamm(o) != b.hamm(o));
+  //   }
+  //   if (bh.size() >0)
+  //     constraint(sum(bh) >= 1); // hamming distance
+  //   break;
+  // }
+
+  // return;
 
 }
 
@@ -470,9 +247,9 @@ bool DecompDivModel::master(const MetaInfo& mi) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if (mi.last() != NULL)
+      if (mi.last() != NULL)
       constrain(*mi.last());
-    mi.nogoods().post(* this);
+    mi.nogoods().post(*this);
     return true; // forces a restart even if a solution has been found
   }
   GECODE_NEVER;
@@ -485,12 +262,10 @@ bool DecompDivModel::slave(const MetaInfo& mi) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if ((mi.restart() > 0) && (div_p > 0.0)) {
+    if (div_p > 0.0) {
       if (mi.last() != NULL)// {
         next(static_cast<const DecompDivModel&>(*mi.last()));
       return false;
-      // } else
-        // return true;
     } else if (mi.restart() == 0) {
       return true;
     } else {
@@ -503,8 +278,56 @@ bool DecompDivModel::slave(const MetaInfo& mi) {
 
 void DecompDivModel::next(const DecompDivModel& l) {
 
-    relax(*this, v_oa, l.v_oa, div_r, div_p);
+  //std::cout << div_p << endl;
+  BoolVarArgs toa, ltoa;
+  for (int i = 0; i < v_oa.size(); i++) {
+    if (l.v_oa[i].assigned()) {
+      toa << v_oa[i];
+      ltoa << l.v_oa[i];
+    }
+  }
+  relax(*this, toa, ltoa, div_r, 0.99);
 
-    relax(*this, v_s , l.v_s , div_r, div_p);
+  BoolVarArgs tpal, ltpal;
+
+  for (int i = 0; i < v_pal.size(); i++) {
+    if (l.v_pal[i].assigned()) {
+      tpal << v_pal[i];
+      ltpal << l.v_pal[i];
+    }
+  }
+
+  relax(*this, tpal, ltpal, div_r, div_p);
+
+  SetVarArgs tali, ltali;
+  for (int i = 0; i < v_ali.size(); i++) {
+    if (l.v_ali[i].assigned()) {
+      tali << v_ali[i];
+      ltali << l.v_ali[i];
+    }
+  }
+
+  relax(*this, tali, ltali, div_r, div_p);
+
+
+  SetVarArgs tpals, ltpals;
+  for (int i = 0; i < v_pals.size(); i++) {
+    if (l.v_pals[i].assigned()) {
+      tpals << v_pals[i];
+      ltpals << l.v_pals[i];
+    }
+  }
+
+  relax(*this, tpals, ltpals, div_r, div_p);
+
+
+  // relax(*this, v_ali, l.v_ali, div_r, div_p);
+  // relax(*this, v_pals, l.v_pals, div_r, div_p);
+
+  //     v_pal.update(*this, cg.v_pal);
+  // v_pals.update(*this, cg.v_pals);
+  // v_oa.update(*this, cg.v_oa);
+  // v_ali.update(*this, cg.v_ali);
+
 }
 

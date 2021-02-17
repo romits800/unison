@@ -1,10 +1,8 @@
 /*
  *  Main authors:
- *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+ *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
  *
- *  This file is part of Unison, see http://unison-code.github.io
- *
- *  Copyright (c) 2016, RISE SICS AB
+ *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -31,27 +29,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __BOOL_SOLUTION_BRANCHER__
+#define __BOOL_SOLUTION_BRANCHER__
 
-#ifndef __DIV_PROCEDURES__
-#define __DIV_PROCEDURES__
-
-#include "models/divmodel.hpp"
-#include "models/decompdivmodel.hpp"
-#include "procedures/commonprocedures.hpp"
+#include <gecode/int.hh>
 
 using namespace std;
 using namespace Gecode;
 
-
-// Gives a global solution
-Solution<DivModel>
-solve_global(DivModel * base, IterationState & state, vector<int> & best,
-             GIST_OPTIONS * go, int iteration);
-
-int
-find_optimal_solution(DivModel *base, DecompDivModel *dm, ModelOptions *options);
-
-// Prefix for debug output
-string div();
+void solution_branch(Home home, const BoolVarArgs& v, const IntArgs& sol);
 
 #endif

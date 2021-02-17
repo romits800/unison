@@ -43,6 +43,9 @@
 #include "branchers/routingbrancher.hpp"
 #include "branchers/pressureschedulingbrancher.hpp"
 
+#include "solver-parameters.hpp"
+#include "branchers/solutionbrancher.hpp"
+
 // #include <gecode/int.hh>
 
 using namespace Gecode;
@@ -71,7 +74,10 @@ public:
 
   void set_relax(double p) {div_p = p;};
 
+  SolverParameters *solver;
 
+  void set_solver(JSONVALUE root);
+  
   // Variable accessors
 
   IntVar diff(operation o) const {return v_diff[o]; }
@@ -90,6 +96,9 @@ public:
 
   LocalDivModel* copy(void);
 
+  // Constrain cost
+  void constrain_total_cost(int cost);
+  
   // Post constraints
   void post_diversification_constraints(void); // Diversification constraints
   void post_diversification_diffs(void); // Diversification constraints

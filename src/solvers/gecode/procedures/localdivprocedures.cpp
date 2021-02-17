@@ -63,13 +63,71 @@ LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel 
   return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
 }
 
+
 LocalDivModel * make_div_local(const DecompDivModel * gs, block b) {
   return make_div_local(gs, b, gs->ipl);
 }
 
 
-// string local(block b) {
-//   stringstream s;
-//   s << "[b" << b << "]\t ";
-//   return s.str();
-// }
+
+
+LocalDivModel *
+init_local_problem(DecompDivModel *g, block b) {
+
+
+  LocalDivModel * l = (LocalDivModel *) make_div_local(g, b);
+  l -> post_div_branchers();
+  l -> post_diversification_constraints();
+
+
+  double sumf = 0;
+  for (int i = 0; i< g->input->freq.size(); i++)
+    sumf += g->input->freq[i];
+
+  double correction = l->f(b, 0).max() - l->f(b, 0).min();
+  correction = ((double)g->options->acceptable_gap() * correction )/100.;
+  int max_cost1 = l->f(b, 0).min() + correction; 
+
+  double correction2 = (1. - (g->input->freq[b] / sumf))*20; // 
+  double ag = 100. + ((double)g->options->acceptable_gap() + correction2);
+  int max_cost2 = ceil((ag*(float)(l->f(b, 0).min()))/100.);
+
+  int max_cost = max_cost1>max_cost2 ? max_cost1 : max_cost2;
+
+  l-> constrain_total_cost(max_cost);
+
+  if (l->status() == SS_FAILED) {
+    std::cerr << "Init_local_problem failed." << std::endl;
+    return NULL;
+  }
+  return l;
+
+
+}
+
+
+ RBS<LocalDivModel,BAB> *
+ init_local_engine(LocalDivModel *l, ModelOptions *options) {
+
+   Search::Options localOptions;
+   Gecode::RestartMode restart = options->restart();
+   Search::Cutoff* c;
+   unsigned long int s_const = options->restart_scale();
+
+   if (restart == RM_LUBY ){
+     c = Search::Cutoff::luby(s_const);
+   } else if (restart == RM_CONSTANT) {
+     c = Search::Cutoff::constant(s_const);
+   } else {
+     c = Search::Cutoff::constant(1000);
+   }
+
+   localOptions.cutoff = c;
+
+   Search::Stop * localStop = new_stop(options->local_limit(), options);
+   localOptions.stop = localStop;
+
+   // Restart-based meta-engine
+   return new  RBS<LocalDivModel,BAB>(l, localOptions);
+
+ }

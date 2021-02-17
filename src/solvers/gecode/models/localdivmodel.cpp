@@ -74,15 +74,26 @@ LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
 LocalDivModel::LocalDivModel(LocalDivModel& cg) :
   LocalModel(cg),
   div_p(cg.div_p),
-  div_r(cg.div_r)
+  div_r(cg.div_r),
+  solver(cg.solver)
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
 
 }
 
+void LocalDivModel::set_solver(JSONVALUE root) {
+  solver = new SolverParameters(root);
+}
+
 LocalDivModel* LocalDivModel::copy(void) {
   return new LocalDivModel(*this);
+}
+
+void LocalDivModel::constrain_total_cost(int cost) {
+  //input->freq[b] * f(b,0), irt, cost
+  //  rel(*this, input->freq[b] *f(b, 0), irt, cost, ipl); // 
+  constraint( f(b, 0) <= cost);
 }
 
 
@@ -258,6 +269,8 @@ void LocalDivModel::next(const LocalDivModel& l) {
 
 void LocalDivModel::post_div_branchers(void) {
 
+  Rnd rnd;
+  rnd.seed(options->seed());
   // branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
   //        NULL, &print_inactive_decision);
 
@@ -274,14 +287,43 @@ void LocalDivModel::post_div_branchers(void) {
 
   // branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
   //        &print_register_decision);
-  branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_MIN());
-  branch(*this, v_i, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+//   if (options->enable_solver_solution_brancher() && solver->has_solution) {
+//     IntArgs sol;
+//     IntVarArgs vs;
+
+//     for (operation o : input-> ops[b]) {
+//       // if (solver->cycles[o] != -1) {
+// 	vs << c(o);
+//         sol << solver->cycles[o];
+// 	// }
+//      }
+//     for (temporary t1 : input-> tmp[b]) {
+//       //  if (solver->registers[t1] != -1) {
+// //	std::cout << solver->registers[t1] << std::endl; // 
+// 	vs << r(t1);
+//         sol << solver->registers[t1];
+// 	// }
+//      }
+
+//     for (operand p : input-> ope[b]) {
+//         vs << y(p);
+//         sol << solver->temporaries[p];
+//      }
+
+//     solution_branch(*this, vs, sol);
+
+//   }
+
+  // assign(*this, v_c, INT_ASSIGN_MIN()); // 
+  
+  branch(*this, v_a, BOOL_VAR_RND(rnd), BOOL_VAL_RND(rnd));
+  branch(*this, v_i, INT_VAR_RND(rnd), INT_VAL_MIN());
   IntVarArgs ts;
   for (operand p : input->groupcopyrel[b]) ts << y(p);
-  branch(*this, ts, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+  branch(*this, ts, INT_VAR_RND(rnd), INT_VAL_MIN());
 
-  branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN());
-  branch(*this, v_r, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+  branch(*this, v_c, INT_VAR_RND(rnd), INT_VAL_RND(rnd));
+  branch(*this, v_r, INT_VAR_RND(rnd), INT_VAL_RND(rnd));
 
 
   // TO CHECK: trivial branchers

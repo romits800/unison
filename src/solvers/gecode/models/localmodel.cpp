@@ -83,6 +83,7 @@ LocalModel::LocalModel(Parameters * p_input, ModelOptions * p_options,
   Model(p_input, p_options, p_ipl),
   b(p_b)
 {
+
   v_r   = int_var_array(T().size(), -1, input->RA.size() - 1);
   v_i   = int_var_array(O().size(), 0, input->I.size() - 1);
   v_c   = int_var_array(O().size(), 0, input->maxc[b]);
@@ -126,13 +127,12 @@ LocalModel::LocalModel(Parameters * p_input, ModelOptions * p_options,
 
   // Individual domains of problem variables
   post_decision_variable_domain_definitions();
-
   // Secondary variable definitions
   post_secondary_variable_definitions();
 
   // Basic model
   post_basic_model_constraints();
-
+  
   // Improved model
   post_improved_model_constraints();
 
@@ -447,7 +447,6 @@ void LocalModel::print(ostream & pOs) const {
 }
 
 void LocalModel::apply_solution(const GlobalModel * gs) {
-
   for (operation o : input->ops[b]) {
     copy_domain(*this, gs->i(o), i(o));
     copy_domain(*this, gs->c(o), c(o));

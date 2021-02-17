@@ -216,10 +216,12 @@ void DivModel::post_div_branchers(void) {
     IntVarArgs vs;
     for (int c: solver->cycles) sol << c;
     for (int r: solver->registers) sol << r;
-    for (int t: solver->temporaries) sol << t;
+    // for (int t: solver->temporaries) sol << t;
+    // for (int i: solver->instructions) sol << i;
     for (IntVar c: v_c) vs << c;
     for (IntVar r: v_r) vs << r;
-    for (IntVar t: v_y) vs << t;
+    // for (IntVar t: v_y) vs << t; // 
+    //  for (IntVar i: v_i) vs << i;
     
     // TODO(Romy):
     // assign(*this, vs, INT_ASSIGN(v,c*));

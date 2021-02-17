@@ -52,6 +52,13 @@ LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel 
 
 LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
 
+
+LocalDivModel * init_local_problem(DecompDivModel * g, block b);
+
+
+RBS<LocalDivModel,BAB> *
+init_local_engine(LocalDivModel *l, ModelOptions *options);
+
 // Prefix for debug output
 string local(block b);
 
