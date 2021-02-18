@@ -1234,7 +1234,7 @@ int main(int argc, char* argv[]) {
 	    }
 	    block b = ls->b;
 	    
-	    local_problems[b] = ls;
+	    //local_problems[b] = ls;
 	    if (ls && ls->status() != SS_FAILED) {
 	      cerr << div() << "Applying solution " << ls->b << endl; // 
 	      g1->apply_solution(ls);
