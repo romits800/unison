@@ -187,7 +187,7 @@ void LocalDivModel::constrain(const Space & _b) {
 
 
 bool LocalDivModel::master(const MetaInfo& mi) {
-  std::cerr << "master loc " << b << std::endl; // 
+  // std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
@@ -205,7 +205,7 @@ bool LocalDivModel::master(const MetaInfo& mi) {
 
 
 bool LocalDivModel::slave(const MetaInfo& mi) {
-  std::cerr << "master loc " << b << std::endl; // 
+  // std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     string portfolio = options->local_portfolio();
     assert(mi.asset() < portfolio.size());
@@ -213,7 +213,7 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
     post_branchers(search);
     return true;
   } else if (mi.type() == MetaInfo::RESTART) {
-    std::cerr << "restart loc " << b << std::endl; // 
+    // std::cerr << "restart loc " << b << std::endl; // 
     //if ((mi.restart() > 0) && (div_p > 0.0)) {
     if ((div_p > 0.0)) {
       if (mi.last() != NULL) {
@@ -229,7 +229,7 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
 }
 
 void LocalDivModel::next(const LocalDivModel& l) {
-  std::cerr << "next local " << b << std::endl; // 
+  // std::cerr << "next local " << b << std::endl; // 
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;
     for (operation o : input->ops[b]) {

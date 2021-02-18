@@ -41,7 +41,7 @@ DecompDivModel::DecompDivModel(Parameters * p_input, ModelOptions * p_options,
 {
 
   // div_r.seed(p_options->seed());
-  div_p = 0.2;
+  div_p = 0.5;
 
   // int op_size = O().size();
 
@@ -351,7 +351,7 @@ void DecompDivModel::post_constrain(DecompDivModel* _b) {
 }
 
 bool DecompDivModel::master(const MetaInfo& mi) {
-  std::cout << "master: " << div_p << endl;
+  //  std::cout << "master: " << div_p << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
@@ -367,7 +367,7 @@ bool DecompDivModel::master(const MetaInfo& mi) {
 
 
 bool DecompDivModel::slave(const MetaInfo& mi) {
-  std::cout << "slave: " << div_p << endl;
+  //  std::cout << "slave: " << div_p << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
@@ -388,7 +388,7 @@ bool DecompDivModel::slave(const MetaInfo& mi) {
 
 void DecompDivModel::next(const DecompDivModel& l) {
 
-  std::cout << "next: " << div_p << endl;
+  //std::cout << "next: " << div_p << endl;
   BoolVarArgs toa, ltoa;
   for (int i = 0; i < v_oa.size(); i++) {
     if (l.v_oa[i].assigned()) {
