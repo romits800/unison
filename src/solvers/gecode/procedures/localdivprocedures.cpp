@@ -59,25 +59,32 @@ Solution<LocalDivModel> local_problem(DecompDivModel * g1, block b) {
 //   return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
 // }
 
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl) {
-  return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b);
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b, int seed_correction, IntPropLevel p_ipl) {
+  return new LocalDivModel(gs->input, gs->options, p_ipl, gs, b, seed_correction);
 }
 
 
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b) {
-  return make_div_local(gs, b, gs->ipl);
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b, int seed_correction) {
+  return make_div_local(gs, b, seed_correction, gs->ipl);
 }
 
 
 
 
 LocalDivModel *
-init_local_problem(DecompDivModel *g, block b) {
+init_local_problem(DecompDivModel *g, block b, int seed_correction) {
 
 
-  LocalDivModel * l = (LocalDivModel *) make_div_local(g, b);
+  LocalDivModel * l = (LocalDivModel *) make_div_local(g, b, seed_correction);
   l -> post_div_branchers();
   l -> post_diversification_constraints();
+  std::cerr << b << std::endl;
+  std::cerr << l -> v_c << std::endl;
+  std::cerr << l -> v_r << std::endl;
+  std::cerr << l -> v_i << std::endl;
+  std::cerr << l -> v_a << std::endl;
+  std::cerr << l -> v_y << std::endl;
+  std::cerr << l -> f(b,0) << std::endl;
 
 
   double sumf = 0;
@@ -100,6 +107,9 @@ init_local_problem(DecompDivModel *g, block b) {
     std::cerr << "Init_local_problem failed." << std::endl;
     return NULL;
   }
+  std::cerr << l -> f(b,0) << std::endl;
+  std::cerr << "end: " << b << std::endl;
+  
   return l;
 
 

@@ -41,7 +41,7 @@ DecompDivModel::DecompDivModel(Parameters * p_input, ModelOptions * p_options,
 {
 
   // div_r.seed(p_options->seed());
-  div_p = 0.9;
+  div_p = 0.2;
 
   // int op_size = O().size();
 
@@ -67,41 +67,149 @@ DecompDivModel* DecompDivModel::copy(void) {
 }
 
 
-void DecompDivModel::post_div_decomp_branchers(DivModel* solm) {
+// void DecompDivModel::post_div_decomp_solution_branchers(DivModel* solm) {
 
-  std::cout << solm -> v_oa << std::endl;
-  std::cout << v_oa << std::endl;
-  IntArgs sol;
-  BoolVarArgs vs;
+//   GlobalModel::post_solution_brancher();
+  // std::cout << solm -> v_oa << std::endl;
+  // std::cout << v_oa << std::endl;
+    // IntArgs sol;
+    // IntVarArgs vs;
+    // for (int c: solver->cycles) sol << c;
+    // for (int r: solver->registers) sol << r;
+    // // for (int t: solver->temporaries) sol << t;
+    // // for (int i: solver->instructions) sol << i;
+    // for (IntVar c: v_c) vs << c;
+    // for (IntVar r: v_r) vs << r;
+    // solution_branch(*this, vs, sol);
+
+
   // for (IntVar p: v_pal) vs << p;
   // for (IntVar p: v_pals) vs << p;
   // // for (BoolVar p: v_oa) vs << p; // 
   // for (IntVar p: v_ali) vs << p;
 
-  for (int i=0; i < solm->v_pal.size(); i++) {
-    if (solm->v_pal[i].assigned()) {
-  	sol << solm->v_pal[i].val();
-  	vs << v_pal[i];
-    }
-  }
-  for (int i=0; i < solm->v_oa.size(); i++) {
-    if (solm->v_oa[i].assigned()) {
-      sol << solm->v_oa[i].val();
-      vs << v_oa[i];
-    }
+  // for (int i=0; i < solm->v_pal.size(); i++) {
+  //   if (solm->v_pal[i].assigned()) {
+  // 	sol << solm->v_pal[i].val();
+  // 	vs << v_pal[i];
+  //   }
+  // }
+  // for (int i=0; i < solm->v_oa.size(); i++) {
+  //   if (solm->v_oa[i].assigned()) {
+  //     sol << solm->v_oa[i].val();
+  //     vs << v_oa[i];
+  //   }
+  // }
+
+  // solution_branch(*this, vs, sol);
+// } 
+
+void DecompDivModel::post_div_decomp_branchers() {
+  Rnd r;
+  r.seed(options->seed());
+
+  BoolVarArgs xs;
+  for (global_cluster gc : input->GC) {
+    operand p = input->clusters[gc][0];
+    xs << x(p);
   }
 
-  solution_branch(*this, vs, sol);
+  if (cf) {
+    branch(*this,
+           xs,
+           BOOL_VAR_MERIT_MAX(&Merit::cluster_energy),
+           BOOL_VAL_MAX(),
+           NULL,
+           &print_cluster_connection_decision);
+  } else {
+    branch(*this,
+           xs,
+           BOOL_VAR_MERIT_MAX(&Merit::cluster_energy),
+           BOOL_VAL(&most_effective_connection_decision),
+           NULL,
+           &print_cluster_disconnection_decision);
+  }
+
+  // register allocation
+
+  branch(*this,
+         v_pals,
+         SET_VAR_RND(r),
+         SET_VAL_RND_INC(r),
+         &allocatable,
+         &print_allocation_decision);
+
+  // activation
+
+  BoolVarArgs as;
+  for (activation_class ac : input->AC) {
+    operation o = input->activation_class_representative[ac];
+    as << a(o);
+  }
+  branch(*this, as, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
+         NULL, &print_activation_decision);
+
+  if (!options->disable_hints()) {
+
+    // hinted register avoidance
+
+    BoolVarArgs avoidhs;
+    for (AvoidHint hint : input->avoidhints) {
+      operand p = get<0>(hint);
+      vector<register_atom> as = get<1>(hint);
+      IntArgs ras(as);
+      BoolVar h(*this, 0, 1);
+      dom(*this, ry(p), IntSet(ras), h);
+      avoidhs << h;
+    }
+
+    branch(*this, avoidhs, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
+           NULL, &print_hinted_avoidance_decision);
+
+    // hinted register assignment
+
+    BoolVarArgs assignhs;
+    for (vector<int> hint : input->assignhints) {
+      operand p = hint[0];
+      register_atom a = hint[1];
+      BoolVar h(*this, 0, 1);
+      assignhs << var(ry(p) == a);
+    }
+
+    branch(*this, assignhs, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
+           NULL, &print_hinted_assignment_decision);
+
+  }
+
+  // register alignment
+
+  branch(*this, v_oa, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
+         NULL, &print_alignment_decision);
+
+  // slack assignment
+
+  branch(*this, v_s, INT_VAR_RND(r), INT_VAL_RND(r),
+         NULL, &print_slack_assignment_decision);
+
+  // register assignment
+
+  IntVarArgs prs;
+
+  for (global_congruence g : input->G)
+    prs << ry(input->representative[input->regular[g]]);
+
+  branch(*this, prs, INT_VAR_RND(r), INT_VAL_RND(r),
+         NULL, &print_assignment_decision);
 }
 
 void DecompDivModel::constrain(const Space & _b) {
   const DecompDivModel& b = static_cast<const DecompDivModel&>(_b);
 
   BoolVarArgs bh;
-  for (int i = 0; i < v_oa.size(); i++) {
-    if (b.v_oa[i].assigned())
-      bh << var (b.v_oa[i] != v_oa[i]);
-  }
+  // for (int i = 0; i < v_oa.size(); i++) {
+  //   if (b.v_oa[i].assigned())
+  //     bh << var (b.v_oa[i] != v_oa[i]);
+  // }
   for (int i = 0; i < v_pal.size(); i++) {
     if (b.v_pal[i].assigned())
       bh << var (b.v_pal[i] != v_pal[i]);
@@ -243,6 +351,7 @@ void DecompDivModel::post_constrain(DecompDivModel* _b) {
 }
 
 bool DecompDivModel::master(const MetaInfo& mi) {
+  std::cout << "master: " << div_p << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
@@ -258,6 +367,7 @@ bool DecompDivModel::master(const MetaInfo& mi) {
 
 
 bool DecompDivModel::slave(const MetaInfo& mi) {
+  std::cout << "slave: " << div_p << endl;
   if (mi.type() == MetaInfo::PORTFOLIO) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
@@ -278,7 +388,7 @@ bool DecompDivModel::slave(const MetaInfo& mi) {
 
 void DecompDivModel::next(const DecompDivModel& l) {
 
-  //std::cout << div_p << endl;
+  std::cout << "next: " << div_p << endl;
   BoolVarArgs toa, ltoa;
   for (int i = 0; i < v_oa.size(); i++) {
     if (l.v_oa[i].assigned()) {
@@ -286,7 +396,7 @@ void DecompDivModel::next(const DecompDivModel& l) {
       ltoa << l.v_oa[i];
     }
   }
-  relax(*this, toa, ltoa, div_r, 0.99);
+  relax(*this, toa, ltoa, div_r, 0.1);
 
   BoolVarArgs tpal, ltpal;
 
@@ -320,6 +430,37 @@ void DecompDivModel::next(const DecompDivModel& l) {
 
   relax(*this, tpals, ltpals, div_r, div_p);
 
+
+  IntVarArgs tc, ltc;
+
+  for (int o = 0; o < v_c.size(); o++) {
+    if (l.c(o).assigned()) {
+      tc << c(o);
+      ltc << l.c(o);
+    }
+  }
+  relax(*this, tc, ltc, div_r, div_p);
+
+  IntVarArgs tr, ltr;
+
+  for (int i = 0; i < v_r.size(); i++) {
+    if (l.r(i).assigned()) {
+      tr << r(i);
+      ltr << l.r(i);
+    }
+  }
+  relax(*this, tr, ltr, div_r, div_p);
+
+
+  BoolVarArgs ta, lta;
+
+  for (int i = 0; i < v_a.size(); i++) {
+    if (l.a(i).assigned()) {
+      ta << a(i);
+      lta << l.a(i);
+    }
+  }
+  relax(*this, ta, lta, div_r, div_p);
 
   // relax(*this, v_ali, l.v_ali, div_r, div_p);
   // relax(*this, v_pals, l.v_pals, div_r, div_p);

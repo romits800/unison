@@ -48,12 +48,12 @@ Solution<LocalDivModel> local_problem(DecompDivModel * g1, block b);
 
 // LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl);
 
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl);
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b, int sc, IntPropLevel p_ipl);
 
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
+LocalDivModel * make_div_local(const DecompDivModel * gs, block b, int sc);
 
 
-LocalDivModel * init_local_problem(DecompDivModel * g, block b);
+LocalDivModel * init_local_problem(DecompDivModel * g, block b, int sc);
 
 
 RBS<LocalDivModel,BAB> *

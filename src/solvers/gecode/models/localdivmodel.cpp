@@ -55,10 +55,12 @@
 
 LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
                              IntPropLevel p_ipl,
-                             const DecompDivModel * gs, block p_b) :
+                             const DecompDivModel * gs,
+			     block p_b,
+			     int seed_correction) :
   LocalModel(p_input, p_options, p_ipl, gs, p_b)
 {
-  div_r.seed(p_options->seed());
+  div_r.seed(p_options->seed() + seed_correction);
   div_p = p_options->relax();
 
   int op_size = O().size();
@@ -185,6 +187,7 @@ void LocalDivModel::constrain(const Space & _b) {
 
 
 bool LocalDivModel::master(const MetaInfo& mi) {
+  std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
@@ -202,6 +205,7 @@ bool LocalDivModel::master(const MetaInfo& mi) {
 
 
 bool LocalDivModel::slave(const MetaInfo& mi) {
+  std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     string portfolio = options->local_portfolio();
     assert(mi.asset() < portfolio.size());
@@ -209,7 +213,9 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
     post_branchers(search);
     return true;
   } else if (mi.type() == MetaInfo::RESTART) {
-    if ((mi.restart() > 0) && (div_p > 0.0)) {
+    std::cerr << "restart loc " << b << std::endl; // 
+    //if ((mi.restart() > 0) && (div_p > 0.0)) {
+    if ((div_p > 0.0)) {
       if (mi.last() != NULL) {
 	next(static_cast<const LocalDivModel&>(*mi.last()));
       }
@@ -223,6 +229,7 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
 }
 
 void LocalDivModel::next(const LocalDivModel& l) {
+  std::cerr << "next local " << b << std::endl; // 
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;
     for (operation o : input->ops[b]) {
@@ -271,80 +278,34 @@ void LocalDivModel::post_div_branchers(void) {
 
   Rnd rnd;
   rnd.seed(options->seed());
-  // branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
-  //        NULL, &print_inactive_decision);
 
-  // IntVarArgs ts;
-  // for (operand p : input->groupcopyrel[b]) ts << y(p);
-  // branch(*this, ts, INT_VAR_NONE(), INT_VAL_MIN(),
-  //        NULL, &print_temporary_decision);
-
-  // branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
-
-
-  // branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN(),
-  //        &schedulable, &print_cycle_decision);
-
-  // branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
-  //        &print_register_decision);
-//   if (options->enable_solver_solution_brancher() && solver->has_solution) {
-//     IntArgs sol;
-//     IntVarArgs vs;
-
-//     for (operation o : input-> ops[b]) {
-//       // if (solver->cycles[o] != -1) {
-// 	vs << c(o);
-//         sol << solver->cycles[o];
-// 	// }
-//      }
-//     for (temporary t1 : input-> tmp[b]) {
-//       //  if (solver->registers[t1] != -1) {
-// //	std::cout << solver->registers[t1] << std::endl; // 
-// 	vs << r(t1);
-//         sol << solver->registers[t1];
-// 	// }
-//      }
-
-//     for (operand p : input-> ope[b]) {
-//         vs << y(p);
-//         sol << solver->temporaries[p];
-//      }
-
-//     solution_branch(*this, vs, sol);
-
-//   }
-
-  // assign(*this, v_c, INT_ASSIGN_MIN()); // 
-  
+  // BoolVarArgs a;
+  // for (operation o : input->ops[b])
+  //   a << v_a[o];
   branch(*this, v_a, BOOL_VAR_RND(rnd), BOOL_VAL_RND(rnd));
+
+
+  // IntVarArgs is;
+  // for (operation o : input->ops[b])
+  //   is << v_i[o];
   branch(*this, v_i, INT_VAR_RND(rnd), INT_VAL_MIN());
+
   IntVarArgs ts;
   for (operand p : input->groupcopyrel[b]) ts << y(p);
   branch(*this, ts, INT_VAR_RND(rnd), INT_VAL_MIN());
 
+  // IntVarArgs c;
+  // for (operation o : input->ops[b])
+  //   c << v_c[o];
+
+  branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
+  
   branch(*this, v_c, INT_VAR_RND(rnd), INT_VAL_RND(rnd));
+
+  // IntVarArgs r;
+  // for (temporary t : input->tmp[b])
+  //   r << v_r[t];
+      
   branch(*this, v_r, INT_VAR_RND(rnd), INT_VAL_RND(rnd));
-
-
-  // TO CHECK: trivial branchers
-  // branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
-  //        NULL, &print_inactive_decision);
-
-  // branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
-  //        NULL, &print_instruction_decision);
-
-  // IntVarArgs ts;
-  // for (operand p : input->groupcopyrel[b]) ts << y(p);
-  // branch(*this, ts, INT_VAR_NONE(), INT_VAL_MIN(),
-  //        NULL, &print_temporary_decision);
-
-  // branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
-
-  // branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN(),
-  //        &schedulable, &print_cycle_decision);
-
-  // branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
-  //        &print_register_decision);
-
 
 }

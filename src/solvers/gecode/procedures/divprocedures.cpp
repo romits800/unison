@@ -47,47 +47,49 @@ global_limit_2(Parameters * input, ModelOptions * options, int best) {
 int
 find_optimal_solution(DivModel *base, DecompDivModel *dm, ModelOptions *options) {
 
-      base->post_div_branchers();
-      base->post_diversification_constraints(); // Diversification constraint
+      // base->post_div_branchers();
+      // base->post_diversification_constraints(); // Diversification constraint
 
 
-      if (base->status() == SS_FAILED) {
-	cerr << div() << "Status failed." << endl;
-	return -1;
-      }
+      // if (base->status() == SS_FAILED) {
+      // 	cerr << div() << "Status failed." << endl;
+      // 	return -1;
+      // }
 
-      // Configuration for the engine 
-      Gecode::RestartMode restart = options->restart();
-      Search::Cutoff* c;
-      Search::Options o;
-      unsigned long int s_const = options->restart_scale();
+      // // Configuration for the engine 
+      // Gecode::RestartMode restart = options->restart();
+      // Search::Cutoff* c;
+      // Search::Options o;
+      // unsigned long int s_const = options->restart_scale();
 
-      if (restart == RM_LUBY ){
-	c = Search::Cutoff::luby(s_const);
-      } else if (restart == RM_CONSTANT) {
-	c = Search::Cutoff::constant(s_const);
-      } else {
-	c = Search::Cutoff::constant(1000);
-      }
+      // if (restart == RM_LUBY ){
+      // 	c = Search::Cutoff::luby(s_const);
+      // } else if (restart == RM_CONSTANT) {
+      // 	c = Search::Cutoff::constant(s_const);
+      // } else {
+      // 	c = Search::Cutoff::constant(1000);
+      // }
 
-      o.cutoff = c;
+      // o.cutoff = c;
 
-      // Start Engine
-      RBS<DivModel,BAB> e(base, o);
+      // // Start Engine
+      // RBS<DivModel,BAB> e(base, o);
 
-      if (base->status() == SS_FAILED) {
-	cerr << div() << "Status failed." << endl;
-      }
+      // if (base->status() == SS_FAILED) {
+      // 	cerr << div() << "Status failed." << endl;
+      // }
 
-      cerr << div() << "Start generating first solution" << endl;
+      // cerr << div() << "Start generating first solution" << endl;
 
-      DivModel *nextg = e.next();
+      // DivModel *nextg = e.next();
 
-      cerr << div() << "Done generating first solution" << endl;
+      // cerr << div() << "Done generating first solution" << endl;
 
       //g->apply_div_solution(nextg);
-      dm->post_div_decomp_branchers(nextg);
+      //dm->post_div_decomp_branchers(nextg);
 
+      dm->post_solution_brancher();
+      
       if (dm->status() == SS_FAILED) {
 	cerr << div() << "Failed applying div solution!" << endl;
 	return -1;

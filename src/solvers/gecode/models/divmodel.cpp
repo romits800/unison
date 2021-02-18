@@ -208,24 +208,37 @@ void DivModel::post_cloriginal_branchers(void) {
 }
 
 
-// int  DivModel::commit(IntVar x, int i) 
-void DivModel::post_div_branchers(void) {
+void DivModel::post_solution_brancher(void) {
 
-  if (options->enable_solver_solution_brancher() && solver->has_solution) {
     IntArgs sol;
     IntVarArgs vs;
     for (int c: solver->cycles) sol << c;
     for (int r: solver->registers) sol << r;
-    // for (int t: solver->temporaries) sol << t;
-    // for (int i: solver->instructions) sol << i;
     for (IntVar c: v_c) vs << c;
     for (IntVar r: v_r) vs << r;
+
+
+    IntArgs sol2;
+    BoolVarArgs vs2;
+    for (int c: solver->cycles) sol2 << ((c == -1)?0:1);
+    // for (int t: solver->temporaries) sol << t;
+    // for (int i: solver->instructions) sol << i;
+
+    for (BoolVar a: v_a) vs2 << a;
     // for (IntVar t: v_y) vs << t; // 
     //  for (IntVar i: v_i) vs << i;
     
     // TODO(Romy):
     // assign(*this, vs, INT_ASSIGN(v,c*));
+    solution_branch(*this, vs2, sol2);
     solution_branch(*this, vs, sol);
+
+}
+
+// int  DivModel::commit(IntVar x, int i) 
+void DivModel::post_div_branchers(void) {
+  if (options->enable_solver_solution_brancher() && solver->has_solution) {
+    post_solution_brancher();
   }
   if (options->branching() == BR_RND) {
     post_random_branchers();

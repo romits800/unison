@@ -81,7 +81,7 @@ public:
   DecompDivModel* copy(void);
 
   // Branchers
-  void post_div_decomp_branchers(DivModel * sol);
+  void post_div_decomp_branchers(void);
   void apply_div_solution(DivModel * d);
   // void post_div_branchers(void);
   // void post_random_branchers(void);

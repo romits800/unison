@@ -90,7 +90,7 @@ public:
   //               const DecompDivModel * gs, block b);
 
   LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
-                const DecompDivModel * gs, block b);
+                const DecompDivModel * gs, block b, int seed_correction);
 
   LocalDivModel(LocalDivModel& cg);
 

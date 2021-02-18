@@ -40,6 +40,7 @@
 //#include "localdivmodel.hpp"
 #include "solver-parameters.hpp"
 #include "branchers/solutionbrancher.hpp"
+#include "branchers/boolsolutionbrancher.hpp"
 
 using namespace Gecode;
 using namespace std;
@@ -127,6 +128,7 @@ public:
   DivModel* copy(void);
 
   // Branchers
+  void post_solution_brancher(void);
   void post_div_branchers(void);
   void post_random_branchers(void);
   void post_clrandom_branchers(void);

@@ -325,8 +325,9 @@ public:
     l(l0), e(e0), b(b0) {}
   virtual LocalDivModel * run(int) {
     // return 3;
+    cerr << "Running" << endl;
     LocalDivModel * nextl = e->next();
-
+    cerr << "got next" << endl;
     // TODO(Romy): Fix this to return something relevant
     if (e -> stopped()) {
       cerr << div() << "Job stopped" << endl;
@@ -361,7 +362,7 @@ public:
     block b = k;
     // Base local space to accumulate bounds while the portfolio is applied
     // Solution<LocalDivModel> ls = local_problem(gs.solution, b);
-    LocalDivModel * lb = l[b];
+    LocalDivModel * lb = new LocalDivModel(*l[b]);
     RBS<LocalDivModel,BAB> * eb = e[b];
     k++;
     return new LocalJob(lb, eb, b); //, local_solutions);
@@ -669,7 +670,7 @@ int main(int argc, char* argv[]) {
 
   vector<int> ag_best_cost;
   vector<int> dd_best_cost;
-  // double d_mul = 2.;
+  //double d_mul = 5.;		// 
   vector<int> best_cost;
   int bestcost;
 
@@ -732,6 +733,7 @@ int main(int argc, char* argv[]) {
 #endif
     // SolverParameters solver(root);
     d->set_solver(root_solver);
+    dd->set_solver(root_solver);
     cerr << div() << "Creating folder: " + options.divs_dir() << endl;
 
     if (do_mkdir(options.divs_dir())) {
@@ -748,7 +750,7 @@ int main(int argc, char* argv[]) {
       for (uint i = 0; i < input.N; i++) {
         bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
         ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-	// dd_best_cost.push_back(round((bestcost*(100. + d_mul * (double)d->options->acceptable_gap()))/100.0));
+	//	dd_best_cost.push_back(round((bestcost*(100. + d_mul * (double)d->options->acceptable_gap()))/100.0));
 
       }
 
@@ -787,7 +789,7 @@ int main(int argc, char* argv[]) {
       bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
       // cerr << div() << bestcost <<  "|" << d->cost()[i].max() << "|" << input.maxf[i] << endl;
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-      // dd_best_cost.push_back(round((bestcost*(100. + d_mul * (double)d->options->acceptable_gap()))/100.0));
+      //      dd_best_cost.push_back(round((bestcost*(100. + d_mul * (double)d->options->acceptable_gap()))/100.0));
 
     }
     // Best cost lower bound
@@ -800,7 +802,7 @@ int main(int argc, char* argv[]) {
   d -> post_upper_bound(ag_best_cost);
 
   // dd -> post_lower_bound(best_cost);
-  //dd -> post_upper_bound(dd_best_cost);
+  // dd -> post_upper_bound(dd_best_cost);
 
   if (d->status() == SS_FAILED) {
     cerr << div() << "D: No better solution!" << endl;
@@ -809,12 +811,12 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  // if (dd->status() == SS_FAILED) {
-  //   cerr << div() << "DD: No better solution!" << endl;
-  //   cerr << div() << "ag_best_cost[0]:" << ag_best_cost[0] << endl;
-  //   cerr << div() << "best_cost[0]:" << best_cost[0] << endl;
-  //   return -1;
-  // }
+  if (dd->status() == SS_FAILED) {
+    cerr << div() << "DD: No better solution!" << endl;
+    cerr << div() << "ag_best_cost[0]:" << ag_best_cost[0] << endl;
+    cerr << div() << "best_cost[0]:" << best_cost[0] << endl;
+    return -1;
+  }
 
   
   if (options.verbose()) {
@@ -1084,7 +1086,7 @@ int main(int argc, char* argv[]) {
       if (find_optimal_solution(d, g, &options) != 0)
 	cerr << "Fail to find optimal solution" << endl;
     
-    g -> post_branchers(); // 
+    g -> post_div_decomp_branchers(); // 
 
     if (g->status() == SS_FAILED) {
       cerr << div() << "DivModel g failed." << endl;
@@ -1107,6 +1109,7 @@ int main(int argc, char* argv[]) {
     o.cutoff = c;
 
     RBS<DecompDivModel,BAB> e(g,o);
+    //    DFS<DecompDivModel> e(g);
 
     // DecompDivModel *g3 = e.next(); //
 
@@ -1159,9 +1162,21 @@ int main(int argc, char* argv[]) {
 
     while(count < maxcount) {
     
-      //cerr << div() << "Before e.next()." << endl; // 
+      cerr << div() << "Before e.next()." << endl; // 
       DecompDivModel *g3 = e.next();
+      cerr << div() << "AFter e.next()." << endl; // 
       std::cout << g3 -> v_oa << std::endl;
+      std::cout << g3 -> v_c << std::endl;
+      std::cout << g3 -> v_r << std::endl;
+      std::cout << g3 -> v_i << std::endl;
+      std::cout << g3 -> v_a << std::endl;
+      std::cout << g3 -> v_y << std::endl;
+
+      if (options.verbose()) {
+	cerr << div() << "Printing cost status report..." << endl;
+	cerr << div() << cost_status_report(dd, g3) << endl;
+      }
+
       //cerr << div() << "After e.next()." << endl;
       //    cerr << div() << "After next solution" << endl; // 
       if (!g3) {
@@ -1179,7 +1194,7 @@ int main(int argc, char* argv[]) {
       // Initialize the local_problems with an engine
       for (block b: blocks) {	// 
 
-	local_problems[b] = (LocalDivModel *) init_local_problem(g3, b);
+	local_problems[b] = (LocalDivModel *) init_local_problem(g3, b, r(maxcount));
 	if (local_problems[b] == NULL) {
 	  found_local_problem  = false;
 	  break;
@@ -1195,16 +1210,18 @@ int main(int argc, char* argv[]) {
       vector<DecompDivModel*> solutions;
       DecompDivModel * g1 = NULL;
 
-
+      unsigned int threads = options.total_threads();
       //   End of test block 2 - factorial
+
 
       int rn = r(maxcount);
       while(count < maxcount && rn > 0) {
 	// g1 = e.next();
 	rn--;
-	cout << "count:" << count << "rnd: " << rn  << endl;
-      
-	g1 = (DecompDivModel *) g->clone();
+	cout << "count:" << count << endl; //"rnd: " << rn  << endl;
+
+
+	g1 = (DecompDivModel *) g3->clone();
 	if (g1 == NULL || g1->status() == SS_FAILED) {
 	  cerr << div() << "DivModel g.clone() failed." << endl;
 	  return 0;
@@ -1212,11 +1229,11 @@ int main(int argc, char* argv[]) {
 
       
 	bool found_local_solution = true;
+	bool application_failed = false;
 	//Here
 	LocalJobs ljs(local_problems, local_engines, blocks);
-	unsigned int threads = options.total_threads();
 	Support::RunJobs<LocalJobs, LocalDivModel *> js(ljs, threads);
- 
+	//map<block, LocalDivModel *> local_problems_new;
 	LocalDivModel *ls;
 	while(js.run(ls)) {
 	  int i;
@@ -1229,18 +1246,26 @@ int main(int argc, char* argv[]) {
 	    break;
 	  } else {
 	    if (ls == NULL) {
+	      cerr << div() << "ls is null: " << count <<  endl;
 	      found_local_solution = false;
 	      break;
 	    }
 	    block b = ls->b;
 	    
-	    local_problems[b] = ls;
-	    if (ls && ls->status() != SS_FAILED) {
+	    //local_problems_new[b] = ls;
+	    if (ls->status() != SS_FAILED) {
 	      cerr << div() << "Applying solution " << ls->b << endl; // 
+	      // cerr << div() << ls->v_c << endl; //
+	      // cerr << div() << ls->v_r << endl; //
+	      // cerr << div() << ls->v_i << endl; //
+	      // cerr << div() << ls->v_a << endl; //
+	      // cerr << div() << ls->v_y << endl; //
+	      // cerr << div() << ls->f(b,0) << endl; //
+
 	      g1->apply_solution(ls);
 	      if (g1->status() == SS_FAILED) {
-		cerr << div() << "Applying solution failed " << ls->b << endl; // 
-		found_local_solution = false;
+		cerr << div() << "Applying solution failed " << ls->b << endl; //
+		application_failed = true;
 		break;
 	      }
 	    } else {
@@ -1256,27 +1281,36 @@ int main(int argc, char* argv[]) {
 	  cerr << div() << "Trying again." << endl;
 	  break;
 	}
+	if (application_failed) {
+	  cerr << div() << "Trying again." << endl;
+	  continue;
+	}
 
 	// DFS<DecompDivModel> e(g1);
 
-	DecompDivModel *g3 = g1; // e.next();
+	DecompDivModel *g2 = g1; // e.next();
 
       
-	if (g3 == NULL || g3->status() == SS_FAILED) {
+	if (g2 == NULL || g2->status() == SS_FAILED) {
 	  cerr << div() << "DecompDivModel e.next() failed." << endl;
 	  //if (g3 != NULL) delete g3; // 
 	} else {
-	
-	  cerr << div() << "Cloning " << count << "\r";
-	  solutions.push_back(g1);
-	  ResultData rd = ResultData(g3, false, 0,
+
+	  if (options.verbose()) {
+	    cerr << div() << "Printing cost status report..." << endl;
+	    cerr << div() << cost_status_report(dd, g2) << endl;
+	  }
+
+	  cerr << div() << "Cloning " << count << "\n";
+	  solutions.push_back(g2);
+	  ResultData rd = ResultData(g2, false, 0,
 				     0, 0,
 				     0, t_solver.stop(),
 				     t_it.stop());
 
 	  ofstream fout;
-	  fout.open(options.divs_dir() +  "/" + to_string(count) + "." + g3->options->output_file());
-	  fout << produce_json(rd, gd, g3->input->N, 0);
+	  fout.open(options.divs_dir() +  "/" + to_string(count) + "." + g2->options->output_file());
+	  fout << produce_json(rd, gd, g2->input->N, 0);
 	  fout.close();
 	  count++;
 	  // g->post_constrain(g1);
