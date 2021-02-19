@@ -330,10 +330,12 @@ public:
     // cerr << "got next" << endl;
     // TODO(Romy): Fix this to return something relevant
     if (e -> stopped()) {
-      cerr << div() << "Job stopped" << endl;
+      //throw Support::JobStop<LocalModel*>(l); // 
+      //cerr << div() << "Job stopped" << endl;
       return NULL;
     }
     if (!nextl) {
+      //throw Support::JobStop<LocalModel*>(l);
       return NULL;
     }
     return nextl;
@@ -750,7 +752,7 @@ int main(int argc, char* argv[]) {
       for (uint i = 0; i < input.N; i++) {
         bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
         ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-	//	dd_best_cost.push_back(round((bestcost*(100. + d_mul * (double)d->options->acceptable_gap()))/100.0));
+	dd_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
       }
 
@@ -765,7 +767,7 @@ int main(int argc, char* argv[]) {
       for (uint i = 0; i < input.N; i++) {
         int bcost = d->solver->cost[i];
         ag_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-	// dd_best_cost.push_back(round((bcost*(100. + d_mul * (double)d->options->acceptable_gap()))/100.0));
+	dd_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
       }
       // Best cost lower bound
@@ -789,7 +791,7 @@ int main(int argc, char* argv[]) {
       bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
       // cerr << div() << bestcost <<  "|" << d->cost()[i].max() << "|" << input.maxf[i] << endl;
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-      //      dd_best_cost.push_back(round((bestcost*(100. + d_mul * (double)d->options->acceptable_gap()))/100.0));
+      dd_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
     }
     // Best cost lower bound
@@ -802,7 +804,7 @@ int main(int argc, char* argv[]) {
   d -> post_upper_bound(ag_best_cost);
 
   // dd -> post_lower_bound(best_cost);
-  // dd -> post_upper_bound(dd_best_cost);
+  dd -> post_upper_bound(dd_best_cost);
 
   if (d->status() == SS_FAILED) {
     cerr << div() << "D: No better solution!" << endl;
@@ -1109,7 +1111,7 @@ int main(int argc, char* argv[]) {
     o.cutoff = c;
 
     RBS<DecompDivModel,BAB> e(g,o);
-    //    DFS<DecompDivModel> e(g);
+    // DFS<DecompDivModel> e(g);
 
     // DecompDivModel *g3 = e.next(); //
 
@@ -1117,15 +1119,15 @@ int main(int argc, char* argv[]) {
 
 
     while(count < maxcount) {
-    
+      cout << "count:" << count << endl;
       DecompDivModel *g3 = e.next();
-      if (options.verbose()) {
-	cerr << div() << "Printing cost status report..." << endl;
-	cerr << div() << cost_status_report(dd, g3) << endl;
-      }
-
+    
       if (!g3) {
 	cerr << div() << "G3 failed" << endl;
+      }
+      if (options.verbose()) {
+      	cerr << div() << "Printing cost status report..." << endl;
+      	cerr << div() << cost_status_report(dd, g3) << endl;
       }
 
       vector<block> blocks(g3->input->B);
@@ -1198,13 +1200,13 @@ int main(int argc, char* argv[]) {
 	    
 	    //local_problems_new[b] = ls;
 	    if (ls->status() != SS_FAILED) {
-	      // cerr << div() << "Applying solution " << ls->b << endl; // 
+	      cerr << div() << "Applying solution " << ls->b << endl; // 
 	      // cerr << div() << ls->v_c << endl; //
 	      // cerr << div() << ls->v_r << endl; //
 	      // cerr << div() << ls->v_i << endl; //
 	      // cerr << div() << ls->v_a << endl; //
 	      // cerr << div() << ls->v_y << endl; //
-	      // cerr << div() << ls->f(b,0) << endl; //
+	      cerr << div() << ls->f(b,0) << endl; //
 
 	      g1->apply_solution(ls);
 	      if (g1->status() == SS_FAILED) {
@@ -1232,9 +1234,10 @@ int main(int argc, char* argv[]) {
 	  break;
 	}
 
+
 	// DFS<DecompDivModel> e(g1);
 
-	DecompDivModel *g2 = g1; // e.next();
+	DecompDivModel *g2 = (DecompDivModel *) g1;
 
       
 	if (g2 == NULL || g2->status() == SS_FAILED) {
@@ -1242,10 +1245,10 @@ int main(int argc, char* argv[]) {
 	  //if (g3 != NULL) delete g3; // 
 	} else {
 
-	  // if (options.verbose()) {
-	  //   cerr << div() << "Printing cost status report..." << endl;
-	  //   cerr << div() << cost_status_report(dd, g2) << endl;
-	  // }
+	  if (options.verbose()) {
+	    cerr << div() << "Printing cost status report..." << endl;
+	    cerr << div() << cost_status_report(dd, g2) << endl;
+	  }
 
 	  cerr << div() << "Cloning " << count << "\n";
 	  solutions.push_back(g2);

@@ -79,10 +79,14 @@ init_local_problem(DecompDivModel *g, block b, int seed_correction) {
   l -> post_div_branchers();
   l -> post_diversification_constraints();
 
+  // if (l->status() == SS_FAILED) {
+  //   std::cerr << "Init_local_problem failed1: " << b << std::endl;
+  //   return NULL;
+  // }
 
-  double sumf = 0;
-  for (int i = 0; i< g->input->freq.size(); i++)
-    sumf += g->input->freq[i];
+  // double sumf = 0;
+  // for (int i = 0; i< g->input->freq.size(); i++)
+  //   sumf += g->input->freq[i];
 
   // double correction = l->f(b, 0).max() - l->f(b, 0).min();
   // correction = ((double)g->options->acceptable_gap() * correction )/100.;
@@ -93,12 +97,14 @@ init_local_problem(DecompDivModel *g, block b, int seed_correction) {
   // int max_cost2 = ceil((ag*(float)(l->f(b, 0).min()))/100.);
 
   // int max_cost = max_cost1>max_cost2 ? max_cost1 : max_cost2;
-
+  // std::cerr << b << ":" << l -> f(b,0) << std::endl;
   double ag = 100. + ((double)g->options->acceptable_gap());
-  l-> constrain_total_cost(ceil(ag/100.));
+  l-> constrain_total_cost(floor((ag*(l->f(b,0).min()))/100.));
 
+  // std::cerr <<  b << ":" << ceil(ag/100.) << std::endl;
+  
   if (l->status() == SS_FAILED) {
-    std::cerr << "Init_local_problem failed." << std::endl;
+    std::cerr << "Init_local_problem failed: " << b << std::endl;
     return NULL;
   }
   // std::cerr << l -> f(b,0) << std::endl;
