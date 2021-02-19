@@ -56,6 +56,17 @@ LocalDivModel * make_div_local(const DecompDivModel * gs, block b, int sc);
 LocalDivModel * init_local_problem(DecompDivModel * g, block b, int sc);
 
 
+class LocalSolution {
+public:
+  LocalDivModel * solution;
+    block b;
+  LocalSolution() : solution(0), b(0) {}
+  LocalSolution(LocalDivModel * solution1, block b1) :
+    solution(solution1), b(b1) {}
+
+};
+
+
 RBS<LocalDivModel,BAB> *
 init_local_engine(LocalDivModel *l, ModelOptions *options);
 

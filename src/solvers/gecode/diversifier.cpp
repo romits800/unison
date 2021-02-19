@@ -312,9 +312,8 @@ string produce_json(const ResultDivData& rd,
 
 
 
-class LocalJob : public Support::Job<LocalDivModel * > {
+class LocalJob : public Support::Job<LocalSolution * > {
 protected:
-
   LocalDivModel * l;
   RBS<LocalDivModel,BAB> * e;
   int b;
@@ -323,22 +322,24 @@ public:
            RBS<LocalDivModel,BAB> * e0,
 	   int b0):
     l(l0), e(e0), b(b0) {}
-  virtual LocalDivModel * run(int) {
+  virtual LocalSolution * run(int) {
     // return 3;
     // cerr << "Running" << endl;
     LocalDivModel * nextl = e->next();
     // cerr << "got next" << endl;
     // TODO(Romy): Fix this to return something relevant
     if (e -> stopped()) {
-      //throw Support::JobStop<LocalModel*>(l); // 
+      cerr << div() << "Job stopped by timer: " << b <<  endl;
+      return new LocalSolution(NULL, b);
+      // throw Support::JobStop<LocalDivModel*>(l); // 
       //cerr << div() << "Job stopped" << endl;
-      return NULL;
     }
     if (!nextl) {
-      //throw Support::JobStop<LocalModel*>(l);
-      return NULL;
+      cerr << div() << "Job stopped by tno more solutions: " << b << endl;
+      // throw Support::JobStop<LocalDivModel*>(l);
+      return new LocalSolution(NULL, b);
     }
-    return nextl;
+    return new LocalSolution(nextl, b);
 
   }
 };
@@ -642,9 +643,6 @@ int main(int argc, char* argv[]) {
 
 
   // vector<ResultData> results;
-  vector<vector<LocalModel *> > local_solutions;
-  for (unsigned int b = 0; b < input.B.size(); b++)
-    local_solutions.push_back(vector<LocalModel *>());
 
 
   bool proven = false;
@@ -1140,7 +1138,11 @@ int main(int argc, char* argv[]) {
       map<block, LocalDivModel *> local_problems;
       map<block, RBS<LocalDivModel,BAB> *> local_engines;
 
-      //map<block, LocalDivModel *> local_solutions;
+
+      vector<vector<LocalModel *> > local_solutions;
+      for (unsigned int b = 0; b < input.B.size(); b++)
+	local_solutions.push_back(vector<LocalModel *>());
+
 
 
       bool found_local_problem = true;
@@ -1184,44 +1186,55 @@ int main(int argc, char* argv[]) {
       
 	bool found_local_solution = true;
 	bool application_failed = false;
+	bool found_new_solution = false;
 	//Here
 	LocalJobs ljs(local_problems, local_engines, blocks);
-	Support::RunJobs<LocalJobs, LocalDivModel *> js(ljs, threads);
+	Support::RunJobs<LocalJobs, LocalSolution *> js(ljs, threads);
 	//map<block, LocalDivModel *> local_problems_new;
-	LocalDivModel *ls;
+	LocalSolution *ls;
 	while(js.run(ls)) {
 	  int i;
-	  LocalDivModel *fls;
+	  LocalSolution *fls;
 	  if (js.stopped(i,fls)) {
-	    cerr << div() << "js.stopped: " << count <<  endl;
-	    block b = fls->b;
-	    // local_problems[b] = fls;
 	    found_local_solution = false;
 	    break;
+	    // local_problems[b] = fls;
 	  } else {
-	    if (ls == NULL) {
-	      cerr << div() << "ls is null: " << count <<  endl;
-	      found_local_solution = false;
-	      break;
+	    if (ls->solution == NULL) {
+	      cerr << div() << "NULL: " << i <<  endl;
+	      block b = ls->b;
+	      cerr << div() << "fls b: " << b <<  endl;
+	      int previous_solutions = local_solutions[b].size();
+	      cerr << div() << "size: " << previous_solutions <<  endl;
+	      if (previous_solutions == 0) {
+		found_local_solution = false;
+		break;
+	      }
+	      int index = r(previous_solutions);
+	      cerr << div() << "index: " << index <<  endl;
+	      LocalDivModel *l0 = (LocalDivModel *) local_solutions[b][index];
+	      cerr << div() << "Applying previous solution " << l0->b << endl; //
+	      g1->apply_solution(l0);	      
+	      if (g1->status() == SS_FAILED) {
+		cerr << div() << "Applying previous solution failed " << l0->b << endl; //
+		found_local_solution = false;
+		break;
+	      }
 	    }
-	    block b = ls->b;
-	    
 	    //local_problems_new[b] = ls;
-	    if (ls->status() != SS_FAILED) {
+	    else if (ls->solution->status() != SS_FAILED) {
+	      block b = ls->b;
+	      local_solutions[b].push_back(ls->solution);
 	      cerr << div() << "Applying solution " << ls->b << endl; // 
-	      // cerr << div() << ls->v_c << endl; //
-	      // cerr << div() << ls->v_r << endl; //
-	      // cerr << div() << ls->v_i << endl; //
-	      // cerr << div() << ls->v_a << endl; //
-	      // cerr << div() << ls->v_y << endl; //
-	      cerr << div() << ls->f(b,0) << endl; //
+	      cerr << div() << ls->solution->f(b,0) << endl; //
 
-	      g1->apply_solution(ls);
+	      g1->apply_solution(ls->solution);
 	      if (g1->status() == SS_FAILED) {
 		cerr << div() << "Applying solution failed " << ls->b << endl; //
 		application_failed = true;
 		break;
 	      }
+	      found_new_solution = true;
 	    } else {
 	      found_local_solution = false;
 	      cerr << div() << "Failed: " << count << endl;
@@ -1232,12 +1245,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (!found_local_solution) {
-	  cerr << div() << "Trying again." << endl;
+	  cerr << div() << "Trying again not found local sol." << endl;
 	  if (g1) delete g1;
 	  break;
 	}
-	if (application_failed) {
-	  cerr << div() << "Trying again." << endl;
+	if (application_failed || !found_new_solution) {
+	  cerr << div() << "Trying again app or found new solution." << endl;
 	  if (g1) delete g1;
 	  break;
 	}
