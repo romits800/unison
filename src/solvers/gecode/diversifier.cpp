@@ -1166,7 +1166,7 @@ int main(int argc, char* argv[]) {
 	rn--;
 	cout << "count:" << count << "rnd: " << rn  << endl;
 
-	g1 = (DecompDivModel *) g3->clone();
+	g1 = (DecompDivModel *) g->clone();
 
 	if (g1 == NULL || g1->status() == SS_FAILED) {
 	  cerr << div() << "DivModel g.clone() failed." << endl;
@@ -1235,9 +1235,9 @@ int main(int argc, char* argv[]) {
 	}
 
 
-	// DFS<DecompDivModel> e(g1);
+	DFS<DecompDivModel> e2(g1);
 
-	DecompDivModel *g2 = (DecompDivModel *) g1;
+	DecompDivModel *g2 = e2.next(); //(DecompDivModel *) g1;
 
       
 	if (g2 == NULL || g2->status() == SS_FAILED) {
