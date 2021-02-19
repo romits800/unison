@@ -1090,8 +1090,8 @@ int main(int argc, char* argv[]) {
       if (find_optimal_solution(d, g, &options) != 0)
     	cerr << "Fail to find optimal solution" << endl;
     
-    //g -> post_div_decomp_branchers(); // 
-    g -> post_branchers();
+    g -> post_div_decomp_branchers(); // 
+    //g -> post_branchers();
 
 
     // g->post_diversification_constraints(); 
@@ -1139,6 +1139,8 @@ int main(int argc, char* argv[]) {
       vector<block> blocks(g3->input->B);
       map<block, LocalDivModel *> local_problems;
       map<block, RBS<LocalDivModel,BAB> *> local_engines;
+
+      //map<block, LocalDivModel *> local_solutions;
 
 
       bool found_local_problem = true;
@@ -1193,7 +1195,7 @@ int main(int argc, char* argv[]) {
 	  if (js.stopped(i,fls)) {
 	    cerr << div() << "js.stopped: " << count <<  endl;
 	    block b = fls->b;
-	    local_problems[b] = fls;
+	    // local_problems[b] = fls;
 	    found_local_solution = false;
 	    break;
 	  } else {
