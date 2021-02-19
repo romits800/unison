@@ -78,11 +78,10 @@ init_local_problem(DecompDivModel *g, block b, int seed_correction) {
   LocalDivModel * l = (LocalDivModel *) make_div_local(g, b, seed_correction);
   l -> post_div_branchers();
   l -> post_diversification_constraints();
-
-  // if (l->status() == SS_FAILED) {
-  //   std::cerr << "Init_local_problem failed1: " << b << std::endl;
-  //   return NULL;
-  // }
+  if (l->status() == SS_FAILED) {
+    std::cerr << b << ": Failed completely"  << std::endl;
+    return NULL;
+  }
 
   // double sumf = 0;
   // for (int i = 0; i< g->input->freq.size(); i++)
@@ -97,19 +96,27 @@ init_local_problem(DecompDivModel *g, block b, int seed_correction) {
   // int max_cost2 = ceil((ag*(float)(l->f(b, 0).min()))/100.);
 
   // int max_cost = max_cost1>max_cost2 ? max_cost1 : max_cost2;
-  // std::cerr << b << ":" << l -> f(b,0) << std::endl;
-  double ag = 100. + ((double)g->options->acceptable_gap());
-  l-> constrain_total_cost(floor((ag*(l->f(b,0).min()))/100.));
+  std::cerr << b << ":" << l -> f(b,0) << std::endl;
+  
+  for (int i=1; i< 5; i++) {
+    LocalDivModel *l0 = (LocalDivModel *) l->clone();
+    double ag = 100. + i*((double)g->options->acceptable_gap());
+    int max_bound = floor((ag*(l0->f(b,0).min()))/100.);
+    l0-> constrain_total_cost(max_bound > l0->f(b,0).min() ? max_bound : l0->f(b,0).min() + 1);
 
-  // std::cerr <<  b << ":" << ceil(ag/100.) << std::endl;
-  
-  if (l->status() == SS_FAILED) {
-    std::cerr << "Init_local_problem failed: " << b << std::endl;
-    return NULL;
+    if (l0->status() == SS_FAILED) {
+      if (l0!=NULL) delete l0;
+      continue;
+    }
+    else {
+      if (l!=NULL) delete l;
+      std::cerr << b << ":" << l0 -> f(b,0) << std::endl;
+      return l0;
+    }
   }
-  // std::cerr << l -> f(b,0) << std::endl;
-  // std::cerr << "end: " << b << std::endl;
   
+  // std::cerr << l -> f(b,0) << std::endl;
+  std::cerr << "Not constraining l: " << b << std::endl;
   return l;
 
 

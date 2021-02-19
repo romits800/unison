@@ -41,7 +41,7 @@ DecompDivModel::DecompDivModel(Parameters * p_input, ModelOptions * p_options,
 {
 
   // div_r.seed(p_options->seed());
-  div_p = 0.05;
+  div_p = 0.5;
 
   // int op_size = O().size();
 
@@ -206,10 +206,10 @@ void DecompDivModel::constrain(const Space & _b) {
   const DecompDivModel& b = static_cast<const DecompDivModel&>(_b);
 
   BoolVarArgs bh;
-  // for (int i = 0; i < v_oa.size(); i++) {
-  //   if (b.v_oa[i].assigned())
-  //     bh << var (b.v_oa[i] != v_oa[i]);
-  // }
+  for (int i = 0; i < v_oa.size(); i++) {
+    if (b.v_oa[i].assigned())
+      bh << var (b.v_oa[i] != v_oa[i]);
+  }
   for (int i = 0; i < v_pal.size(); i++) {
     if (b.v_pal[i].assigned())
       bh << var (b.v_pal[i] != v_pal[i]);
@@ -227,7 +227,9 @@ void DecompDivModel::constrain(const Space & _b) {
 
   if (bh.size() > 0)
     constraint(sum(bh) >= 1);
-  
+
+
+  // DivModel::constrain(_b);	// 
 
   // BoolVarArgs bh;
 
@@ -388,7 +390,7 @@ bool DecompDivModel::slave(const MetaInfo& mi) {
 
 void DecompDivModel::next(const DecompDivModel& l) {
 
-  //std::cout << "next: " << div_p << endl;
+  std::cout << "next: " << div_p << endl;
   BoolVarArgs toa, ltoa;
   for (int i = 0; i < v_oa.size(); i++) {
     if (l.v_oa[i].assigned()) {
@@ -396,7 +398,7 @@ void DecompDivModel::next(const DecompDivModel& l) {
       ltoa << l.v_oa[i];
     }
   }
-  relax(*this, toa, ltoa, div_r, 0.05);
+  relax(*this, toa, ltoa, div_r, 0.2);
 
   BoolVarArgs tpal, ltpal;
 

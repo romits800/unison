@@ -752,6 +752,7 @@ int main(int argc, char* argv[]) {
       for (uint i = 0; i < input.N; i++) {
         bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
         ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
+	bestcost = d->cost()[i].min();
 	dd_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
       }
@@ -767,6 +768,7 @@ int main(int argc, char* argv[]) {
       for (uint i = 0; i < input.N; i++) {
         int bcost = d->solver->cost[i];
         ag_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
+	bcost = d->cost()[i].min();
 	dd_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
       }
@@ -791,6 +793,7 @@ int main(int argc, char* argv[]) {
       bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
       // cerr << div() << bestcost <<  "|" << d->cost()[i].max() << "|" << input.maxf[i] << endl;
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
+      bestcost = d->cost()[i].min();
       dd_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
     }
@@ -1089,7 +1092,10 @@ int main(int argc, char* argv[]) {
     
     //g -> post_div_decomp_branchers(); // 
     g -> post_branchers();
-    
+
+
+    // g->post_diversification_constraints(); 
+
     if (g->status() == SS_FAILED) {
       cerr << div() << "DivModel g failed." << endl;
       return 0;
