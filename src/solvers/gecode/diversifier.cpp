@@ -324,7 +324,7 @@ public:
     l(l0), e(e0), b(b0) {}
   virtual LocalSolution * run(int) {
     // return 3;
-    // cerr << "Running" << endl;
+    cerr << "Running: " << b <<endl;
     LocalDivModel * nextl = e->next();
     // cerr << "got next" << endl;
     // TODO(Romy): Fix this to return something relevant
@@ -1144,7 +1144,6 @@ int main(int argc, char* argv[]) {
 	local_solutions.push_back(vector<LocalModel *>());
 
 
-
       bool found_local_problem = true;
       // Initialize the local_problems with an engine
       for (block b: blocks) {	// 
@@ -1192,16 +1191,18 @@ int main(int argc, char* argv[]) {
 	Support::RunJobs<LocalJobs, LocalSolution *> js(ljs, threads);
 	//map<block, LocalDivModel *> local_problems_new;
 	LocalSolution *ls;
+	//vector<int> failed_application;
 	while(js.run(ls)) {
 	  int i;
 	  LocalSolution *fls;
 	  if (js.stopped(i,fls)) {
+	    cerr << div() << "js.stopped " <<  endl;
 	    found_local_solution = false;
 	    break;
 	    // local_problems[b] = fls;
 	  } else {
 	    if (ls->solution == NULL) {
-	      cerr << div() << "NULL: " << i <<  endl;
+	      cerr << div() << "NULL: " <<  endl;
 	      block b = ls->b;
 	      cerr << div() << "fls b: " << b <<  endl;
 	      int previous_solutions = local_solutions[b].size();
@@ -1229,10 +1230,10 @@ int main(int argc, char* argv[]) {
 	      cerr << div() << ls->solution->f(b,0) << endl; //
 
 	      g1->apply_solution(ls->solution);
-	      if (g1->status() == SS_FAILED) {
+ 	      if (g1->status() == SS_FAILED) {
 		cerr << div() << "Applying solution failed " << ls->b << endl; //
 		application_failed = true;
-		break;
+		//break;
 	      }
 	      found_new_solution = true;
 	    } else {
@@ -1246,13 +1247,20 @@ int main(int argc, char* argv[]) {
 
 	if (!found_local_solution) {
 	  cerr << div() << "Trying again not found local sol." << endl;
-	  if (g1) delete g1;
+	  if (g1 != NULL) delete g1;
 	  break;
 	}
-	if (application_failed || !found_new_solution) {
-	  cerr << div() << "Trying again app or found new solution." << endl;
-	  if (g1) delete g1;
+	if (application_failed) {
+	  cerr << div() << "Trying again app failed." << endl;
+	  if (g1 != NULL) delete g1;
+	  continue;
+	}
+
+	if (!found_new_solution) {
+	  cerr << div() << "Trying again found no new solution." << endl;
+	  if (g1 != NULL) delete g1;
 	  break;
+
 	}
 
 
