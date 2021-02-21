@@ -59,7 +59,7 @@ LocalDivModel * init_local_problem(DecompDivModel * g, block b, int sc);
 class LocalSolution {
 public:
   LocalDivModel * solution;
-    block b;
+  block b;
   LocalSolution() : solution(0), b(0) {}
   LocalSolution(LocalDivModel * solution1, block b1) :
     solution(solution1), b(b1) {}

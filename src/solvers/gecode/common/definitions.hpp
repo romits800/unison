@@ -121,7 +121,8 @@ typedef enum divdistance
     DIST_REG_GADGET,           // Hamming of registers for each "gadget"
     DIST_CYC_GADGET,           // DiffHamming of cycles for each "gadget"
     DIST_DIFF_BR,              // Like DIST_HAMMING_DIFF_BR but calculates the actual distance
-    DIST_HAMMING_BR_REG        // Like HAMMING_BR but add also register
+    DIST_HAMMING_BR_REG,        // Like HAMMING_BR but add also register
+    DIST_COST                  // Generate variants with different costs
   } DivDistance;
 
 // Diversification method

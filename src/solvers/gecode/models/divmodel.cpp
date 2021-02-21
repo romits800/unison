@@ -88,7 +88,8 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   }
 
   // difference between operations and branch operations
-  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) || (options->dist_metric() == DIST_DIFF_BR)) {
+  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) ||
+      (options->dist_metric() == DIST_DIFF_BR)) {
     v_diff  = int_var_array(size, -maxval, maxval);
 
   }
@@ -292,6 +293,8 @@ void DivModel::post_diversification_constraints(void) {
   case DIST_HAMMING_BR_REG:        // Like HAMMING_BR but add also register
     post_diversification_hamming();
     post_diversification_reghamming();
+    break;
+  case DIST_COST:
     break;
   }
   // if (options->dist_metric() == DIST_REGHAMMING) {
@@ -838,9 +841,16 @@ void DivModel::constrain(const Space & _b) {
       // exit(EXIT_FAILURE);
     }
     break;
+  case DIST_COST:
+    for (int i = 0; i< input->N; i++)
+      if (b.cost()[i].assigned())
+	constraint(cost()[i] != b.cost()[i]);
+    break;
 
+    
   } // switch
 
+  
   return;
 
 }
