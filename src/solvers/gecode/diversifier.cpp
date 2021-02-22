@@ -1092,7 +1092,7 @@ int main(int argc, char* argv[]) {
     //g -> post_branchers();
 
 
-    // g->post_diversification_constraints(); 
+    //g->post_diversification_constraints(); 
 
     if (g->status() == SS_FAILED) {
       cerr << div() << "DivModel g failed." << endl;
