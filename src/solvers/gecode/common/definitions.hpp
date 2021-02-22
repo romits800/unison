@@ -128,7 +128,8 @@ typedef enum divdistance
 // Diversification method
 typedef enum divmethod
   {
-   DIV_DECOMPOSITION_LNS,
+   DIV_DECOMPOSITION_ONE_LNS,
+   DIV_DECOMPOSITION_MANY_LNS,
    DIV_MONOLITHIC_LNS,
    DIV_MONOLITHIC_DFS,
    DIV_MAX_DIV

@@ -241,7 +241,8 @@ ModelOptions::ModelOptions(void)
 
   add(_distance);
 
-  _div_method.add(DIV_DECOMPOSITION_LNS, "decomposition_lns");
+  _div_method.add(DIV_DECOMPOSITION_ONE_LNS, "decomposition_one_lns");
+  _div_method.add(DIV_DECOMPOSITION_MANY_LNS, "decomposition_many_lns");
   _div_method.add(DIV_MONOLITHIC_LNS, "monolithic_lns");
   _div_method.add(DIV_MONOLITHIC_DFS, "monolithic_dfs");
   _div_method.add(DIV_MAX_DIV, "max_div");
