@@ -1182,8 +1182,8 @@ int main(int argc, char* argv[]) {
       unsigned int threads = options.total_threads();
       //   End of test block 2 - factorial
 
-
-      unsigned int rn = r(maxcount);
+      unsigned int min_mc = 10;
+      unsigned int rn = r(maxcount-10) + 10;
       
       bool found_local_solution = true;
       bool application_failed = false;
