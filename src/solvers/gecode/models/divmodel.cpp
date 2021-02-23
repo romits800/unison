@@ -281,6 +281,7 @@ void DivModel::post_diversification_constraints(void) {
   case DIST_HAMMING_REG_GADGET:
     post_diversification_reghamming();
     post_diversification_reg_gadget();
+    post_diversification_channel();
     break;
   case DIST_REG_GADGET:
     post_diversification_reghamming();
@@ -659,8 +660,10 @@ void DivModel::constrain(const Space & _b) {
 	    }
 	  }
 	  if (b.gadget(i).assigned()) {
-	    btemp << var (gadget(i) != b.gadget(i));
-	    bweight << (3*maxval)/(weight_b); //b.gadget(i).val();
+	    if (b.gadget(i).assigned()) {
+	      btemp << var (gadget(i) != b.gadget(i));
+	      bweight << (3*maxval)/(weight_b); //b.gadget(i).val();
+	    }
 	  }
 	}
 	for (operand p: input->operands[br]) {
@@ -673,6 +676,8 @@ void DivModel::constrain(const Space & _b) {
 	if (btemp.size() >0) {
 	  BoolVar rb = var(a(br) == 1);
 	  Reify r(rb, RM_IMP);
+	  // cerr << "Weight" << endl;
+	  // cerr << bweight << " " << maxval << endl;
 	  linear(*this, bweight, btemp, IRT_GQ, maxval, r);
 	  ih << var(sum(btemp));
 	}
@@ -704,8 +709,6 @@ void DivModel::constrain(const Space & _b) {
 	  }
 	} 
       }
-
-
 
       for (uint j = 0; j < gadgets.size(); j++) {
 	gadget_t g = gadgets[j];
@@ -797,6 +800,8 @@ void DivModel::constrain(const Space & _b) {
 	if (btemp.size() >0) {
 	  BoolVar rb = var(a(br) == 1);
 	  Reify r(rb, RM_IMP);
+	  cerr << "Weight" << endl;
+	  cerr << bweight << endl;
 	  linear(*this, bweight, btemp, IRT_GQ, maxval, r);
 	  ih << var(sum(btemp));
 	}
