@@ -1389,7 +1389,7 @@ int main(int argc, char* argv[]) {
     // Initialize the decomposition solver
     DecompDivModel * g = (DecompDivModel*) dd -> clone();
 
-    map<block, LocalDivModel *> local_problems;    
+    map<block, LocalDivModel *> local_problems;
 
 
     if (options.use_optimal_for_diversification()) 
@@ -1476,8 +1476,8 @@ int main(int argc, char* argv[]) {
       unsigned int threads = options.total_threads();
       //   End of test block 2 - factorial
 
-      unsigned int min_mc = 10;
-      unsigned int rn = r(maxcount-10) + 10;
+      unsigned int min_mc = 0;
+      unsigned int rn = r(maxcount-min_mc) + min_mc;
       
       bool found_local_solution = true;
       bool application_failed = false;

@@ -41,6 +41,8 @@
 #include "solver-parameters.hpp"
 #include "branchers/solutionbrancher.hpp"
 #include "branchers/boolsolutionbrancher.hpp"
+#include "branchers/solutionbrancher_dfs.hpp"
+#include "branchers/boolsolutionbrancher_dfs.hpp"
 
 using namespace Gecode;
 using namespace std;

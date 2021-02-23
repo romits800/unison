@@ -223,9 +223,13 @@ void DivModel::post_solution_brancher(void) {
     for (int c: solver->cycles) sol2 << ((c == -1)?0:1);
     for (BoolVar a: v_a) vs2 << a;
 
-    solution_branch(*this, vs2, sol2);
-    solution_branch(*this, vs, sol);
-
+    if (options->div_method() == DIV_MONOLITHIC_DFS) {
+      solution_branch_dfs(*this, vs2, sol2);
+      solution_branch_dfs(*this, vs, sol);
+    } else {
+      solution_branch(*this, vs2, sol2);
+      solution_branch(*this, vs, sol);
+    }
 }
 
 // int  DivModel::commit(IntVar x, int i) 
