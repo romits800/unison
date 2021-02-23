@@ -800,8 +800,8 @@ void DivModel::constrain(const Space & _b) {
 	if (btemp.size() >0) {
 	  BoolVar rb = var(a(br) == 1);
 	  Reify r(rb, RM_IMP);
-	  cerr << "Weight" << endl;
-	  cerr << bweight << endl;
+	  // cerr << "Weight" << endl;
+	  // cerr << bweight << endl;
 	  linear(*this, bweight, btemp, IRT_GQ, maxval, r);
 	  ih << var(sum(btemp));
 	}
