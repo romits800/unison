@@ -179,6 +179,12 @@ void LocalDivModel::constrain(const Space & _b) {
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
     break;
+  case DIST_COST:
+    for (int i = 0; i< input->N; i++)
+      if (bi.cost()[i].assigned())
+	constraint(cost()[i] != bi.cost()[i]);
+    break;
+
   }
 
   return;

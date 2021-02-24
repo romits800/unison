@@ -390,7 +390,7 @@ bool DecompDivModel::slave(const MetaInfo& mi) {
 
 void DecompDivModel::next(const DecompDivModel& l) {
 
-  std::cout << "next: " << div_p << endl;
+  // std::cout << "next: " << div_p << endl;
   BoolVarArgs toa, ltoa;
   for (int i = 0; i < v_oa.size(); i++) {
     if (l.v_oa[i].assigned()) {
