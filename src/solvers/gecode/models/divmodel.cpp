@@ -663,7 +663,7 @@ void DivModel::constrain(const Space & _b) {
 	  if (b.gadget(i).assigned()) {
 	    if (b.gadget(i).assigned()) {
 	      btemp << var (gadget(i) != b.gadget(i));
-	      bweight << (3*maxval)/(weight_b); //b.gadget(i).val();
+	      bweight << (2*maxval)/(weight_b); //b.gadget(i).val();
 	    }
 	  }
 	}
@@ -730,7 +730,8 @@ void DivModel::constrain(const Space & _b) {
 	  if (weight_b < 0) continue;
 	  if (b.gadget(i).assigned()) {
 	    btemp << var (gadget(i) != b.gadget(i));
-	    bweight << (3*maxval)/(weight_b); //b.gadget(i).val();
+	    // bweight << (2*maxval)/(weight_b); //b.gadget(i).val();
+	    bweight << (2*maxval)/(weight_b); //b.gadget(i).val();
 	  }
 	}
 	if (btemp.size() >0) {
@@ -857,8 +858,6 @@ void DivModel::constrain(const Space & _b) {
       if (b.cost()[i].assigned())
 	constraint(cost()[i] != b.cost()[i]);
     break;
-
-    
   } // switch
 
   
