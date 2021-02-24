@@ -1246,7 +1246,7 @@ int main(int argc, char* argv[]) {
       unsigned int threads = options.total_threads();
       //   End of test block 2 - factorial
 
-      unsigned int min_mc = 10;
+      unsigned int min_mc = maxcount;
       unsigned int rn = r(maxcount-min_mc) + min_mc;
 
       while(count < maxcount && rn > 0) {
@@ -1477,7 +1477,7 @@ int main(int argc, char* argv[]) {
       unsigned int threads = options.total_threads();
       //   End of test block 2 - factorial
 
-      unsigned int min_mc = 10;
+      unsigned int min_mc = maxcount;
       unsigned int rn = r(maxcount-min_mc) + min_mc;
       
       bool found_local_solution = true;

@@ -647,7 +647,8 @@ void DivModel::constrain(const Space & _b) {
 	  operation o = gadgets_operations[i];
 	  if (cycleorder[o] == -1) continue;
 	  int weight_r = (cycleorder[br] - cycleorder[o]);
-	  int weight_b = cycleorder[o];
+	  // if we move one starting cycle then we move everything
+	  int weight_b = (cycleorder[br] - cycleorder[o]); 
 	  weight_r = weight_r == 0 ? 1 : weight_r;
 	  weight_b = weight_b == 0 ? 1 : weight_b;
 	  if (weight_b < 0 || weight_r < 0) continue;
@@ -723,7 +724,8 @@ void DivModel::constrain(const Space & _b) {
 	for (uint i = g.start; i < g.end; i++) {
 	  operation o = gadgets_operations[i];
 	  if (cycleorder[o] == -1) continue;
-	  int weight_b = cycleorder[o];
+	  // int weight_b = cycleorder[o];
+	  int weight_b = (cycleorder[br] - cycleorder[o]); 
 	  weight_b = weight_b == 0 ? 1 : weight_b;
 	  if (weight_b < 0) continue;
 	  if (b.gadget(i).assigned()) {
