@@ -355,6 +355,11 @@ expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc PseudoCVT_S_
   let mi1 = mi {msOpcode = mkMachineTargetOpc MTC1, msOperands = [fi, ri]}
       mi2 = mi {msOpcode = mkMachineTargetOpc CVT_S_W, msOperands = [fi, fi]}
   in [[mi1],[mi2]]
+
+expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc SWC1_fi} =
+  let mi' = mi {msOpcode = mkMachineTargetOpc SWC1}
+  in [[mi']]
+
 expandPseudoEarly _ mi = [[mi]]
 
 expandPseudos = mapToMachineBlock (expandBlockPseudos expandPseudo)
