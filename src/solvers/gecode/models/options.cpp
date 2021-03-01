@@ -133,7 +133,8 @@ ModelOptions::ModelOptions(void)
     _solver_file("solver-file", "solver json file file", ""),
     _divs_dir("divs-dir", "folder to store the diversified versions", "."),
     _min_dist("min-dist", "Minimum allowed distance", 1),
-    _gadget_size("gadget-size", "Gadget size for Test functions", 1),
+    _cyc_gadget_size("cyc-gadget-size", "Gadget size for cyc_gadget and reg_cyc_gadget distances", 8),
+    _reg_gadget_size("reg-gadget-size", "Gadget size for reg_gadget and reg_cyc_gadget distances", 0),
     _enable_solver_solution_brancher("enable-solver-solution-brancher", "Enable branching to the solver's solution as the first solution", false)
 
 {
@@ -233,14 +234,10 @@ ModelOptions::ModelOptions(void)
   _distance.add(DIST_LEVENSHTEIN_SET, "levenshtein_set");
 
   _distance.add(DIST_REGHAMMING, "reg_hamming");
-  _distance.add(DIST_HAMMING_REG_GADGET, "hamm_reg_gadget");
+  _distance.add(DIST_CYC_REG_GADGET, "hamm_reg_gadget");
   _distance.add(DIST_REG_GADGET, "reg_gadget");
   _distance.add(DIST_CYC_GADGET, "cyc_gadget");
-// TEST
-  _distance.add(DIST_REG_GADGET_TEST, "reg_gadget_test");
-  _distance.add(DIST_CYC_GADGET_TEST, "cyc_gadget_test");
- 
-// END TEST
+
   _distance.add(DIST_DIFF_BR, "diff_br");
   _distance.add(DIST_HAMMING_BR_REG, "br_reg_hamming");
   _distance.add(DIST_COST, "cost");
@@ -260,7 +257,8 @@ ModelOptions::ModelOptions(void)
   add(_solver_file);
   add(_divs_dir);
   add(_min_dist);
-  add(_gadget_size);
+  add(_cyc_gadget_size);
+  add(_reg_gadget_size);
 
   add(_enable_solver_solution_brancher);
 }
