@@ -41,7 +41,7 @@ DecompDivModel::DecompDivModel(Parameters * p_input, ModelOptions * p_options,
 {
 
   // div_r.seed(p_options->seed());
-  div_p = 0.2;
+  div_p = options->decomp_r();
 
   // int op_size = O().size();
 
@@ -308,6 +308,7 @@ void DecompDivModel::apply_div_solution(DivModel * d) {
 }
 
 
+
 void DecompDivModel::post_constrain(DecompDivModel* _b) {
 
   // const DecompDivModel& b = static_cast<const DecompDivModel&>(*_b);
@@ -398,7 +399,7 @@ void DecompDivModel::next(const DecompDivModel& l) {
       ltoa << l.v_oa[i];
     }
   }
-  relax(*this, toa, ltoa, div_r, 0.05);
+  relax(*this, toa, ltoa, div_r, div_p);
 
   BoolVarArgs tpal, ltpal;
 

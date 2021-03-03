@@ -160,6 +160,7 @@ protected:
   Driver::UnsignedIntOption _cyc_gadget_size;  
   Driver::UnsignedIntOption _reg_gadget_size;  
   Driver::BoolOption _enable_solver_solution_brancher; // Enable a brancher to find the solution first
+  Driver::DoubleOption _decomp_r; // Relax rate for decomposition model
 public:
 
   ModelOptions(void);
@@ -263,6 +264,7 @@ public:
   unsigned int reg_gadget_size(void) const {return _reg_gadget_size.value();}
 
   bool enable_solver_solution_brancher(void) const {return _enable_solver_solution_brancher.value();}
+  double decomp_r(void) const {return _decomp_r.value();}
 };
 
 #endif

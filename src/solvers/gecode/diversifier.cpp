@@ -828,7 +828,7 @@ int main(int argc, char* argv[]) {
       for (uint i = 0; i < input.N; i++) {
         bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
         ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-	bestcost = d->cost()[i].min();
+	//bestcost = d->cost()[i].min();
 	dd_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
       }
@@ -844,7 +844,7 @@ int main(int argc, char* argv[]) {
       for (uint i = 0; i < input.N; i++) {
         int bcost = d->solver->cost[i];
         ag_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-	bcost = d->cost()[i].min();
+	//bcost = d->cost()[i].min();
 	dd_best_cost.push_back(round((bcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
       }
@@ -869,7 +869,7 @@ int main(int argc, char* argv[]) {
       bestcost = (d->cost()[i].max() > input.maxf[i]) ? input.maxf[i] : d->cost()[i].min();
       // cerr << div() << bestcost <<  "|" << d->cost()[i].max() << "|" << input.maxf[i] << endl;
       ag_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
-      bestcost = d->cost()[i].min();
+      //bestcost = d->cost()[i].min();
       dd_best_cost.push_back(round((bestcost*(100. + (double)d->options->acceptable_gap()))/100.0));
 
     }
@@ -883,6 +883,7 @@ int main(int argc, char* argv[]) {
   d -> post_upper_bound(ag_best_cost);
 
   // dd -> post_lower_bound(best_cost);
+  dd -> post_lower_bound(best_cost);
   dd -> post_upper_bound(dd_best_cost);
 
   if (d->status() == SS_FAILED) {
@@ -902,7 +903,12 @@ int main(int argc, char* argv[]) {
   
   if (options.verbose()) {
     cerr << div() << "Printing cost status report..." << endl;
-    cerr << div() << cost_status_report(d, d) << endl;
+    
+    if (options.div_method() == DIV_DECOMPOSITION_ONE_LNS || 
+        options.div_method() == DIV_DECOMPOSITION_MANY_LNS) 
+           cerr << div() << cost_status_report(dd, dd) << endl;
+    else
+        cerr << div() << cost_status_report(d, d) << endl;
   }
 
 
@@ -1193,12 +1199,13 @@ int main(int argc, char* argv[]) {
     o.cutoff = c;
 
     RBS<DecompDivModel,BAB> e(g,o);
-    // DFS<DecompDivModel> e(g);
+    //DFS<DecompDivModel> e(g);
 
     // DecompDivModel *g3 = e.next(); //
 
     Rnd r(options.seed());
 
+    cerr << div() << "Starting..." << endl;
 
     while(count < maxcount) {
       // cout << "count:" << count << endl;
@@ -1348,6 +1355,8 @@ int main(int argc, char* argv[]) {
 
 	DecompDivModel *g2 = e2.next(); //(DecompDivModel *) g1;
 
+        g2->post_global_cycles();
+
       
 	if (g2 == NULL || g2->status() == SS_FAILED) {
 	  // cerr << div() << "DecompDivModel e.next() failed." << endl;
@@ -1361,10 +1370,15 @@ int main(int argc, char* argv[]) {
 
 	  cerr << div() << "Cloning " << count << "\r";
 	  solutions.push_back(g2);
-	  ResultData rd = ResultData(g2, false, 0,
-				     0, 0,
-				     0, t_solver.stop(),
-				     t_it.stop());
+          ResultDivData rd = ResultDivData(g2,
+                                           proven, // false, /*proven*/
+                                           0,
+                                           count,
+                                           0, //presolver_time,
+                                           0, //presolving_time,
+                                           t_solver.stop(),
+                                           t_it.stop());
+
 
 	  ofstream fout;
 	  fout.open(options.divs_dir() +  "/" + to_string(count) + "." + g2->options->output_file());
@@ -1605,6 +1619,7 @@ int main(int argc, char* argv[]) {
 
 	DecompDivModel *g2 = e2.next(); //(DecompDivModel *) g1;
 
+        g2->post_global_cycles();
       
 	if (g2 != NULL && g2->status() != SS_FAILED) {
 	  // if (options.verbose()) {
@@ -1614,10 +1629,16 @@ int main(int argc, char* argv[]) {
 
 	  cerr << div() << "Cloning " << count << "\r";
 	  solutions.push_back(g2);
-	  ResultData rd = ResultData(g2, false, 0,
-				     0, 0,
-				     0, t_solver.stop(),
-				     t_it.stop());
+          ResultDivData rd = ResultDivData(g2,
+                                           proven, // false, /*proven*/
+                                           0,
+                                           count,
+                                           0, //presolver_time,
+                                           0, //presolving_time,
+                                           t_solver.stop(),
+                                           t_it.stop());
+
+
 
 	  ofstream fout;
 	  fout.open(options.divs_dir() +  "/" + to_string(count) + "." + g2->options->output_file());

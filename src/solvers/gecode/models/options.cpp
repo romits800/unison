@@ -135,7 +135,8 @@ ModelOptions::ModelOptions(void)
     _min_dist("min-dist", "Minimum allowed distance", 1),
     _cyc_gadget_size("cyc-gadget-size", "Gadget size for cyc_gadget and reg_cyc_gadget distances", 8),
     _reg_gadget_size("reg-gadget-size", "Gadget size for reg_gadget and reg_cyc_gadget distances", 0),
-    _enable_solver_solution_brancher("enable-solver-solution-brancher", "Enable branching to the solver's solution as the first solution", false)
+    _enable_solver_solution_brancher("enable-solver-solution-brancher", "Enable branching to the solver's solution as the first solution", false),
+    _decomp_r("decomp-r", "Set decomposition relax rate", 0.3)
 
 {
   add(_output_file);
@@ -261,4 +262,5 @@ ModelOptions::ModelOptions(void)
   add(_reg_gadget_size);
 
   add(_enable_solver_solution_brancher);
+  add(_decomp_r);
 }
