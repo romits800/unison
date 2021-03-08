@@ -504,17 +504,18 @@ void DivModel::constrain_solution(DivModel *b) {
 
   BoolVarArgs cs;
   for (operation o: real_operations) {
-    if (b->gc(o).assigned())
-        cs << var(gc(o) != b-> gc(o));
-  }
-  for (operand p: input->P) {
-    if (b->ry(p).assigned())
-        cs << var(ry(p) != b->ry(p));
-  }
+      if (b->hamm(o).assigned())
+	cs << var (hamm(o) != b->hamm(o));
+    }
   if (cs.size() >0) {           //
-      constraint(var(sum(cs)) >= 1); // hamming distance
+      dist = var( sum(cs));
+      constraint(dist >= mindist); // 
   }
-  
+  //for (operand p: input->P) {
+  //  if (b->ry(p).assigned())
+  //      cs << var(ry(p) != b->ry(p));
+  //}
+ 
   return;
 
 }
