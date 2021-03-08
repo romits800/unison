@@ -109,7 +109,7 @@ init_local_problem(DecompDivModel *g, block b, int seed_correction) {
     }
     else {
       if (l!=NULL) delete l;
-      // std::cerr << b << ":" << l0 -> f(b,0) << std::endl;
+      //std::cerr << b << ":" << l0 -> f(b,0) << std::endl;
       return l0;
     }
   }

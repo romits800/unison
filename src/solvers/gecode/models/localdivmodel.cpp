@@ -63,13 +63,25 @@ LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
   div_r.seed(p_options->seed() + seed_correction);
   div_p = p_options->relax();
 
+  branch_op = 0;
+  
+  for (uint i = 0; i < input -> ops[b].size(); i++) {
+    operation o = input->ops[b][i];
+    if (is_branch_type(o)) {
+        branch_op = i;
+    }
+  }
   int op_size = O().size();
+  int operand_size = P().size();
 
   int maxval = max_of(input->maxc);
+
   // difference between operators
   v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
   // Hamming distance between operators
   v_hamm  = int_var_array(op_size, -1, maxval);
+  // Register  distance between operands
+  v_reghamm  = int_var_array(operand_size, -1, input->RA.size() - 1);
 
 }
 
@@ -77,10 +89,12 @@ LocalDivModel::LocalDivModel(LocalDivModel& cg) :
   LocalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
+  branch_op(cg.branch_op),
   solver(cg.solver)
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
+  v_reghamm.update(*this, cg.v_reghamm);
 
 }
 
@@ -92,6 +106,8 @@ LocalDivModel* LocalDivModel::copy(void) {
   return new LocalDivModel(*this);
 }
 
+
+
 void LocalDivModel::constrain_total_cost(int cost) {
   //input->freq[b] * f(b,0), irt, cost
   //  rel(*this, input->freq[b] *f(b, 0), irt, cost, ipl); // 
@@ -100,9 +116,22 @@ void LocalDivModel::constrain_total_cost(int cost) {
 
 
 void LocalDivModel::post_diversification_constraints(void) {
-  post_diversification_hamming();
-  if (options->dist_metric() == DIST_HAMMING_DIFF) {
+  if (options->dist_metric() == DIST_HAMMING) {
+    post_diversification_hamming();
+  }
+  else if (options->dist_metric() == DIST_HAMMING_BR) {
+    post_diversification_hamming();
+  }
+  else if (options->dist_metric() == DIST_HAMMING_DIFF) {
+    post_diversification_hamming();
     post_diversification_diffs();
+  }
+  else if (options->dist_metric() == DIST_REGHAMMING) {
+    post_diversification_reghamming();
+  }
+  else if (options->dist_metric() == DIST_CYC_REG_GADGET) {
+    post_diversification_hamming();
+    post_diversification_reghamming();
   }
 
 }
@@ -132,6 +161,13 @@ void LocalDivModel::post_diversification_hamming(void) {
   }
 }
 
+void LocalDivModel::post_diversification_reghamming(void) {
+  for (operation p: P()) {
+   // operation pp = P()[p];
+    constraint(reghamm(p) == ry(p));
+  }
+}
+
 bool LocalDivModel::is_real_type(int o) {
 
   return (input->type[o] == BRANCH ||
@@ -156,11 +192,28 @@ void LocalDivModel::constrain(const Space & _b) {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
-      bh << var (hamm(o) != bi.hamm(o));
+      operation op = input->ops[b][o];
+      if (is_real_type(op))
+          bh << var (hamm(o) != bi.hamm(o));
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance
     break;
+  case DIST_REGHAMMING:
+    for (uint o = 0; o < input -> ops[b].size(); o++) {
+      operation op = input->ops[b][o];
+      if (is_real_type(op))
+          for (operand p: input->operands[op]) {
+            if (bi.reghamm(p).assigned())
+              bh << var (reghamm(p) != bi.reghamm(p));
+            if (bi.x(p).assigned())
+              bh << var (x(p) != bi.x(p));
+         }
+    }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+
   case DIST_HAMMING_DIFF:
   //   // for (uint o=0; o< input -> ops[b].size(); o++) {
   //   for (int i = 0; i < v_diff.size(); i++) {
@@ -173,16 +226,54 @@ void LocalDivModel::constrain(const Space & _b) {
     break;
   case DIST_HAMMING_BR:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
-      if (is_branch_type(o))
+      operation op = input->ops[b][o];
+      if (is_branch_type(op))
         bh << var (hamm(o) != bi.hamm(o));
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
     break;
+  case DIST_CYC_REG_GADGET:
+   {
+    int cyc_gadget = (int)options->cyc_gadget_size();
+    //int reg_gadget = (int)options->reg_gadget_size();
+    for (uint o = 0; o < input -> ops[b].size(); o++) {
+      operation op = input->ops[b][o];
+      if (is_real_type(op)) {
+          BoolVar ifb = var ( abs ( hamm(branch_op) - hamm(o)) <= cyc_gadget );
+          BoolVar thenb = var (hamm(o) != bi.hamm(o));
+          BoolVar elseb = var (hamm(o) != hamm(o));
+          //BoolVar elseb = var (1 == 1);
+          BoolVar res = BoolVar(*this, 0, 1);
+          ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
+          bh << res;
+          if (is_branch_type(op)) {
+            for (operand p: input->operands[op]) {
+               if (bi.reghamm(p).assigned() && bi.reghamm(p).val() != 0)
+                  bh << var (reghamm(p) != bi.reghamm(p));
+               if (bi.x(p).assigned())
+                  bh << var (x(p) != bi.x(p));
+            }
+          }
+
+      }
+    }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= 1); // hamming distance
+    else {
+        cerr << "No constraint" << endl;
+        GECODE_NEVER;
+    }
+   }
+   break;
   case DIST_COST:
-    for (int i = 0; i< input->N; i++)
+    for (uint i = 0; i< input->N; i++)
       if (bi.cost()[i].assigned())
 	constraint(cost()[i] != bi.cost()[i]);
+    break;
+  default:
+    cerr << "Distance not implemented!" << endl;
+    GECODE_NEVER;
     break;
 
   }

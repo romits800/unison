@@ -500,6 +500,27 @@ bool DivModel::is_branch_type(int o) {
           input->type[o] == CALL);
 }
 
+void DivModel::constrain_solution(DivModel *b) {
+
+  BoolVarArgs cs;
+  for (operation o: real_operations) {
+    if (b->gc(o).assigned())
+        cs << var(gc(o) != b-> gc(o));
+  }
+  for (operand p: input->P) {
+    if (b->ry(p).assigned())
+        cs << var(ry(p) != b->ry(p));
+  }
+  if (cs.size() >0) {           //
+      constraint(var(sum(cs)) >= 1); // hamming distance
+  }
+  
+  return;
+
+}
+
+
+
 void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
 
@@ -584,6 +605,8 @@ void DivModel::constrain(const Space & _b) {
     for (operand p : input->P) {
       if (b.reghamm(p).assigned())
 	bh << var (reghamm(p) != b.reghamm(p));
+      if (b.x(p).assigned())
+	bh << var (x(p) != b.x(p));
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
@@ -704,6 +727,10 @@ void DivModel::constrain(const Space & _b) {
 	      btemp << var (reghamm(p) != b.reghamm(p));
 	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
 	    } 
+	    if (b.x(p).assigned()) {
+	      btemp << var (x(p) != b.x(p));
+	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+            }
 	  }
 	}
 
@@ -772,6 +799,10 @@ case DIST_REG_GADGET:
           //bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
           bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
         } 
+        if (b.x(p).assigned()) {
+          btemp << var (x(p) != b.x(p));
+          bweight << (weight_r * maxval); 
+        }
       }
     }
     if (btemp.size() >0) {
@@ -806,6 +837,9 @@ break;
 	  if (b.reghamm(p).assigned()) {
 	    bh << var (reghamm(p) != b.reghamm(p));
 	  }
+	  if (b.x(p).assigned()) {
+	    bh << var (x(p) != b.x(p));
+          }
 	}
       }
       

@@ -394,7 +394,7 @@ public:
     LocalDivModel *nextl;
     while (max_num >0 && (nextl = e->next())) {
       if (nextl==NULL) {
-	// cerr << "Breaking: " << b <<endl;
+	 cerr << "Breaking: " << b <<endl;
 	break;
       }
       all_solutions->push_back(new LocalSolution(nextl, b));
@@ -403,9 +403,8 @@ public:
     // cerr << "got next" << endl;
     // TODO(Romy): Fix this to return something relevant
     if (e -> stopped()) {
-      // cerr << div() << "Job stopped by timer: " << b <<  endl;
+     // cerr << div() << "Job stopped by timer: " << b <<  endl;
       return all_solutions;
-      // throw Support::JobStop<LocalDivModel*>(l); // 
       //cerr << div() << "Job stopped" << endl;
     }
     // if (!nextl) {
@@ -736,6 +735,8 @@ int main(int argc, char* argv[]) {
 
   DecompDivModel *dd = new DecompDivModel(&input, &options, IPL_DOM);
   
+  MaxDivModel *md = new MaxDivModel(&input, &options, IPL_DOM);
+
   GlobalData gd(d->n_int_vars, d->n_bool_vars, d->n_set_vars);
 
 
@@ -812,6 +813,7 @@ int main(int argc, char* argv[]) {
     // SolverParameters solver(root);
     d->set_solver(root_solver);
     dd->set_solver(root_solver);
+    md->set_solver(root_solver);
     cerr << div() << "Creating folder: " + options.divs_dir() << endl;
 
     if (do_mkdir(options.divs_dir())) {
@@ -1032,7 +1034,6 @@ int main(int argc, char* argv[]) {
   }
   else if (options.div_method() == DIV_MAX_DIV) {
 
-    MaxDivModel *md = new MaxDivModel(&input, &options, IPL_DOM);
     // MaxDivModel *md = new MaxDivModel (d); //dynamic_cast<MaxDivModel*> (d);
 
     GlobalData dgd(md->n_int_vars, md->n_bool_vars, md->n_set_vars);
@@ -1056,9 +1057,12 @@ int main(int argc, char* argv[]) {
         MaxDivModel *d0 = (MaxDivModel *)md->clone();
 
 
+        if (options.use_optimal_for_diversification())  {
+            d0->post_solution_brancher();
+        }
+
         d0->post_clrandom_branchers();
         d0->post_diversification_constraints(); // Diversification constraint
-
         // cout << "posting_input_sol " << endl;
         // d0->post_input_solution_constrain();
 
@@ -1082,6 +1086,7 @@ int main(int argc, char* argv[]) {
         }
 
 
+          //cerr << div() << "Done with first solution " << count << endl;
         md->input_solutions.push_back(d0);
         ResultDivData rd = ResultDivData(d0,
                                          proven, // false, /*proven*/
@@ -1123,8 +1128,22 @@ int main(int argc, char* argv[]) {
           // if (t.stop() > options.timeout())
           //   timeout_exit(base, results, gd, go, t.stop());
 
+          
           MaxDivModel *tmpg = d0;
           d0 = nextg;
+          ResultDivData rd = ResultDivData(d0,
+                                       proven, // false, /*proven*/
+                                             0,
+                                             count,
+                                             0, //presolver_time,
+                                             0, //presolving_time,
+                                             t_solver.stop(),
+                                             t_it.stop());
+          ofstream fout;
+          fout.open(options.divs_dir() +  "/" + to_string(count) + "." + d0->options->output_file());
+          fout << produce_json(rd, gd, d0->input->N, 0);
+          fout.close();
+     
           delete tmpg;
 
         }
@@ -1235,7 +1254,7 @@ int main(int argc, char* argv[]) {
       for (block b: blocks) {	// 
 
 	local_problems[b] =
-	  (LocalDivModel *) init_local_problem(g3, b, r(maxcount));
+	  (LocalDivModel *) init_local_problem(g3, b, r(1000));
 	if (local_problems[b] == NULL) {
 	  // cerr << div() << "Cannot generate local problem" << endl;
 	  found_local_problem  = false;
@@ -1294,8 +1313,8 @@ int main(int argc, char* argv[]) {
 	      int previous_solutions = local_solutions[b].size();
 	      // cerr << div() << "size: " << previous_solutions <<  endl;
 	      if (previous_solutions == 0) {
-		found_local_solution = false;
-		break;
+	        found_local_solution = false;
+	        break;
 	      }
 	      int index = r(previous_solutions);
 	      // cerr << div() << "index: " << index <<  endl;
@@ -1325,9 +1344,10 @@ int main(int argc, char* argv[]) {
 	  }
 
 	}
-	if (g1 !=NULL && g1->status() == SS_FAILED) {
+	if (g1 ==NULL || g1->status() == SS_FAILED) {
 	  // cerr << div() << "Applying previous solution failed " << endl; //
-	  delete g1;
+          if (g1 != NULL)
+              delete g1;
 	  break;
 	}
 
@@ -1493,8 +1513,8 @@ int main(int argc, char* argv[]) {
       unsigned int threads = options.total_threads();
       //   End of test block 2 - factorial
 
-      unsigned int min_mc = maxcount;
-      unsigned int rn = r(maxcount-min_mc) + min_mc;
+      //unsigned int min_mc = maxcount;
+      unsigned int rn = maxcount; // r(maxcount-min_mc) + min_mc;
       
       bool found_local_solution = true;
       bool application_failed = false;
@@ -1516,35 +1536,25 @@ int main(int argc, char* argv[]) {
 	  // local_problems[b] = fls;
 	} else {
 	  if (ls->size() == 0) {
-	    // cerr << div() << "NULL: " <<  endl;
+	     //cerr << div() << "Zero solutions: " <<  endl;
 	    //block b = ls->b;
 	    //cerr << div() << "fls b: " << b <<  endl;
 	    found_local_solution = false;
 	    break;
-	    // int previous_solutions = local_solutions[b].size();
-	    // cerr << div() << "size: " << previous_solutions <<  endl;
-	    // if (previous_solutions == 0) {
-	    // 	found_local_solution = false;
-	    // 	break;
-	    // }
-	    // int index = r(previous_solutions);
-	    // cerr << div() << "index: " << index <<  endl;
-	    // LocalDivModel *l0 = (LocalDivModel *) local_solutions[b][index];
-	    // cerr << div() << "Applying previous solution " << l0->b << endl; //
-	    // g1->apply_solution(l0);	      
-	    // if (g1->status() == SS_FAILED) {
-	    // 	cerr << div() << "Applying previous solution failed " << l0->b << endl; //
-	    // 	found_local_solution = false;
-	    // 	break;
-	    // }
 	  }
 	  //local_problems_new[b] = ls;
 	  else {
 	    block b = (*ls)[0]->b;
+            //cerr << div() << "EARLY:" << b << ":" << ls->size() << endl;
+            //cerr << div() << "EARLY: total_size:" << total_size << endl;
 	    // cerr << div() << "Storing solution " << b << ", "
 	    // 	 << (*ls)[0]->solution->b << endl; // 
 	    local_solutions[b] = ls;
 	    total_size *= local_solutions[b]->size();
+	    //total_size = (local_solutions[b]->size() > total_size) ? local_solutions[b]->size() : total_size;
+            //cerr << div() << "AFTER:" << b << ":" << ls->size() << endl;
+            //cerr << div() << "AFTER: total_size:" << total_size << endl;
+	
 	    // cerr << div() << "Applying solution " << ls->b << endl; // 
 	    // cerr << div() << ls->solution->f(b,0) << endl; //
 
@@ -1559,7 +1569,8 @@ int main(int argc, char* argv[]) {
 	}
 
       }
-
+    
+      //cerr << div() << "total_size: " << total_size << endl;
       if (!found_local_solution) {
 	cerr << div() << "Trying again not found local sol." << endl;
 	if (g1 != NULL) delete g1;
@@ -1577,13 +1588,12 @@ int main(int argc, char* argv[]) {
       //   break;
 
       // }
-      found_local_solution = true;
+      //found_local_solution = true;
+      total_size = total_size;
       while(count < maxcount && rn > 0 && total_size > 0) {
 	// g1 = e.next();
 	rn--;
-	// cout << "count:" << count << " rnd: " << rn
-	//      << " total_size: " << total_size << endl;
-
+	//cout << "count:" << count << " rnd: " << rn
 	g1 = (DecompDivModel *) g->clone();
 
 	if (g1 == NULL || g1->status() == SS_FAILED) {
@@ -1595,16 +1605,21 @@ int main(int argc, char* argv[]) {
 	  // cerr << div() << "For loop " << b << endl; //
 	  total_size--;
 	  int index = r(local_solutions[b]->size());
-	  // cerr << div() << "index: " << index <<  endl;
+	  //cerr << div() << b << ":size: " << local_solutions[b]->size() <<  endl;
+	  //cerr << div() << "index: " << index <<  endl;
 	  LocalSolution *l0 = (LocalSolution *) (*local_solutions[b])[index];
-	  // cerr << div() << "Applying stored solution " << l0->b << endl; //
 	  g1->apply_solution(l0->solution);	      	  
-	  // cerr << div() << "Checking if failed " << l0->b << endl; //
-	  // continue;
-	}
 
+          /*if (options.dist_metric() == DIST_CYC_REG_GADGET) {
+              local_solutions[b]->erase(local_solutions[b]->begin() + index);
+              if (local_solutions[b]->size() == 0) {
+                found_local_solution = false;
+                //break;      
+              }
+          }*/
+	}
 	if (g1->status() == SS_FAILED) {
-	  cerr << div() << "Applying previous solution failed " << endl; //
+	  //cerr << div() << "Applying previous solution failed " << endl; //
 	  if (g1 != NULL) delete g1;
 	  continue;
 	}
@@ -1620,12 +1635,21 @@ int main(int argc, char* argv[]) {
 	DecompDivModel *g2 = e2.next(); //(DecompDivModel *) g1;
 
         g2->post_global_cycles();
+        //g2->post_diversification_constraints();
+      
       
 	if (g2 != NULL && g2->status() != SS_FAILED) {
 	  // if (options.verbose()) {
 	  //   cerr << div() << "Printing cost status report..." << endl;
 	  //   cerr << div() << cost_status_report(dd, g2) << endl;
 	  // }
+          //DivModel *b = static_cast<DivModel *>(g2);
+          g->constrain_solution(g2);
+          if (g->status() == SS_FAILED) {
+            cerr << "Cannot find any more solutions. Exiting..." << endl;
+            return 0;
+          }
+          
 
 	  cerr << div() << "Cloning " << count << "\r";
 	  solutions.push_back(g2);

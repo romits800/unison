@@ -305,9 +305,11 @@ void MaxDivModel::post_input_solution_constrain() {
   case DIST_REGHAMMING:
     for (MaxDivModel *s: input_solutions) {
       BoolVarArgs bhs;
-      for (temporary t: input->T) {
-          bh << var (reghamm(t) != s->reghamm(t));
-          bhs << var (reghamm(t) != s->reghamm(t));
+      for (operand p : input->P) {
+          bh << var (reghamm(p) != s->reghamm(p));
+          bh << var (x(p) != s->x(p));
+          bhs << var (reghamm(p) != s->reghamm(p));
+          bhs << var (x(p) != s->x(p));
       }
       if (bhs.size() >0) {           //
           constraint(var( sum(bhs)) > 0);
@@ -351,12 +353,12 @@ void MaxDivModel::post_input_solution_constrain() {
         bh << var (hamm(o) != s->hamm(o));
         bhs << var (hamm(o) != s->hamm(o));
         for (operand p: input->operands[o]) {
-          for (temporary t: input->temps[p]) {
-            if (t >= 0) {
-              bh << var (reghamm(t) != s->reghamm(t));
-              bhs << var (reghamm(t) != s->reghamm(t));
-            }
-          }
+          //for (temporary t: input->temps[p]) {
+          bh << var (reghamm(p) != s->reghamm(p));
+          bh << var (x(p) != s->x(p));
+          bhs << var (reghamm(p) != s->reghamm(p));
+          bhs << var (x(p) != s->x(p));
+          //}
         }
       }
       if (bhs.size() >0) {           //
@@ -370,7 +372,7 @@ void MaxDivModel::post_input_solution_constrain() {
     }
     break;
   case DIST_COST:
-    IntVarArgs ihs;
+    {IntVarArgs ihs;
     for (MaxDivModel *s: input_solutions) {
       for (uint i = 0; i< input->N; i++) {
         ihs << var(abs(cost()[i] - s->cost()[i]));
@@ -381,6 +383,11 @@ void MaxDivModel::post_input_solution_constrain() {
     } else {
       exit(EXIT_FAILURE);
     }
+    }
+    break;
+  default:
+    cerr << "Dinstace not implemented yet." << endl;
+    exit(EXIT_FAILURE);
     break;
 
   } // Switch
@@ -451,8 +458,9 @@ void MaxDivModel::constrain(const Space & _b) {
     break;
   case DIST_REGHAMMING:
     for (MaxDivModel *s: input_solutions) {
-      for (temporary t: input -> T) {
-          bh << var (b.reghamm(t) != s->reghamm(t));
+      for (operand p : input->P) {
+          bh << var (b.reghamm(p) != s->reghamm(p));
+          bh << var (b.x(p) != s->x(p));
       }
     }
     if (bh.size() >0) {           //
@@ -462,37 +470,6 @@ void MaxDivModel::constrain(const Space & _b) {
       cerr << "No constraints @ constrain" << endl;
       exit(EXIT_FAILURE);
     }
-    break;
-  case DIST_CYC_REG_GADGET:
-  case DIST_CYC_GADGET:
-  case DIST_REG_GADGET:
-    cerr << "Gadget distances not implemented yet. Exiting.." << endl;
-    exit(EXIT_FAILURE);
-//     for (MaxDivModel *s: input_solutions) {
-//       for (uint j = 0; j < gadgets.size(); j++) {
-// 	gadget_t g = gadgets[j];
-// 	operation br = branch_operations[j];
-// 	BoolVarArgs btemp;
-// 	for (uint i = g.start; i < g.end; i++) {
-// 	  btemp << var (b.gadget(i) != s->gadget(i));
-// 	  for (operand p: input->operands[i]) {
-// 	    for (temporary t: input->temps[p]) {
-// 	      btemp << var (b.reghamm(t) != s->reghamm(t));
-// 	    }
-// 	  }
-// 	}
-// 	if (btemp.size() >0) {
-// 	  rel(*this, var(sum(btemp)), IRT_GQ,  var(1), var(a(br) == 1));
-// 	  ih << var(sum(btemp));
-// 	}
-//       }
-//     }
-//     if (ih.size() >0) {
-//       constraint(maxdist >= sum(ih));
-//     } else {
-//       cerr << "No constraints @ constrain";
-//       exit(EXIT_FAILURE);
-//     }
     break;
   case DIST_DIFF_BR:
     for (MaxDivModel *s: input_solutions) {
@@ -508,19 +485,12 @@ void MaxDivModel::constrain(const Space & _b) {
     break;
   case DIST_HAMMING_BR_REG:
     for (MaxDivModel *s: input_solutions) {
-      BoolVarArgs bhs;
       for (operation o : branch_operations) {
         bh << var (b.hamm(o) != s->hamm(o));
         for (operand p: input->operands[o]) {
-          for (temporary t: input->temps[p]) {
-            if (t >= 0) {
-              bh << var (b.reghamm(t) != s->reghamm(t));
-            }
-          }
+          bh << var (b.reghamm(p) != s->reghamm(p));
+          bh << var (b.x(p) != s->x(p));
         }
-      }
-      if (bhs.size() >0) {           //
-        constraint(var( sum(bhs)) > 0);
       }
     }
     if (bh.size() >0) {           //
@@ -531,7 +501,7 @@ void MaxDivModel::constrain(const Space & _b) {
     break;
 
   case DIST_COST:
-    IntVarArgs ihs;
+    {IntVarArgs ihs;
     for (MaxDivModel *s: input_solutions) {
       for (uint i = 0; i< input->N; i++)
         if (b.cost()[i].assigned()) {
@@ -543,7 +513,11 @@ void MaxDivModel::constrain(const Space & _b) {
     } else {
       exit(EXIT_FAILURE);
     }
-
+    }
+    break;
+  default:
+    cerr << "Gadget distances not implemented yet. Exiting.." << endl;
+    exit(EXIT_FAILURE);
     break;
 
   } // switch

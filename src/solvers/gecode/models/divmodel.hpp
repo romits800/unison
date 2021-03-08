@@ -157,6 +157,7 @@ public:
   // Constrain function
 
   void constrain(const Space & _b);
+  void constrain_solution(DivModel* b);
   // The same constraints as the constrain function
   void post_constrain(DivModel* b);
 

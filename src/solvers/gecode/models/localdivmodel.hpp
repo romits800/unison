@@ -65,10 +65,14 @@ public:
   // Hamming distance between operations
   IntVarArray v_hamm;
 
+  // Register Hamming distance between operands
+  IntVarArray v_reghamm;
+
   // p: relax parameter for LNS
   double div_p;
   // r: random number for LNS
   Rnd div_r;
+  int branch_op;
 
   void set_random(Rnd r) {div_r = r;};
 
@@ -83,14 +87,19 @@ public:
   IntVar diff(operation o) const {return v_diff[o]; }
 
   IntVar hamm(operation o) const {return v_hamm[o]; }
+  IntVar reghamm(operand p) const {return v_reghamm[opr(p)]; }
 
   // Gedode space methods
 
   // LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
   //               const DecompDivModel * gs, block b);
 
-  LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
-                const DecompDivModel * gs, block b, int seed_correction);
+  LocalDivModel(Parameters * p_input, 
+                ModelOptions * p_options, 
+                IntPropLevel p_ipl,
+                const DecompDivModel * gs, 
+                block b, 
+                int seed_correction);
 
   LocalDivModel(LocalDivModel& cg);
 
@@ -103,6 +112,7 @@ public:
   void post_diversification_constraints(void); // Diversification constraints
   void post_diversification_diffs(void); // Diversification constraints
   void post_diversification_hamming(void); // Diversification constraints
+  void post_diversification_reghamming(void);
 
   // Branch types
   bool is_branch_type(int o);
