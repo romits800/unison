@@ -63,7 +63,7 @@ LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
   div_r.seed(p_options->seed() + seed_correction);
   div_p = p_options->relax();
 
-  branch_op = 0;
+  branch_op = -1;
   
   for (uint i = 0; i < input -> ops[b].size(); i++) {
     operation o = input->ops[b][i];
@@ -173,14 +173,27 @@ bool LocalDivModel::is_real_type(int o) {
   return (input->type[o] == BRANCH ||
           input->type[o] == LINEAR ||
           input->type[o] == CALL ||
+          input->type[o] == TAILCALL || 
           input->type[o] == COPY);
 }
 
-bool LocalDivModel::is_branch_type(int o) {
+bool DivModel::is_branch_type(int o) {
 
-  return (input->type[o] == BRANCH ||
-          input->type[o] == CALL);
+  bool is_jal = false;
+  bool may_branch = input->type[o] == BRANCH || 
+                    input->type[o] == TAILCALL || 
+                    input->type[o] == CALL;
+  
+  if (may_branch) {
+    string ins1 = input->instructions[o][0];
+    if ((ins1.compare(0,3,"JALR") == 0) || 
+        (ins1.compare(0,2,"JR") == 0) || 
+        (ins1.compare(0,12,"PseudoReturn") == 0))
+        is_jal = true;
+  }
+  return is_jal;
 }
+
 
 
 void LocalDivModel::constrain(const Space & _b) {
@@ -237,9 +250,10 @@ void LocalDivModel::constrain(const Space & _b) {
    {
     int cyc_gadget = (int)options->cyc_gadget_size();
     //int reg_gadget = (int)options->reg_gadget_size();
-    for (uint o = 0; o < input -> ops[b].size(); o++) {
-      operation op = input->ops[b][o];
-      if (is_real_type(op)) {
+    if (branch_op > -1) {
+     for (uint o = 0; o < input -> ops[b].size(); o++) {
+       operation op = input->ops[b][o];
+       if (is_real_type(op)) {
           BoolVar ifb = var ( abs ( hamm(branch_op) - hamm(o)) <= cyc_gadget );
           BoolVar thenb = var (hamm(o) != bi.hamm(o));
           BoolVar elseb = var (hamm(o) != hamm(o));
@@ -255,14 +269,14 @@ void LocalDivModel::constrain(const Space & _b) {
                   bh << var (x(p) != bi.x(p));
             }
           }
-
+        }
       }
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance
     else {
-        cerr << "No constraint" << endl;
-        GECODE_NEVER;
+       // cerr << "No constraint" << endl;
+       // GECODE_NEVER;
     }
    }
    break;

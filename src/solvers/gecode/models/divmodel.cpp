@@ -495,9 +495,17 @@ bool DivModel::is_real_type(int o) {
 
 bool DivModel::is_branch_type(int o) {
 
-  return (input->type[o] == BRANCH ||
-          input->type[o] == TAILCALL ||
-          input->type[o] == CALL);
+  bool is_jal = false;
+  bool may_branch = input->type[o] == BRANCH || input->type[o] == TAILCALL || input->type[o] == CALL;
+  
+  if (may_branch) {
+    string ins1 = input->instructions[o][0];
+    if ((ins1.compare(0,3,"JALR") == 0) || 
+        (ins1.compare(0,2,"JR") == 0) || 
+        (ins1.compare(0,12,"PseudoReturn") == 0))
+        is_jal = true;
+  }
+  return is_jal;
 }
 
 void DivModel::constrain_solution(DivModel *b) {
