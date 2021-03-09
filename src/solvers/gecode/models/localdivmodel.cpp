@@ -177,7 +177,7 @@ bool LocalDivModel::is_real_type(int o) {
           input->type[o] == COPY);
 }
 
-bool DivModel::is_branch_type(int o) {
+bool LocalDivModel::is_branch_type(int o) {
 
   bool is_jal = false;
   bool may_branch = input->type[o] == BRANCH || 
@@ -185,7 +185,7 @@ bool DivModel::is_branch_type(int o) {
                     input->type[o] == CALL;
   
   if (may_branch) {
-    string ins1 = input->instructions[o][0];
+    string ins1 (input->insname[input->instructions[o][0]]);
     if ((ins1.compare(0,3,"JALR") == 0) || 
         (ins1.compare(0,2,"JR") == 0) || 
         (ins1.compare(0,12,"PseudoReturn") == 0))
