@@ -131,6 +131,13 @@ void DecompDivModel::post_div_decomp_branchers() {
   }
 
   // register allocation
+/*  branch(*this,
+         v_pals,
+         SET_VAR_MERIT_MAX(&Merit::energy),
+         SET_VAL(&most_effective),
+         &allocatable,
+         &print_allocation_decision);
+*/
 
   branch(*this,
          v_pals,
@@ -262,7 +269,53 @@ void DecompDivModel::constrain(const Space & _b) {
   return;
 
 }
- 
+/*
+void copy_domain_v(Home h, SetVar s, SetVar d) {
+  Set::ViewRanges<Set::SetView> sr(s);
+  //Int::IntView sr(s);
+  //Iter::Values::Array sv(sr,sr.size());
+  Set::SetView dv(d);
+  dv.narrow_r(h, sr);
+}
+*/
+
+void DecompDivModel::relax_div_solution(DecompDivModel * d) {
+
+ // block b = ls->b;
+
+/*  for (int o = 0; o < v_c.size(); o++) {
+
+    for (operand p: input->operands[o]) {
+        copy_domain(*this, d->ry(p), ry(p));
+    }
+  } */ 
+/*  for (int o = 0; o < v_oa.size(); o++) {
+    copy_domain(*this, d->oa(o), oa(o));
+  }
+*/
+/*
+  for (int o = 0; o < v_pal.size(); o++) {
+    copy_domain(*this, d->v_pal[o], v_pal[o]);
+  }
+*/
+ /*for (operand p: input->P) {
+    int t = input->temps[p][y(p).val()];
+    if (t >= 0)
+        copy_domain(*this, d->r(t), r(t));
+ }
+
+ */
+  for (global_congruence g : input->G) {
+    operand p = input->representative[input->regular[g]];
+    int t = input->temps[p][y(p).val()];
+    if (t >= 0){
+        copy_domain(*this,  d->ry(p),  ry(p));
+        copy_domain(*this, d->r(t), r(t));
+    }
+  }
+
+}
+
 
 void DecompDivModel::apply_div_solution(DivModel * d) {
 
@@ -464,6 +517,15 @@ void DecompDivModel::next(const DecompDivModel& l) {
     }
   }
   relax(*this, ta, lta, div_r, div_p);
+
+  IntVarArgs prs, lprs;
+
+  for (global_congruence g : input->G) {
+    prs << ry(input->representative[input->regular[g]]);
+    lprs << l.ry(input->representative[input->regular[g]]);
+  }
+
+  relax(*this, prs, lprs, div_r, div_p);
 
   // relax(*this, v_ali, l.v_ali, div_r, div_p);
   // relax(*this, v_pals, l.v_pals, div_r, div_p);

@@ -821,6 +821,7 @@ preAssignWith ps t =
       Just r  -> preAssign t r
 
 preAssign ::  Operand r -> Operand r -> Operand r
+--preAssign t t9 = error ("Trying to assign t9")
 preAssign t r = t {tReg = Just r}
 
 undoPreAssign :: Operand r -> Operand r

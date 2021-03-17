@@ -1593,7 +1593,7 @@ int main(int argc, char* argv[]) {
       while(count < maxcount && rn > 0 && total_size > 0) {
 	// g1 = e.next();
 	rn--;
-	//cout << "count:" << count << " rnd: " << rn
+	//cout << "count:" << count << " rnd: " << rn;
 	g1 = (DecompDivModel *) g->clone();
 
 	if (g1 == NULL || g1->status() == SS_FAILED) {
@@ -1602,7 +1602,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	for (block b: blocks) {	//
-	  // cerr << div() << "For loop " << b << endl; //
+	  //cerr << div() << "For loop " << b << endl; //
 	  total_size--;
 	  int index = r(local_solutions[b]->size());
 	  //cerr << div() << b << ":size: " << local_solutions[b]->size() <<  endl;
@@ -1618,11 +1618,22 @@ int main(int argc, char* argv[]) {
               }
           }*/
 	}
+
+
 	if (g1->status() == SS_FAILED) {
 	  //cerr << div() << "Applying previous solution failed " << endl; //
 	  if (g1 != NULL) delete g1;
 	  continue;
 	}
+       
+        //g1 -> relax_div_solution(g);
+        //g1 -> post_div_branchers();
+
+	/*if (g1->status() == SS_FAILED) {
+	  //cerr << div() << "Applying previous solution failed " << endl; //
+	  if (g1 != NULL) delete g1;
+	  continue;
+	}*/
 
 	// if (!found_local_solution) {
 	//   cerr << div() << "Trying again not found local sol." << endl;
@@ -1630,15 +1641,37 @@ int main(int argc, char* argv[]) {
 	//   continue;
 	// }
 	
+
 	DFS<DecompDivModel> e2(g1);
+    /*//Gecode::RestartMode restart2 = options.restart();
+    Search::Cutoff* c2;
+    Search::Options o2;
+    //unsigned long int s_const2 = options.restart_scale();
 
+    if (restart == RM_LUBY ){
+      c2 = Search::Cutoff::luby(s_const);
+    } else if (restart2 == RM_CONSTANT) {
+      c2 = Search::Cutoff::constant(s_const);
+    } else {
+      c2 = Search::Cutoff::constant(1000);
+    }
+
+    o2.cutoff = c2;
+
+        RBS<DecompDivModel,BAB> e2(g1,o2);
+*/
 	DecompDivModel *g2 = e2.next(); //(DecompDivModel *) g1;
+ 
+        //if (g2 != NULL) delete g2;
+        //delete g2;
 
-        g2->post_global_cycles();
+        //g2 = e2.next();
+
         //g2->post_diversification_constraints();
       
-      
+     
 	if (g2 != NULL && g2->status() != SS_FAILED) {
+          g2->post_global_cycles();
 	  // if (options.verbose()) {
 	  //   cerr << div() << "Printing cost status report..." << endl;
 	  //   cerr << div() << cost_status_report(dd, g2) << endl;

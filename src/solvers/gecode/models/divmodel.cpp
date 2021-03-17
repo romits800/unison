@@ -281,7 +281,7 @@ void DivModel::post_diversification_constraints(void) {
   case DIST_CYC_REG_GADGET:
     post_diversification_reghamming();
     post_diversification_reg_gadget();
-    post_diversification_channel();
+    //post_diversification_channel();
     break;
   case DIST_REG_GADGET:
     post_diversification_reghamming();
@@ -494,18 +494,22 @@ bool DivModel::is_real_type(int o) {
 }
 
 bool DivModel::is_branch_type(int o) {
-
+//  bool may_branch = input->type[o] == BRANCH || input->type[o] == TAILCALL || input->type[o] == CALL;
+//  return may_branch;
+ 
+    
   bool is_jal = false;
   bool may_branch = input->type[o] == BRANCH || input->type[o] == TAILCALL || input->type[o] == CALL;
   
   if (may_branch) {
     string ins1 (input->insname[input->instructions[o][0]]);
-    if ((ins1.compare(0,3,"JALR") == 0) || 
+    if ((ins1.compare(0,4,"JALR") == 0) || 
         (ins1.compare(0,2,"JR") == 0) || 
         (ins1.compare(0,12,"PseudoReturn") == 0))
         is_jal = true;
   }
   return is_jal;
+
 }
 
 void DivModel::constrain_solution(DivModel *b) {
@@ -687,7 +691,7 @@ void DivModel::constrain(const Space & _b) {
     }
     break;
   case DIST_CYC_REG_GADGET:
-    {
+/*    {
       int order = 1;
       IntArgs cycleorder = IntArgs::create(v_c.size(),-1,0);
       for (int i = 0; i < b.v_oc.size(); i++) {
@@ -720,6 +724,66 @@ void DivModel::constrain(const Space & _b) {
 	  //int weight_r = (cycleorder[br] - cycleorder[o]);
 	  if (cycleorder[o] == -1) continue;
           int orderi = cycleorder[br] - cycleorder[o];
+	  //int weight_r = (orderi == 0) ? 1 : 0; 
+	  int weight_b = (orderi >= 0 && orderi <= (int)options->cyc_gadget_size() ) ? 1 : 0; 
+	  int weight_r = (orderi >= 0 && orderi <= (int)options->reg_gadget_size() ) ? 1 : 0; 
+
+	  if (weight_r == 0 && weight_b == 0) continue;
+	  if (b.gadget(i).assigned()) {
+	    btemp << var (gadget(i) != b.gadget(i));
+	    bweight << weight_b*maxval; //(1*maxval)/(weight_b); //b.gadget(i).val();
+	  }
+
+        
+	  for (operand p: input->operands[o]) {
+	    if (b.reghamm(p).assigned() && b.reghamm(p).val() !=0 ) {
+	      btemp << var (reghamm(p) != b.reghamm(p));
+	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+	    } 
+	    if (b.x(p).assigned()) {
+	      btemp << var (x(p) != b.x(p));
+	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+            }
+	  }
+	}
+
+	if (btemp.size() >0) {
+	  BoolVar rb = var(a(br) == 1);
+	  Reify r(rb, RM_IMP);
+	  linear(*this, bweight, btemp, IRT_GQ, maxval, r);
+	  ih << var(sum(btemp));
+	}
+      }
+      if (ih.size() >0) {
+	dist = var(sum(ih));
+	constraint(dist >= mindist);
+      } else {
+	cerr << "No constraints @ constrain" << endl;
+	exit(EXIT_FAILURE);
+      }
+    }*/
+
+    {
+      
+      for (uint j = 0; j < gadgets.size(); j++) {
+	gadget_t g = gadgets[j];
+	operation br = branch_operations[j];
+	/*if (cycleorder[br] == -1) {
+	  cout << "No branch" << br << endl;
+	  continue;
+	}*/
+	BoolVarArgs btemp, rtemp;
+	IntArgs bweight;
+	//IntArgs rweight;
+	for (uint i = g.start; i < g.end; i++) {
+	  operation o = gadgets_operations[i];
+	  //int weight_r = (cycleorder[br] - cycleorder[o]);
+	  //if (cycleorder[o] == -1) continue;
+          if (!b.gc(o).assigned()) 
+            continue;
+
+          int orderi = b.gc(br).val() - b.gc(o).val(); // cycleorder[br] - cycleorder[o];
+        
 	  //int weight_r = (orderi == 0) ? 1 : 0; 
 	  int weight_b = (orderi >= 0 && orderi <= (int)options->cyc_gadget_size() ) ? 1 : 0; 
 	  int weight_r = (orderi >= 0 && orderi <= (int)options->reg_gadget_size() ) ? 1 : 0; 
@@ -801,7 +865,11 @@ case DIST_REG_GADGET:
       if (weight_r == 0) continue;
       //int weight = b.gadget(i).val();
     
+        //cout << o << endl;
+        //cout << (input->insname[input->instructions[o][0]]) << endl;
+
       for (operand p: input->operands[o]) {
+        //cout << "rhamm:" << b.reghamm(p) << endl;
         if (b.reghamm(p).assigned() && b.reghamm(p).val() !=0 ) {
           //cerr << "o" << o << " p:" << p << " reghamm:" << b.reghamm(p) << endl;
           btemp << var (reghamm(p) != b.reghamm(p));
@@ -812,7 +880,11 @@ case DIST_REG_GADGET:
           btemp << var (x(p) != b.x(p));
           bweight << (weight_r * maxval); 
         }
+
       }
+        //cout << btemp << endl;
+        //cout << bweight << endl;
+ 
     }
     if (btemp.size() >0) {
       BoolVar rb = var(a(br) == 1);
@@ -840,18 +912,24 @@ break;
 /// END TEST
   case DIST_HAMMING_BR_REG:
     for (operation o : branch_operations) {
+      BoolVarArgs btemp;
       if (b.hamm(o).assigned()) {
+	btemp << var (hamm(o) != b.hamm(o));
 	bh << var (hamm(o) != b.hamm(o));
 	for (operand p: input->operands[o]) {
 	  if (b.reghamm(p).assigned()) {
+	    btemp << var (reghamm(p) != b.reghamm(p));
 	    bh << var (reghamm(p) != b.reghamm(p));
 	  }
 	  if (b.x(p).assigned()) {
+	    btemp << var (x(p) != b.x(p));
 	    bh << var (x(p) != b.x(p));
           }
 	}
       }
-      
+      if (btemp.size() >0) {
+        constraint(sum(btemp) >= 1); // hamming distance on the branches
+      }
     }
     if (bh.size() >0) {
       dist = var( sum(bh));

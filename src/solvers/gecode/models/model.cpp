@@ -835,6 +835,7 @@ void Model::post_preassignment_constraints(block b) {
   for (vector<int> pa : input->preassign) {
     operand p = pa[0];
     register_atom a = pa[1];
+    //if (pa[1] == 25) continue;
     if (input->pb[p] == b) constraint(ry(p) == a);
   }
 

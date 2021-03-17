@@ -83,6 +83,7 @@ public:
   // Branchers
   void post_div_decomp_branchers(void);
   void apply_div_solution(DivModel * d);
+  void relax_div_solution(DecompDivModel * d);
   // void post_div_branchers(void);
   // void post_random_branchers(void);
   // void post_clrandom_branchers(void);
