@@ -280,7 +280,7 @@ void DivModel::post_diversification_constraints(void) {
     break;
   case DIST_CYC_REG_GADGET:
     post_diversification_reghamming();
-    post_diversification_reg_gadget();
+    //post_diversification_reg_gadget();
     //post_diversification_channel();
     break;
   case DIST_REG_GADGET:
@@ -789,8 +789,8 @@ void DivModel::constrain(const Space & _b) {
 	  int weight_r = (orderi >= 0 && orderi <= (int)options->reg_gadget_size() ) ? 1 : 0; 
 
 	  if (weight_r == 0 && weight_b == 0) continue;
-	  if (b.gadget(i).assigned()) {
-	    btemp << var (gadget(i) != b.gadget(i));
+	  if (b.gc(o).assigned()) {
+	    btemp << var (gc(o) != b.gc(o));
 	    bweight << weight_b*maxval; //(1*maxval)/(weight_b); //b.gadget(i).val();
 	  }
 
