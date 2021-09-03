@@ -37,9 +37,12 @@
 
 #include "completemodel.hpp"
 #include "globalmodel.hpp"
-#include "localdivmodel.hpp"
+//#include "localdivmodel.hpp"
 #include "solver-parameters.hpp"
 #include "branchers/solutionbrancher.hpp"
+#include "branchers/boolsolutionbrancher.hpp"
+#include "branchers/solutionbrancher_dfs.hpp"
+#include "branchers/boolsolutionbrancher_dfs.hpp"
 
 using namespace Gecode;
 using namespace std;
@@ -127,6 +130,7 @@ public:
   DivModel* copy(void);
 
   // Branchers
+  void post_solution_brancher(void);
   void post_div_branchers(void);
   void post_random_branchers(void);
   void post_clrandom_branchers(void);
@@ -153,6 +157,7 @@ public:
   // Constrain function
 
   void constrain(const Space & _b);
+  void constrain_solution(DivModel* b);
   // The same constraints as the constrain function
   void post_constrain(DivModel* b);
 

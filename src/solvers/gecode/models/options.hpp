@@ -155,9 +155,12 @@ protected:
 
   Driver::StringValueOption _solver_file; // Solver file for best solution (if available)
 
-  Driver::StringValueOption _divs_dir; // Solver file for best solution (if available)
-  Driver::UnsignedIntOption _min_dist; // Solver file for best solution (if available)
+  Driver::StringValueOption _divs_dir; 
+  Driver::UnsignedIntOption _min_dist; 
+  Driver::UnsignedIntOption _cyc_gadget_size;  
+  Driver::UnsignedIntOption _reg_gadget_size;  
   Driver::BoolOption _enable_solver_solution_brancher; // Enable a brancher to find the solution first
+  Driver::DoubleOption _decomp_r; // Relax rate for decomposition model
 public:
 
   ModelOptions(void);
@@ -257,8 +260,11 @@ public:
 
   string divs_dir(void) const {return _divs_dir.value();}
   unsigned int min_dist(void) const {return _min_dist.value();}
+  unsigned int cyc_gadget_size(void) const {return _cyc_gadget_size.value();}
+  unsigned int reg_gadget_size(void) const {return _reg_gadget_size.value();}
 
   bool enable_solver_solution_brancher(void) const {return _enable_solver_solution_brancher.value();}
+  double decomp_r(void) const {return _decomp_r.value();}
 };
 
 #endif

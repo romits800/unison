@@ -79,7 +79,7 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     gadget_t g;
     g.start = size;
     for (operation o: real_operations) { // = prevbr; o < br; o++) {
-      if (br == o) continue;
+      //if (br == o) continue;
       gadgets_operations.push_back(o);
       size++;
     }
@@ -88,14 +88,15 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   }
 
   // difference between operations and branch operations
-  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) || (options->dist_metric() == DIST_DIFF_BR)) {
+  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) ||
+      (options->dist_metric() == DIST_DIFF_BR)) {
     v_diff  = int_var_array(size, -maxval, maxval);
 
   }
   // Prepare register for hamming distance between registers
   v_reghamm  = int_var_array(operand_size, -1, input->RA.size() - 1);
  
-  if (options->dist_metric() == DIST_HAMMING_REG_GADGET ||
+  if (options->dist_metric() == DIST_CYC_REG_GADGET ||
       options->dist_metric() == DIST_REG_GADGET         ||
       options->dist_metric() == DIST_CYC_GADGET) {
     v_gadget  = int_var_array(size, -maxval, maxval);
@@ -208,22 +209,33 @@ void DivModel::post_cloriginal_branchers(void) {
 }
 
 
-// int  DivModel::commit(IntVar x, int i) 
-void DivModel::post_div_branchers(void) {
+void DivModel::post_solution_brancher(void) {
 
-  if (options->enable_solver_solution_brancher() && solver->has_solution) {
     IntArgs sol;
     IntVarArgs vs;
     for (int c: solver->cycles) sol << c;
     for (int r: solver->registers) sol << r;
-    for (int t: solver->temporaries) sol << t;
     for (IntVar c: v_c) vs << c;
     for (IntVar r: v_r) vs << r;
-    for (IntVar t: v_y) vs << t;
-    
-    // TODO(Romy):
-    // assign(*this, vs, INT_ASSIGN(v,c*));
-    solution_branch(*this, vs, sol);
+
+    IntArgs sol2;
+    BoolVarArgs vs2;
+    for (int c: solver->cycles) sol2 << ((c == -1)?0:1);
+    for (BoolVar a: v_a) vs2 << a;
+
+    if (options->div_method() == DIV_MONOLITHIC_DFS) {
+      solution_branch_dfs(*this, vs2, sol2);
+      solution_branch_dfs(*this, vs, sol);
+    } else {
+      solution_branch(*this, vs2, sol2);
+      solution_branch(*this, vs, sol);
+    }
+}
+
+// int  DivModel::commit(IntVar x, int i) 
+void DivModel::post_div_branchers(void) {
+  if (options->enable_solver_solution_brancher() && solver->has_solution) {
+    post_solution_brancher();
   }
   if (options->branching() == BR_RND) {
     post_random_branchers();
@@ -242,26 +254,54 @@ void DivModel::post_div_branchers(void) {
 
 
 void DivModel::post_diversification_constraints(void) {
+  // TODO(Romy: Check for other distance measures 
   post_global_cycles();
-  post_diversification_hamming();
-  post_diversification_reghamming();
-  post_diversification_channel();
-  if (options->dist_metric() == DIST_HAMMING_DIFF)
+  switch (options->dist_metric()) {
+  case DIST_HAMMING:
+    post_diversification_hamming();
+    break;
+  case DIST_HAMMING_DIFF:
     post_diversification_diffs();
-  if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) || (options->dist_metric() == DIST_DIFF_BR)) {
-    // post_diversification_channel();
-    post_diversification_br_diffs();
-  }
- 
-  if (options->dist_metric() == DIST_HAMMING_REG_GADGET ||
-      options->dist_metric() == DIST_REG_GADGET         ||
-      options->dist_metric() == DIST_CYC_GADGET) {
-    // post_diversification_channel();
+    break;
+  case DIST_HAMMING_DIFF_BR:      // same as above 
+    post_diversification_diffs(); 
+    break;
+  case DIST_HAMMING_BR:           // Hamming distance of only branches
+    post_diversification_hamming();
+    break;
+  case DIST_LEVENSHTEIN:
+    post_diversification_channel();
+    break;
+  case DIST_LEVENSHTEIN_SET:
+    post_diversification_channel();
+    break;
+  case DIST_REGHAMMING:
+    post_diversification_reghamming();
+    break;
+  case DIST_CYC_REG_GADGET:
+    post_diversification_reghamming();
+    //post_diversification_reg_gadget();
+    //post_diversification_channel();
+    break;
+  case DIST_REG_GADGET:
+    post_diversification_reghamming();
     post_diversification_reg_gadget();
+    post_diversification_channel();
+    break;
+  case DIST_CYC_GADGET:
+    post_diversification_reg_gadget();
+    post_diversification_channel();
+    break;
+  case DIST_DIFF_BR:               // Like DIST_HAMMING_DIFF_BR but calculates the actual distance
+    post_diversification_diffs();
+    break;
+  case DIST_HAMMING_BR_REG:        // Like HAMMING_BR but add also register
+    post_diversification_hamming();
+    post_diversification_reghamming();
+    break;
+  case DIST_COST:
+    break;
   }
-
-  //if (options->dist_metric() == DIST_LEVENSHTEIN || options->dist_metric() == DIST_LEVENSHTEIN_SET )
-  //  post_diversification_channel();
 
 }
 
@@ -454,11 +494,45 @@ bool DivModel::is_real_type(int o) {
 }
 
 bool DivModel::is_branch_type(int o) {
+//  bool may_branch = input->type[o] == BRANCH || input->type[o] == TAILCALL || input->type[o] == CALL;
+//  return may_branch;
+ 
+    
+  bool is_jal = false;
+  bool may_branch = input->type[o] == BRANCH || input->type[o] == TAILCALL || input->type[o] == CALL;
+  
+  if (may_branch) {
+    string ins1 (input->insname[input->instructions[o][0]]);
+    if ((ins1.compare(0,4,"JALR") == 0) || 
+        (ins1.compare(0,2,"JR") == 0) || 
+        (ins1.compare(0,12,"PseudoReturn") == 0))
+        is_jal = true;
+  }
+  return is_jal;
 
-  return (input->type[o] == BRANCH ||
-          input->type[o] == TAILCALL ||
-          input->type[o] == CALL);
 }
+
+void DivModel::constrain_solution(DivModel *b) {
+
+  BoolVarArgs cs;
+  for (operation o: real_operations) {
+      if (b->hamm(o).assigned())
+	cs << var (hamm(o) != b->hamm(o));
+    }
+  if (cs.size() >0) {           //
+      dist = var( sum(cs));
+      constraint(dist >= mindist); // 
+  }
+  //for (operand p: input->P) {
+  //  if (b->ry(p).assigned())
+  //      cs << var(ry(p) != b->ry(p));
+  //}
+ 
+  return;
+
+}
+
+
 
 void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
@@ -467,26 +541,12 @@ void DivModel::constrain(const Space & _b) {
   BoolVarArgs bh;
   IntVarArgs ih;
 
-  int order = 1;
-  IntArgs cycleorder = IntArgs::create(v_c.size(),-1,0);
-  for (int i = 0; i < b.v_oc.size(); i++) {
-     if (b.v_oc[i].assigned() && (b.v_oc[i].lubSize() == 1 || b.v_oc[i].lubSize() == 2)) {
-         int oper = b.v_oc[i].lubMin();
-         int oper2 = b.v_oc[i].lubMax();
-         if (oper < cycleorder.size()) {
-           cycleorder[oper] = order;
-           if ((oper2 < cycleorder.size()) && (oper!= oper2) ) {
-              cycleorder[oper2] = order;
-           }
-           order++;
-         }
-     } 
-  }
 
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (operation o: real_operations) {
-      bh << var (hamm(o) != b.hamm(o));
+      if (b.hamm(o).assigned())
+	bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
@@ -494,19 +554,20 @@ void DivModel::constrain(const Space & _b) {
 
     } else {
       cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      //exit(EXIT_FAILURE);
     }
     break;
   case DIST_HAMMING_DIFF:
     for (int i = 0; i < v_diff.size(); i++) {
-      bh << var (diff(i) != b.diff(i));
+      if (b.diff(i).assigned())
+	bh << var (diff(i) != b.diff(i));
     }
     if (bh.size() >0) {
       dist = var( sum(bh));
       constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      //exit(EXIT_FAILURE);
     }
     break;
   case DIST_HAMMING_DIFF_BR:
@@ -522,26 +583,28 @@ void DivModel::constrain(const Space & _b) {
     //   // constraint( var(sum(btemp) >= 1));
     // }
     for (int i = 0; i < v_diff.size(); i++) { //
-      bh << var (diff(i) != b.diff(i));
+      if (b.diff(i).assigned())
+	bh << var (diff(i) != b.diff(i));
     }
     if (bh.size() >0) {
       dist = var(sum(bh));
       constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      //exit(EXIT_FAILURE);
     }
     break;
   case DIST_HAMMING_BR:
     for (operation o : branch_operations) {
-        bh << var (hamm(o) != b.hamm(o));
+      if (b.hamm(o).assigned())
+	bh << var (hamm(o) != b.hamm(o));
     }
     if (bh.size() >0) {
       dist = var( sum(bh));
       constraint(dist >= mindist); // hamming distance on the branches
     } else {
       cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      // exit(EXIT_FAILURE);
     }
     break;
   case DIST_LEVENSHTEIN:
@@ -553,7 +616,10 @@ void DivModel::constrain(const Space & _b) {
     break;
   case DIST_REGHAMMING:
     for (operand p : input->P) {
-      bh << var (reghamm(p) != b.reghamm(p));
+      if (b.reghamm(p).assigned())
+	bh << var (reghamm(p) != b.reghamm(p));
+      if (b.x(p).assigned())
+	bh << var (x(p) != b.x(p));
     }
     if (bh.size() >0) {           //
       dist = var( sum(bh));
@@ -561,144 +627,308 @@ void DivModel::constrain(const Space & _b) {
 
     } else {
       cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
-    }
-    break;
-  case DIST_HAMMING_REG_GADGET: 
-    for (uint j = 0; j < gadgets.size(); j++) {
-      gadget_t g = gadgets[j];
-      operation br = branch_operations[j];
-      if (cycleorder[br] == -1) {
-            cout << "No branch" << br << endl;
-            continue;
-      }
-      BoolVarArgs btemp, rtemp;
-      IntArgs bweight;
-      //IntArgs rweight;
-      for (uint i = g.start; i < g.end; i++) {
-        operation o = gadgets_operations[i];
-        if (cycleorder[o] == -1) continue;
-        int weight_r = (cycleorder[br] - cycleorder[o]);
-        int weight_b = cycleorder[o];
-        weight_r = weight_r == 0 ? 1 : weight_r;
-        weight_b = weight_b == 0 ? 1 : weight_b;
-        if (weight_b < 0 || weight_r < 0) continue;
-        //int weight = b.gadget(i).val();
-        
-        for (operand p: input->operands[o]) {
-           btemp << var (reghamm(p) != b.reghamm(p));
-           bweight << (2*maxval)/(3*weight_r*weight_r); 
-        }
-        btemp << var (gadget(i) != b.gadget(i));
-        bweight << (3*maxval)/(weight_b); //b.gadget(i).val();
-      }
-      for (operand p: input->operands[br]) {
-         btemp << var (reghamm(p) != b.reghamm(p));
-         bweight << maxval;
-      }
-
-      if (btemp.size() >0) {
-        BoolVar rb = var(a(br) == 1);
-        Reify r(rb, RM_IMP);
-        linear(*this, bweight, btemp, IRT_GQ, maxval, r);
-	ih << var(sum(btemp));
-      }
-    }
-    if (ih.size() >0) {
-      dist = var(sum(ih));
-      constraint(dist >= mindist);
-    } else {
-      cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      // exit(EXIT_FAILURE);
     }
     break;
 
   case DIST_CYC_GADGET:
-    for (uint j = 0; j < gadgets.size(); j++) {
-      gadget_t g = gadgets[j];
-      operation br = branch_operations[j];
-      if (cycleorder[br] == -1) {
-            cout << "No branch" << br << endl;
-            continue;
+    {
+      int order = 1;
+      IntArgs cycleorder = IntArgs::create(v_c.size(),-1,0);
+      for (int i = 0; i < b.v_oc.size(); i++) {
+	if (b.v_oc[i].assigned() && (b.v_oc[i].lubSize() == 1 || b.v_oc[i].lubSize() == 2)) {
+	  int oper = b.v_oc[i].lubMin();
+	  int oper2 = b.v_oc[i].lubMax();
+	  if (oper < cycleorder.size()) {
+	    cycleorder[oper] = order;
+	    if ((oper2 < cycleorder.size()) && (oper!= oper2) ) {
+              cycleorder[oper2] = order;
+	    }
+	    order++;
+	  }
+	} 
       }
-      BoolVarArgs btemp, rtemp;
-      IntArgs bweight;
-      //IntArgs rweight;
-      for (uint i = g.start; i < g.end; i++) {
-        operation o = gadgets_operations[i];
-        if (cycleorder[o] == -1) continue;
-        int weight_b = cycleorder[o];
-        weight_b = weight_b == 0 ? 1 : weight_b;
-        if (weight_b < 0) continue;
 
-        btemp << var (gadget(i) != b.gadget(i));
-        bweight << (3*maxval)/(weight_b); //b.gadget(i).val();
+      for (uint j = 0; j < gadgets.size(); j++) {
+	gadget_t g = gadgets[j];
+	operation br = branch_operations[j];
+	if (cycleorder[br] == -1) {
+	  cout << "No branch" << br << endl;
+	  continue;
+	}
+	BoolVarArgs btemp, rtemp;
+	IntArgs bweight;
+	//IntArgs rweight;
+	for (uint i = g.start; i < g.end; i++) {
+	  operation o = gadgets_operations[i];
+	  if (cycleorder[o] == -1) continue;
+	  // int weight_b = cycleorder[o];
+          int orderi = cycleorder[br] - cycleorder[o];
+	  int weight_b = (orderi >= 0 && orderi <= (int)options->cyc_gadget_size()) ? 1 : 0; 
+	  // cerr << "br" << br << ":" << cycleorder[br] << " o:" << o << ":" << cycleorder[o] << " weight_b: " << weight_b << endl;
+
+	  //weight_b = weight_b == 0 ? 1 : weight_b;
+	  if (weight_b == 0) continue;
+	  if (b.gadget(i).assigned()) {
+	    btemp << var (gadget(i) != b.gadget(i));
+	    bweight << weight_b*maxval; //(1*maxval)/(weight_b); //b.gadget(i).val();
+	  }
+	}
+	if (btemp.size() >0) {
+	  BoolVar rb = var(a(br) == 1);
+	  Reify r(rb, RM_IMP);
+	  linear(*this, bweight, btemp, IRT_GQ, maxval, r);
+	  ih << var(sum(btemp));
+	}
       }
-      if (btemp.size() >0) {
-        BoolVar rb = var(a(br) == 1);
-        Reify r(rb, RM_IMP);
-        linear(*this, bweight, btemp, IRT_GQ, maxval, r);
-	ih << var(sum(btemp));
+      if (ih.size() >0) {
+	dist = var(sum(ih));
+	constraint(dist >= mindist);
+      } else {
+	cerr << "No constraints @ constrain" << endl;
+	exit(EXIT_FAILURE);
       }
-    }
-    if (ih.size() >0) {
-      dist = var(sum(ih));
-      constraint(dist >= mindist);
-    } else {
-      cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
     }
     break;
-  case DIST_REG_GADGET:
-   for (uint j = 0; j < gadgets.size(); j++) {
-      gadget_t g = gadgets[j];
-      operation br = branch_operations[j];
-      if (cycleorder[br] == -1) {
-            cout << "No branch" << br << endl;
-            continue;
+  case DIST_CYC_REG_GADGET:
+/*    {
+      int order = 1;
+      IntArgs cycleorder = IntArgs::create(v_c.size(),-1,0);
+      for (int i = 0; i < b.v_oc.size(); i++) {
+	if (b.v_oc[i].assigned() && (b.v_oc[i].lubSize() == 1 || b.v_oc[i].lubSize() == 2)) {
+          //cout << b.v_oc[i] << endl;
+	  int oper = b.v_oc[i].lubMin();
+	  int oper2 = b.v_oc[i].lubMax();
+	  if (oper < cycleorder.size()) {
+	    cycleorder[oper] = order;
+	    if ((oper2 < cycleorder.size()) && (oper!= oper2) ) {
+              cycleorder[oper2] = order;
+	    }
+	    order++;
+	  }
+	} 
       }
-      BoolVarArgs btemp, rtemp;
-      IntArgs bweight;
-      //IntArgs rweight;
-      for (uint i = g.start; i < g.end; i++) {
-        operation o = gadgets_operations[i];
-        if (cycleorder[o] == -1) continue;
-        int weight_r = (cycleorder[br] - cycleorder[o]);
-        weight_r = weight_r == 0 ? 1 : weight_r;
-        if (weight_r < 0) continue;
-        //int weight = b.gadget(i).val();
+
+      for (uint j = 0; j < gadgets.size(); j++) {
+	gadget_t g = gadgets[j];
+	operation br = branch_operations[j];
+	if (cycleorder[br] == -1) {
+	  cout << "No branch" << br << endl;
+	  continue;
+	}
+	BoolVarArgs btemp, rtemp;
+	IntArgs bweight;
+	//IntArgs rweight;
+	for (uint i = g.start; i < g.end; i++) {
+	  operation o = gadgets_operations[i];
+	  //int weight_r = (cycleorder[br] - cycleorder[o]);
+	  if (cycleorder[o] == -1) continue;
+          int orderi = cycleorder[br] - cycleorder[o];
+	  //int weight_r = (orderi == 0) ? 1 : 0; 
+	  int weight_b = (orderi >= 0 && orderi <= (int)options->cyc_gadget_size() ) ? 1 : 0; 
+	  int weight_r = (orderi >= 0 && orderi <= (int)options->reg_gadget_size() ) ? 1 : 0; 
+
+	  if (weight_r == 0 && weight_b == 0) continue;
+	  if (b.gadget(i).assigned()) {
+	    btemp << var (gadget(i) != b.gadget(i));
+	    bweight << weight_b*maxval; //(1*maxval)/(weight_b); //b.gadget(i).val();
+	  }
+
         
-        for (operand p: input->operands[o]) {
-           btemp << var (reghamm(p) != b.reghamm(p));
-           bweight << (2*maxval)/(3*weight_r*weight_r); 
-        }
-      }
-      for (operand p: input->operands[br]) {
-         btemp << var (reghamm(p) != b.reghamm(p));
-         bweight << maxval;
-      }
+	  for (operand p: input->operands[o]) {
+	    if (b.reghamm(p).assigned() && b.reghamm(p).val() !=0 ) {
+	      btemp << var (reghamm(p) != b.reghamm(p));
+	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+	    } 
+	    if (b.x(p).assigned()) {
+	      btemp << var (x(p) != b.x(p));
+	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+            }
+	  }
+	}
 
-      if (btemp.size() >0) {
-        BoolVar rb = var(a(br) == 1);
-        Reify r(rb, RM_IMP);
-        linear(*this, bweight, btemp, IRT_GQ, maxval, r);
-	ih << var(sum(btemp));
+	if (btemp.size() >0) {
+	  BoolVar rb = var(a(br) == 1);
+	  Reify r(rb, RM_IMP);
+	  linear(*this, bweight, btemp, IRT_GQ, maxval, r);
+	  ih << var(sum(btemp));
+	}
       }
-    }
-    if (ih.size() >0) {
-      dist = var(sum(ih));
-      constraint(dist >= mindist);
-    } else {
-      cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      if (ih.size() >0) {
+	dist = var(sum(ih));
+	constraint(dist >= mindist);
+      } else {
+	cerr << "No constraints @ constrain" << endl;
+	exit(EXIT_FAILURE);
+      }
+    }*/
+
+    {
+      
+      for (uint j = 0; j < gadgets.size(); j++) {
+	gadget_t g = gadgets[j];
+	operation br = branch_operations[j];
+	/*if (cycleorder[br] == -1) {
+	  cout << "No branch" << br << endl;
+	  continue;
+	}*/
+	BoolVarArgs btemp, rtemp;
+	IntArgs bweight;
+	//IntArgs rweight;
+	for (uint i = g.start; i < g.end; i++) {
+	  operation o = gadgets_operations[i];
+	  //int weight_r = (cycleorder[br] - cycleorder[o]);
+	  //if (cycleorder[o] == -1) continue;
+          if (!b.gc(o).assigned()) 
+            continue;
+
+          int orderi = b.gc(br).val() - b.gc(o).val(); // cycleorder[br] - cycleorder[o];
+        
+	  //int weight_r = (orderi == 0) ? 1 : 0; 
+	  int weight_b = (orderi >= 0 && orderi <= (int)options->cyc_gadget_size() ) ? 1 : 0; 
+	  int weight_r = (orderi >= 0 && orderi <= (int)options->reg_gadget_size() ) ? 1 : 0; 
+
+	  if (weight_r == 0 && weight_b == 0) continue;
+	  if (b.gc(o).assigned()) {
+	    btemp << var (gc(o) != b.gc(o));
+	    bweight << weight_b*maxval; //(1*maxval)/(weight_b); //b.gadget(i).val();
+	  }
+
+        
+	  for (operand p: input->operands[o]) {
+	    if (b.reghamm(p).assigned() && b.reghamm(p).val() !=0 ) {
+	      btemp << var (reghamm(p) != b.reghamm(p));
+	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+	    } 
+	    if (b.x(p).assigned()) {
+	      btemp << var (x(p) != b.x(p));
+	      bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+            }
+	  }
+	}
+
+	if (btemp.size() >0) {
+	  BoolVar rb = var(a(br) == 1);
+	  Reify r(rb, RM_IMP);
+	  linear(*this, bweight, btemp, IRT_GQ, maxval, r);
+	  ih << var(sum(btemp));
+	}
+      }
+      if (ih.size() >0) {
+	dist = var(sum(ih));
+	constraint(dist >= mindist);
+      } else {
+	cerr << "No constraints @ constrain" << endl;
+	exit(EXIT_FAILURE);
+      }
     }
     break;
+case DIST_REG_GADGET:
+{
+  int order = 1;
+  IntArgs cycleorder = IntArgs::create(v_c.size(),-1,0);
+  for (int i = 0; i < b.v_oc.size(); i++) {
+    if (b.v_oc[i].assigned() && (b.v_oc[i].lubSize() == 1 || b.v_oc[i].lubSize() == 2)) {
+      //cout << b.v_oc[i] << endl;
+      int oper = b.v_oc[i].lubMin();
+      int oper2 = b.v_oc[i].lubMax();
+      if (oper < cycleorder.size()) {
+        cycleorder[oper] = order;
+        if ((oper2 < cycleorder.size()) && (oper!= oper2) ) {
+          cycleorder[oper2] = order;
+        }
+        order++;
+      }
+    } 
+  }
 
+  for (uint j = 0; j < gadgets.size(); j++) {
+    gadget_t g = gadgets[j];
+    operation br = branch_operations[j];
+    if (cycleorder[br] == -1) {
+      cout << "No branch" << br << endl;
+      continue;
+    }
+    BoolVarArgs btemp, rtemp;
+    IntArgs bweight;
+    //IntArgs rweight;
+    for (uint i = g.start; i < g.end; i++) {
+      operation o = gadgets_operations[i];
+      //int weight_r = (cycleorder[br] - cycleorder[o]);
+      if (cycleorder[o] == -1) continue;
+      int orderi = cycleorder[br] - cycleorder[o];
+      //int weight_r = (orderi == 0) ? 1 : 0; 
+      int weight_r = (orderi >= 0 && orderi <= (int)options->reg_gadget_size() ) ? 1 : 0; 
+
+      //cerr << "br" << br << ":" << cycleorder[br] << " o:" << o << ":" << cycleorder[o] << " weight_r: " << weight_r << endl;
+      //weight_r = weight_r == 0 ? 1 : weight_r;
+      if (weight_r == 0) continue;
+      //int weight = b.gadget(i).val();
+    
+        //cout << o << endl;
+        //cout << (input->insname[input->instructions[o][0]]) << endl;
+
+      for (operand p: input->operands[o]) {
+        //cout << "rhamm:" << b.reghamm(p) << endl;
+        if (b.reghamm(p).assigned() && b.reghamm(p).val() !=0 ) {
+          //cerr << "o" << o << " p:" << p << " reghamm:" << b.reghamm(p) << endl;
+          btemp << var (reghamm(p) != b.reghamm(p));
+          //bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+          bweight << (weight_r * maxval); //(2*maxval)/(3*weight_r*weight_r); 
+        } 
+        if (b.x(p).assigned()) {
+          btemp << var (x(p) != b.x(p));
+          bweight << (weight_r * maxval); 
+        }
+
+      }
+        //cout << btemp << endl;
+        //cout << bweight << endl;
+ 
+    }
+    if (btemp.size() >0) {
+      BoolVar rb = var(a(br) == 1);
+      Reify r(rb, RM_IMP);
+      //for (int ii = 0; ii < bweight.size(); ii++)
+      //  bweight[ii] = bweight[ii]/bweight.size() + 1;
+       //cerr << "Weight" << endl;
+       //cerr << bweight << endl;
+       //cerr << maxval << endl;
+
+      linear(*this, bweight, btemp, IRT_GQ, maxval, r);
+      ih << var(sum(btemp));
+    }
+  }
+  if (ih.size() >0) {
+    dist = var(sum(ih));
+    constraint(dist >= mindist);
+  } else {
+    cerr << "No constraints @ constrain" << endl;
+    exit(EXIT_FAILURE);
+  }
+}
+break;
+
+/// END TEST
   case DIST_HAMMING_BR_REG:
     for (operation o : branch_operations) {
-      bh << var (hamm(o) != b.hamm(o));
-      for (operand p: input->operands[o]) {
-            bh << var (reghamm(p) != b.reghamm(p));
+      BoolVarArgs btemp;
+      if (b.hamm(o).assigned()) {
+	btemp << var (hamm(o) != b.hamm(o));
+	bh << var (hamm(o) != b.hamm(o));
+	for (operand p: input->operands[o]) {
+	  if (b.reghamm(p).assigned()) {
+	    btemp << var (reghamm(p) != b.reghamm(p));
+	    bh << var (reghamm(p) != b.reghamm(p));
+	  }
+	  if (b.x(p).assigned()) {
+	    btemp << var (x(p) != b.x(p));
+	    bh << var (x(p) != b.x(p));
+          }
+	}
+      }
+      if (btemp.size() >0) {
+        constraint(sum(btemp) >= 1); // hamming distance on the branches
       }
     }
     if (bh.size() >0) {
@@ -706,25 +936,38 @@ void DivModel::constrain(const Space & _b) {
       constraint(dist >= mindist); // hamming distance on the branches
     } else {
       cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      // exit(EXIT_FAILURE);
     }
     break;
 
   case DIST_DIFF_BR:
     for (int i = 0; i < v_diff.size(); i++) { //
-      ih << var (abs (diff(i) - b.diff(i)));
+      if (b.diff(i).assigned())
+	ih << var (abs (diff(i) - b.diff(i)));
     }
     if (ih.size() >0) {
       dist = var(sum(ih));
       constraint(dist >= mindist); // hamming distance
     } else {
       cerr << "No constraints @ constrain";
-      exit(EXIT_FAILURE);
+      // exit(EXIT_FAILURE);
     }
     break;
-
+  case DIST_COST:
+    for (uint i = 0; i< input->N; i++)
+      if (b.cost()[i].assigned())
+	bh << var (cost()[i] != b.cost()[i]);
+    
+    if (bh.size() > 0) {
+        constraint(sum(bh) >= mindist);
+    } else {
+      cerr << "No constraints @ constrain";
+    }
+        
+    break;
   } // switch
 
+  
   return;
 
 }

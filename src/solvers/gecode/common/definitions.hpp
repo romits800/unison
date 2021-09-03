@@ -117,17 +117,21 @@ typedef enum divdistance
     DIST_LEVENSHTEIN,          // Levenshtein for 1-1 cycle/operation and operation/cycle
     DIST_LEVENSHTEIN_SET,      // Levenshtein considering sets for multi issue
     DIST_REGHAMMING,           // Hamming of register array
-    DIST_HAMMING_REG_GADGET,   // Hamming of either cycles or registers for each "gadget"
+// Gadget distances
+    DIST_CYC_REG_GADGET,   // Hamming of either cycles or registers for each "gadget"
     DIST_REG_GADGET,           // Hamming of registers for each "gadget"
     DIST_CYC_GADGET,           // DiffHamming of cycles for each "gadget"
+
     DIST_DIFF_BR,              // Like DIST_HAMMING_DIFF_BR but calculates the actual distance
-    DIST_HAMMING_BR_REG        // Like HAMMING_BR but add also register
+    DIST_HAMMING_BR_REG,        // Like HAMMING_BR but add also register
+    DIST_COST                  // Generate variants with different costs
   } DivDistance;
 
 // Diversification method
 typedef enum divmethod
   {
-   DIV_DECOMPOSITION_LNS,
+   DIV_DECOMPOSITION_ONE_LNS,
+   DIV_DECOMPOSITION_MANY_LNS,
    DIV_MONOLITHIC_LNS,
    DIV_MONOLITHIC_DFS,
    DIV_MAX_DIV

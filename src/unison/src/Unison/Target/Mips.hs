@@ -356,6 +356,21 @@ expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc PseudoCVT_S_
   let mi1 = mi {msOpcode = mkMachineTargetOpc MTC1, msOperands = [fi, ri]}
       mi2 = mi {msOpcode = mkMachineTargetOpc CVT_S_W, msOperands = [fi, fi]}
   in [[mi1],[mi2]]
+
+-- TODO(Fix): These are hacks to make llc work but should probably be handled differently
+expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc SWC1_fi,
+                                        msOperands = [fi, offset,_]} =
+  let sp = mkMachineReg SP in --mkOprMipsSP in
+  let mi' = mi {msOpcode = mkMachineTargetOpc SWC1, msOperands = [fi, sp, offset]}
+  in [[mi']]
+
+expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc LEA_ADDiu,
+                                        msOperands = [ri,offset,_]} =
+  let sp = mkMachineReg SP in --mkOprMipsSP in
+  let mi' = mi {msOpcode = mkMachineTargetOpc LEA_ADDiu, msOperands = [ri, sp, offset]}
+  in [[mi']]
+
+
 expandPseudoEarly _ mi = [[mi]]
 
 expandPseudos = mapToMachineBlock (expandBlockPseudos expandPseudo)

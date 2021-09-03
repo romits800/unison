@@ -28,14 +28,14 @@
  */
 
 
-#include "solutionbrancher.hpp" 
+#include "solutionbrancher_dfs.hpp" 
 
 
 using namespace Gecode;
 using namespace Gecode::Int;
 
 
-class SolutionBrancher : public Brancher {
+class SolutionBrancherDFS : public Brancher {
 protected:
   // Variables of the problem (registers/cycles)
   ViewArray<IntView> v;
@@ -51,7 +51,7 @@ protected:
     int pos;
     int sol;
 
-    Description(const SolutionBrancher& b, unsigned int a, int p, int s)
+    Description(const SolutionBrancherDFS& b, unsigned int a, int p, int s)
       : Choice(b,a), pos(p), sol(s){}
     // Report size occupied
     virtual size_t size(void) const {
@@ -67,16 +67,16 @@ protected:
   };
 public:
   // Construct branching
-  SolutionBrancher(Home home,
+  SolutionBrancherDFS(Home home,
                    ViewArray<IntView>& v0, int sol0[])
     : Brancher(home), v(v0), sol(sol0), start(0) {}
   // Post branching
   static void post(Home home, ViewArray<IntView>& v, int sol[]) {
-    (void) new (home) SolutionBrancher(home,v,sol);
+    (void) new (home) SolutionBrancherDFS(home,v,sol);
   }
 
   // Copy constructor used during cloning of b
-  SolutionBrancher(Space& home, SolutionBrancher& b)
+  SolutionBrancherDFS(Space& home, SolutionBrancherDFS& b)
     : Brancher(home, b), start(b.start) {
     v.update(home, b.v);
     sol = home.alloc<int>(v.size());
@@ -85,14 +85,14 @@ public:
   }
   // Copy brancher
   virtual Actor* copy(Space& home) {
-    return new (home) SolutionBrancher(home, *this);
+    return new (home) SolutionBrancherDFS(home, *this);
   }
 
   // Check status of brancher, return true if alternatives left
   virtual bool status(const Space&) const {
     if (invoked == 0) {
       for (int i=0; i < v.size(); i++)
-	if ((sol[i] != -1) && (!v[i].assigned())) {
+	if ((sol[i] != -1) && (!(v[i].assigned() && v[i].val() == sol[i]))) {
 	  return true;
 	}
       start++;
@@ -107,7 +107,7 @@ public:
   virtual const Choice* choice(Space&) {
     for (int i=0; i<v.size(); i++)
       if ((sol[i]!= -1) && (! v[i].assigned()))
-	return new Description(*this, 1, i, sol[i]);
+	return new Description(*this, 2, i, sol[i]);
 
     GECODE_NEVER;
     return NULL;
@@ -118,7 +118,7 @@ public:
     // Again, you have to take care of the additional information
     int pos, sol;
     e >> pos >> sol;
-    return new Description(*this, 1, pos, sol);
+    return new Description(*this, 2, pos, sol);
   }
   // Perform commit for choice c and alternative a
   virtual ExecStatus commit(Space& home,
@@ -127,9 +127,10 @@ public:
     const Description& d = static_cast<const Description&>(c);
 
     int pos = d.pos, sol = d.sol;
-
-    return me_failed(v[pos].eq(home, sol)) ? ES_FAILED: ES_OK;
-
+    if (a == 0)
+      return me_failed(v[pos].eq(home, sol)) ? ES_FAILED: ES_OK;
+    else
+      return me_failed(v[pos].nq(home, sol)) ? ES_FAILED: ES_OK;
   }
   // Print some information on stream o (used by Gist, from Gecode 4.0.1 on)
   virtual void print(const Space&, const Choice& c, unsigned int a,
@@ -144,10 +145,10 @@ public:
   }
 };
 
-int SolutionBrancher::invoked = 0;
+int SolutionBrancherDFS::invoked = 0;
 
 // This posts the interval branching
-void solution_branch(Home home, const IntVarArgs& v, const IntArgs& sol) {
+void solution_branch_dfs(Home home, const IntVarArgs& v, const IntArgs& sol) {
   // Check whether arguments make sense
   if (sol.size() != v.size())
     throw ArgumentSizeMismatch("solution_branch");
@@ -160,6 +161,6 @@ void solution_branch(Home home, const IntVarArgs& v, const IntArgs& sol) {
   for (int i=sol.size(); i--; )
     vsol[i]=sol[i];
   // Post the brancher
-  SolutionBrancher::post(home,vv,vsol);
+  SolutionBrancherDFS::post(home,vv,vsol);
 }
 

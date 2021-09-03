@@ -778,19 +778,23 @@ void GlobalModel::apply_solution(LocalModel * ls) {
 
   block b = ls->b;
 
-  for (temporary t1 : input->tmp[b])
-    if (!ls->is_dead(t1))
+  for (temporary t1 : input->tmp[b]) {
+    if (!ls->is_dead(t1)) {
       constraint(r(t1) == ls->r(t1));
-
-  for (operation o : input->ops[b])
+    }
+  }
+  
+  for (operation o : input->ops[b]) {
     constraint(i(o) == ls->i(o));
-
+  }
+  
   for (operation o : input->ops[b])
-    if (!ls->is_inactive(o))
+    if (!ls->is_inactive(o)) {
       constraint(c(o) == ls->c(o));
-
-  for (operand p : input->ope[b])
+    }
+  for (operand p : input->ope[b]) {
     constraint(y(p) == ls->y(p));
+  }
 
 }
 

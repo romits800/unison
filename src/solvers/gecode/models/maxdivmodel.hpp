@@ -52,7 +52,6 @@ public:
   // // Levenshtein distance
   // IntVarArray v_lev;
 
-
   vector<MaxDivModel *> input_solutions;
 
   // Gecode space methods

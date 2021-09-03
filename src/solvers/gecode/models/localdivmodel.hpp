@@ -37,11 +37,14 @@
 
 #include "localmodel.hpp"
 #include "decompdivmodel.hpp"
-#include "divmodel.hpp"
+//#include "divmodel.hpp"		// 
 #include "branchers/filters.hpp"
 #include "branchers/printers.hpp"
 #include "branchers/routingbrancher.hpp"
 #include "branchers/pressureschedulingbrancher.hpp"
+
+#include "solver-parameters.hpp"
+#include "branchers/solutionbrancher.hpp"
 
 // #include <gecode/int.hh>
 
@@ -50,7 +53,7 @@ using namespace std;
 
 // class GlobalModel;
 class DecompDivModel;                 //
-class DivModel;                 //
+// class DivModel;                 //
 
 class LocalDivModel : public LocalModel {
 
@@ -62,38 +65,54 @@ public:
   // Hamming distance between operations
   IntVarArray v_hamm;
 
+  // Register Hamming distance between operands
+  IntVarArray v_reghamm;
+
   // p: relax parameter for LNS
   double div_p;
   // r: random number for LNS
   Rnd div_r;
+  int branch_op;
 
   void set_random(Rnd r) {div_r = r;};
 
   void set_relax(double p) {div_p = p;};
 
+  SolverParameters *solver;
 
+  void set_solver(JSONVALUE root);
+  
   // Variable accessors
 
   IntVar diff(operation o) const {return v_diff[o]; }
 
   IntVar hamm(operation o) const {return v_hamm[o]; }
+  IntVar reghamm(operand p) const {return v_reghamm[opr(p)]; }
 
   // Gedode space methods
 
-  LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
-                const DecompDivModel * gs, block b);
+  // LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
+  //               const DecompDivModel * gs, block b);
 
-  LocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
-                const DivModel * gs, block b);
+  LocalDivModel(Parameters * p_input, 
+                ModelOptions * p_options, 
+                IntPropLevel p_ipl,
+                const DecompDivModel * gs, 
+                block b, 
+                int seed_correction);
 
   LocalDivModel(LocalDivModel& cg);
 
   LocalDivModel* copy(void);
 
+  // Constrain cost
+  void constrain_total_cost(int cost);
+  
   // Post constraints
   void post_diversification_constraints(void); // Diversification constraints
   void post_diversification_diffs(void); // Diversification constraints
   void post_diversification_hamming(void); // Diversification constraints
+  void post_diversification_reghamming(void);
 
   // Branch types
   bool is_branch_type(int o);

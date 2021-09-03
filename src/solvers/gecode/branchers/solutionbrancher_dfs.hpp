@@ -1,10 +1,8 @@
 /*
  *  Main authors:
- *    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+ *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
  *
- *  This file is part of Unison, see http://unison-code.github.io
- *
- *  Copyright (c) 2016, RISE SICS AB
+ *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -31,46 +29,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __SOLUTION_BRANCHER_DFS__
+#define __SOLUTION_BRANCHER_DFS__
 
-#ifndef __LOCAL_DIV_PROCEDURES__
-#define __LOCAL_DIV_PROCEDURES__
-
-#include "models/localdivmodel.hpp"
-#include "procedures/commonprocedures.hpp"
+#include <gecode/int.hh>
 
 using namespace std;
 using namespace Gecode;
 
-// Creates a local problem for block b out of the global solution g1
-Solution<LocalDivModel> local_problem(DecompDivModel * g1, block b);
-
-// LocalDivModel * make_div_local(const DecompDivModel * gs, block b);
-
-// LocalDivModel * make_div_local(const DecompDivModel * gs, block b, IntPropLevel p_ipl);
-
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b, int sc, IntPropLevel p_ipl);
-
-LocalDivModel * make_div_local(const DecompDivModel * gs, block b, int sc);
-
-
-LocalDivModel * init_local_problem(DecompDivModel * g, block b, int sc);
-
-
-class LocalSolution {
-public:
-  LocalDivModel * solution;
-  block b;
-  LocalSolution() : solution(0), b(0) {}
-  LocalSolution(LocalDivModel * solution1, block b1) :
-    solution(solution1), b(b1) {}
-
-};
-
-
-RBS<LocalDivModel,BAB> *
-init_local_engine(LocalDivModel *l, ModelOptions *options);
-
-// Prefix for debug output
-string local(block b);
+void solution_branch_dfs(Home home, const IntVarArgs& v, const IntArgs& sol);
 
 #endif

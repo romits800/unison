@@ -42,6 +42,8 @@ HEADERS += common/definitions.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
            models/divmodel.hpp \
+           models/decompdivmodel.hpp \
+           models/localdivmodel.hpp \
            models/maxdivmodel.hpp \
            models/simplemodel.hpp \
            models/relaxedmodel.hpp \
@@ -52,6 +54,10 @@ HEADERS += common/definitions.hpp \
            branchers/pressureschedulingbrancher.hpp \
            branchers/routingbrancher.hpp \
            branchers/solutionbrancher.hpp \
+           branchers/solutionbrancher_dfs.hpp \
+           branchers/boolsolutionbrancher.hpp \
+           branchers/boolsolutionbrancher_dfs.hpp \
+           procedures/localdivprocedures.hpp \
            procedures/commonprocedures.hpp \
            procedures/divprocedures.hpp \
            procedures/globalprocedures.hpp \
@@ -72,6 +78,8 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
            models/divmodel.cpp \
+           models/decompdivmodel.cpp \
+           models/localdivmodel.cpp \
            models/maxdivmodel.cpp \
            models/simplemodel.cpp \
            models/relaxedmodel.cpp \
@@ -82,6 +90,10 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/pressureschedulingbrancher.cpp \
            branchers/routingbrancher.cpp \
            branchers/solutionbrancher.cpp \
+           branchers/solutionbrancher_dfs.cpp \
+           branchers/boolsolutionbrancher.cpp \
+           branchers/boolsolutionbrancher_dfs.cpp \
+           procedures/localdivprocedures.cpp \
            procedures/commonprocedures.cpp \
            procedures/localprocedures.cpp \
            procedures/globalprocedures.cpp \

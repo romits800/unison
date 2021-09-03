@@ -36,6 +36,7 @@
 #define __DIV_PROCEDURES__
 
 #include "models/divmodel.hpp"
+#include "models/decompdivmodel.hpp"
 #include "procedures/commonprocedures.hpp"
 
 using namespace std;
@@ -47,6 +48,8 @@ Solution<DivModel>
 solve_global(DivModel * base, IterationState & state, vector<int> & best,
              GIST_OPTIONS * go, int iteration);
 
+int
+find_optimal_solution(DivModel *base, DecompDivModel *dm, ModelOptions *options);
 
 // Prefix for debug output
 string div();

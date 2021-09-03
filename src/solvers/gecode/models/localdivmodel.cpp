@@ -35,51 +35,71 @@
 #include "localdivmodel.hpp"
 
 
-LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
-                       IntPropLevel p_ipl,
-                       const DecompDivModel * gs, block p_b) :
-  LocalModel(p_input, p_options, p_ipl, gs, p_b)
-{
-  div_r.seed(p_options->seed());
-  div_p = p_options->relax();
+// LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
+//                        IntPropLevel p_ipl,
+//                        const DecompDivModel * gs, block p_b) :
+//   LocalModel(p_input, p_options, p_ipl, gs, p_b)
+// {
+//   div_r.seed(p_options->seed());
+//   div_p = p_options->relax();
 
-  int op_size = O().size();
+//   int op_size = O().size();
 
-  int maxval = max_of(input->maxc);
-  // difference between operators
-  v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
-  // Hamming distance between operators
-  v_hamm  = int_var_array(op_size, -1, maxval);
+//   int maxval = max_of(input->maxc);
+//   // difference between operators
+//   v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
+//   // Hamming distance between operators
+//   v_hamm  = int_var_array(op_size, -1, maxval);
 
-}
+// }
 
 LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
                              IntPropLevel p_ipl,
-                             const DivModel * gs, block p_b) :
+                             const DecompDivModel * gs,
+			     block p_b,
+			     int seed_correction) :
   LocalModel(p_input, p_options, p_ipl, gs, p_b)
 {
-  div_r.seed(p_options->seed());
+  div_r.seed(p_options->seed() + seed_correction);
   div_p = p_options->relax();
 
+  branch_op = -1;
+  
+  for (uint i = 0; i < input -> ops[b].size(); i++) {
+    operation o = input->ops[b][i];
+    if (is_branch_type(o)) {
+        branch_op = i;
+    }
+  }
   int op_size = O().size();
+  int operand_size = P().size();
 
   int maxval = max_of(input->maxc);
+
   // difference between operators
   v_diff  = int_var_array((op_size*(op_size -1))/2, -maxval, maxval);
   // Hamming distance between operators
   v_hamm  = int_var_array(op_size, -1, maxval);
+  // Register  distance between operands
+  v_reghamm  = int_var_array(operand_size, -1, input->RA.size() - 1);
 
 }
 
 LocalDivModel::LocalDivModel(LocalDivModel& cg) :
   LocalModel(cg),
   div_p(cg.div_p),
-  div_r(cg.div_r)
-
+  div_r(cg.div_r),
+  branch_op(cg.branch_op),
+  solver(cg.solver)
 {
   v_diff.update(*this, cg.v_diff);
   v_hamm.update(*this, cg.v_hamm);
+  v_reghamm.update(*this, cg.v_reghamm);
 
+}
+
+void LocalDivModel::set_solver(JSONVALUE root) {
+  solver = new SolverParameters(root);
 }
 
 LocalDivModel* LocalDivModel::copy(void) {
@@ -87,10 +107,31 @@ LocalDivModel* LocalDivModel::copy(void) {
 }
 
 
+
+void LocalDivModel::constrain_total_cost(int cost) {
+  //input->freq[b] * f(b,0), irt, cost
+  //  rel(*this, input->freq[b] *f(b, 0), irt, cost, ipl); // 
+  constraint( f(b, 0) <= cost);
+}
+
+
 void LocalDivModel::post_diversification_constraints(void) {
-  post_diversification_hamming();
-  if (options->dist_metric() == DIST_HAMMING_DIFF) {
+  if (options->dist_metric() == DIST_HAMMING) {
+    post_diversification_hamming();
+  }
+  else if (options->dist_metric() == DIST_HAMMING_BR) {
+    post_diversification_hamming();
+  }
+  else if (options->dist_metric() == DIST_HAMMING_DIFF) {
+    post_diversification_hamming();
     post_diversification_diffs();
+  }
+  else if (options->dist_metric() == DIST_REGHAMMING) {
+    post_diversification_reghamming();
+  }
+  else if (options->dist_metric() == DIST_CYC_REG_GADGET) {
+    post_diversification_hamming();
+    post_diversification_reghamming();
   }
 
 }
@@ -120,19 +161,39 @@ void LocalDivModel::post_diversification_hamming(void) {
   }
 }
 
+void LocalDivModel::post_diversification_reghamming(void) {
+  for (operation p: P()) {
+   // operation pp = P()[p];
+    constraint(reghamm(p) == ry(p));
+  }
+}
+
 bool LocalDivModel::is_real_type(int o) {
 
   return (input->type[o] == BRANCH ||
           input->type[o] == LINEAR ||
           input->type[o] == CALL ||
+          input->type[o] == TAILCALL || 
           input->type[o] == COPY);
 }
 
 bool LocalDivModel::is_branch_type(int o) {
 
-  return (input->type[o] == BRANCH ||
-          input->type[o] == CALL);
+  bool is_jal = false;
+  bool may_branch = input->type[o] == BRANCH || 
+                    input->type[o] == TAILCALL || 
+                    input->type[o] == CALL;
+  
+  if (may_branch) {
+    string ins1 (input->insname[input->instructions[o][0]]);
+    if ((ins1.compare(0,3,"JALR") == 0) || 
+        (ins1.compare(0,2,"JR") == 0) || 
+        (ins1.compare(0,12,"PseudoReturn") == 0))
+        is_jal = true;
+  }
+  return is_jal;
 }
+
 
 
 void LocalDivModel::constrain(const Space & _b) {
@@ -144,11 +205,28 @@ void LocalDivModel::constrain(const Space & _b) {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
-      bh << var (hamm(o) != bi.hamm(o));
+      operation op = input->ops[b][o];
+      if (is_real_type(op))
+          bh << var (hamm(o) != bi.hamm(o));
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance
     break;
+  case DIST_REGHAMMING:
+    for (uint o = 0; o < input -> ops[b].size(); o++) {
+      operation op = input->ops[b][o];
+      if (is_real_type(op))
+          for (operand p: input->operands[op]) {
+            if (bi.reghamm(p).assigned())
+              bh << var (reghamm(p) != bi.reghamm(p));
+            if (bi.x(p).assigned())
+              bh << var (x(p) != bi.x(p));
+         }
+    }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+
   case DIST_HAMMING_DIFF:
   //   // for (uint o=0; o< input -> ops[b].size(); o++) {
   //   for (int i = 0; i < v_diff.size(); i++) {
@@ -161,12 +239,57 @@ void LocalDivModel::constrain(const Space & _b) {
     break;
   case DIST_HAMMING_BR:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
-      if (is_branch_type(o))
+      operation op = input->ops[b][o];
+      if (is_branch_type(op))
         bh << var (hamm(o) != bi.hamm(o));
     }
     if (bh.size() >0)
       constraint(sum(bh) >= 1); // hamming distance
     break;
+  case DIST_CYC_REG_GADGET:
+   {
+    int cyc_gadget = (int)options->cyc_gadget_size();
+    //int reg_gadget = (int)options->reg_gadget_size();
+    if (branch_op > -1) {
+     for (uint o = 0; o < input -> ops[b].size(); o++) {
+       operation op = input->ops[b][o];
+       if (is_real_type(op)) {
+          BoolVar ifb = var ( abs ( hamm(branch_op) - hamm(o)) <= cyc_gadget );
+          BoolVar thenb = var (hamm(o) != bi.hamm(o));
+          BoolVar elseb = var (hamm(o) != hamm(o));
+          //BoolVar elseb = var (1 == 1);
+          BoolVar res = BoolVar(*this, 0, 1);
+          ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
+          bh << res;
+          if (is_branch_type(op)) {
+            for (operand p: input->operands[op]) {
+               if (bi.reghamm(p).assigned() && bi.reghamm(p).val() != 0)
+                  bh << var (reghamm(p) != bi.reghamm(p));
+               if (bi.x(p).assigned())
+                  bh << var (x(p) != bi.x(p));
+            }
+          }
+        }
+      }
+    }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= 1); // hamming distance
+    else {
+       // cerr << "No constraint" << endl;
+       // GECODE_NEVER;
+    }
+   }
+   break;
+  case DIST_COST:
+    for (uint i = 0; i< input->N; i++)
+      if (bi.cost()[i].assigned())
+	constraint(cost()[i] != bi.cost()[i]);
+    break;
+  default:
+    cerr << "Distance not implemented!" << endl;
+    GECODE_NEVER;
+    break;
+
   }
 
   return;
@@ -175,12 +298,14 @@ void LocalDivModel::constrain(const Space & _b) {
 
 
 bool LocalDivModel::master(const MetaInfo& mi) {
+  // std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
-    if (mi.last() != NULL)
+    if (mi.last() != NULL) {
       constrain(*mi.last());
+    }
     mi.nogoods().post(* this);
     return true; // forces a restart even if a solution has been found
   }
@@ -191,6 +316,7 @@ bool LocalDivModel::master(const MetaInfo& mi) {
 
 
 bool LocalDivModel::slave(const MetaInfo& mi) {
+  // std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     string portfolio = options->local_portfolio();
     assert(mi.asset() < portfolio.size());
@@ -198,9 +324,12 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
     post_branchers(search);
     return true;
   } else if (mi.type() == MetaInfo::RESTART) {
-    if ((mi.restart() > 0) && (div_p > 0.0)) {
-      if (mi.last() != NULL)// {
-        next(static_cast<const LocalDivModel&>(*mi.last()));
+    // std::cerr << "restart loc " << b << std::endl; // 
+    //if ((mi.restart() > 0) && (div_p > 0.0)) {
+    if ((div_p > 0.0)) {
+      if (mi.last() != NULL) {
+	next(static_cast<const LocalDivModel&>(*mi.last()));
+      }
       return false;
     } else {
       return true;
@@ -211,7 +340,7 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
 }
 
 void LocalDivModel::next(const LocalDivModel& l) {
-
+  // std::cerr << "next local " << b << std::endl; // 
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;
     for (operation o : input->ops[b]) {
@@ -258,30 +387,36 @@ void LocalDivModel::next(const LocalDivModel& l) {
 
 void LocalDivModel::post_div_branchers(void) {
 
-  // branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
-  //        NULL, &print_inactive_decision);
+  Rnd rnd;
+  rnd.seed(options->seed());
 
-  // IntVarArgs ts;
-  // for (operand p : input->groupcopyrel[b]) ts << y(p);
-  // branch(*this, ts, INT_VAR_NONE(), INT_VAL_MIN(),
-  //        NULL, &print_temporary_decision);
-
-  // branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
+  // BoolVarArgs a;
+  // for (operation o : input->ops[b])
+  //   a << v_a[o];
+  branch(*this, v_a, BOOL_VAR_RND(rnd), BOOL_VAL_RND(rnd));
 
 
-  // branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN(),
-  //        &schedulable, &print_cycle_decision);
+  // IntVarArgs is;
+  // for (operation o : input->ops[b])
+  //   is << v_i[o];
+  branch(*this, v_i, INT_VAR_RND(rnd), INT_VAL_MIN());
 
-  // branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
-  //        &print_register_decision);
-  branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_MIN());
+  IntVarArgs ts;
+  for (operand p : input->groupcopyrel[b]) ts << y(p);
+  branch(*this, ts, INT_VAR_RND(rnd), INT_VAL_MIN());
 
-  branch(*this, v_y, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+  // IntVarArgs c;
+  // for (operation o : input->ops[b])
+  //   c << v_c[o];
 
-  branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN());
-  branch(*this, v_r, INT_VAR_MIN_MIN(), INT_VAL_MIN());
+  branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
+  
+  branch(*this, v_c, INT_VAR_RND(rnd), INT_VAL_RND(rnd));
 
-  branch(*this, v_i, INT_VAR_MIN_MIN(), INT_VAL_MIN());
-
+  // IntVarArgs r;
+  // for (temporary t : input->tmp[b])
+  //   r << v_r[t];
+      
+  branch(*this, v_r, INT_VAR_RND(rnd), INT_VAL_RND(rnd));
 
 }
