@@ -80,7 +80,7 @@ public:
 
   SolverParameters *solver;
 
-  void set_solver(JSONVALUE root);
+  void set_solver(Json::Value root);
   
   // Variable accessors
 

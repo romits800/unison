@@ -98,7 +98,7 @@ LocalDivModel::LocalDivModel(LocalDivModel& cg) :
 
 }
 
-void LocalDivModel::set_solver(JSONVALUE root) {
+void LocalDivModel::set_solver(Json::Value root) {
   solver = new SolverParameters(root);
 }
 
