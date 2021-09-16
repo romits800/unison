@@ -139,6 +139,7 @@ make doc
 
 [Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/) [<tsoupidi@kth.se>]
 
+For questions or issues on Unison contact:
 [Roberto Castañeda Lozano](https://robcasloz.github.io/) [<rcas@acm.org>]
 
 
