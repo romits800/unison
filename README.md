@@ -136,11 +136,11 @@ make doc
 
 ## Contact
 
-<<<<<<< HEAD
+
 [Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/) [<tsoupidi@kth.se>]
-=======
+
 [Roberto Castañeda Lozano](https://robcasloz.github.io/) [<rcas@acm.org>]
->>>>>>> upstream/master
+
 
 ## License
 
