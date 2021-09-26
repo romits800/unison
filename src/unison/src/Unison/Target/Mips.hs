@@ -371,6 +371,12 @@ expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc LEA_ADDiu,
   let mi' = mi {msOpcode = mkMachineTargetOpc LEA_ADDiu, msOperands = [ri, sp, offset]}
   in [[mi']]
 
+expandPseudoEarly _ mi @ MachineSingle {msOpcode = MachineTargetOpc PseudoMFLO,
+                                        msOperands = [ri, MachineReg ac []]} =
+  let mi' = mi {msOpcode = mkMachineTargetOpc MFLO, msOperands = [ri, MachineReg ac [mkMachineRegImplicit]]}
+  in [[mi']]
+
+
 
 expandPseudoEarly _ mi = [[mi]]
 
