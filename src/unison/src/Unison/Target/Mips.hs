@@ -250,7 +250,7 @@ mkOprMipsSP = Register $ mkTargetRegister SP
 
 mkBoundMachineFrameObject i (Register r) =
     let size = stackSize i
-    in mkBound (mkMachineFrameObject (infRegPlace r) (Just size) size False)
+    in mkBound (mkMachineFrameObject (infRegPlace r * 4) (Just size) size False)
 
 stackSize op
   | op `elem` [STORE, STORE_F, LOAD, LOAD_F] = 4
