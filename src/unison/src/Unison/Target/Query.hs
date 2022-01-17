@@ -38,6 +38,13 @@ import Unison.Constructors
 import Unison.Util
 import Unison.Target.API
 
+
+--import qualified Unison.Target.API as API
+
+--is_target_cortex (t,to) = 
+--    API.isBoolOption "cortex-m0" to
+
+
 data ResourceManager i s = ResourceManager {
       iResources :: [IndexedResource s],
       iUsages    :: Instruction i -> [IndexedUsage s]

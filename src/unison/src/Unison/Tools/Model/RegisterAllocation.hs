@@ -37,6 +37,12 @@ import qualified Unison.Graphs.Partition as P
 
 import Unison.Tools.Model.Definitions
 
+is_target_cortex (t,to) = 
+    isBoolOption "cortex-m0" to
+
+
+--parameters _ _ _ target | is_target_cortex target =
+--    error "Parameters Allocation"
 parameters noCC (cg, _, _, t2w, ra, _) f @ Function {fCode = code} target =
     let oif         = operandInfo target
         bif         = branchInfo target
