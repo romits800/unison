@@ -25,7 +25,7 @@ import Unison.Target.Thumb.SpecsGen.ThumbRegisterClassDecl
 
 -- | Register array
 
-registerArray  = 
+registerArray  =
             [RegisterClass GPR, RegisterClass CCR, InfiniteRegisterClass M32,
             InfiniteRegisterClass RM32]
 
@@ -65,7 +65,7 @@ registers (RegisterClass TcGPR) = [R0, R1, R2, R3, R12]
 registers (RegisterClass GPRsp) = [SP]
 
 registers (RegisterClass ALL) =
-  registers (RegisterClass GPR) 
+  registers (RegisterClass GPR)
 
 registers (RegisterClass CS) = [R4_7, R8_11]
 

@@ -838,7 +838,7 @@ transforms AugmentPreRW = [peephole combinePushPops,
                            peephole combineLoadStores,
                            reorderCalleeSavedSpills,
                            peephole extendNonSymmetricOperands]
-                           
+
 transforms AugmentPostRW = [enforceStackFrame]
 
 transforms _ = []

@@ -403,7 +403,7 @@ defineFP f @ Function {fCode = code} =
     o2: [p2{ -, t2},p3{ -, t3}] <- { -, tEOR_r} [p0{ -, t0},p1{ -, t1},14,_] (reads: [control])
     o3: [p6{ -, t4},p7{ -, t5}] <- { -, tEOR_l} [p4{ -, t1},p5{ -, t0},14,_] (reads: [control])
 -}
-      
+
 
 extendNonSymmetricOperands _ (
   SingleOperation {
@@ -443,7 +443,7 @@ extendNonSymmetricOperands _ (
                                    rest' = map (mapToModelOperand (replaceTemp ts3 [ts3,ts3'])) rest
                                    rest'' = map (mapToModelOperand (replaceTemp ts4 [ts4,ts4'])) rest'
                                  in  (rest'', [o1,o2])
-                           
+
 extendNonSymmetricOperands _ (o : code) _ = (code, [o])
 
 replaceTemp t ts p @ MOperand {altTemps = ats} =

@@ -212,7 +212,6 @@ GlobalModel::GlobalModel(Parameters * p_input, ModelOptions * p_options,
   v_ali  = set_var_array(input->G.size(), IntSet::empty,
                          IntSet(0, input->G.size() - 1));
 
-  //constraint( a(11) == 1);
   // Individual domains of problem variables
   CompleteModel::post_decision_variable_domain_definitions();
 

@@ -2,7 +2,7 @@
 
 module Unison.Target.Thumb.SpecsGen.ThumbRegisterClassDecl
        (ThumbRegisterClass(..)) where
- 
+
 data ThumbRegisterClass = ALL
                         | CCR
                         | CRS
