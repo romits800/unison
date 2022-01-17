@@ -51,6 +51,7 @@ protected:
     int pos;
     int sol;
 
+
     Description(const SolutionBrancher& b, unsigned int a, int p, int s)
       : Choice(b,a), pos(p), sol(s){}
     // Report size occupied
@@ -106,9 +107,9 @@ public:
   // Return choice as description
   virtual const Choice* choice(Space&) {
     for (int i=0; i<v.size(); i++)
-      if ((sol[i]!= -1) && (! v[i].assigned()))
+      if ((sol[i]!= -1) && (! v[i].assigned())) {
 	return new Description(*this, 1, i, sol[i]);
-
+        }
     GECODE_NEVER;
     return NULL;
 

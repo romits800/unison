@@ -71,9 +71,10 @@ LocalDivModel::LocalDivModel(Parameters * p_input, ModelOptions * p_options,
         branch_op = i;
     }
   }
-  int op_size = O().size();
+  int op_size = O().size(); //input -> ops[b].size(); //O().size();
   int operand_size = P().size();
 
+//    cout << "init:" << b << ":" << op_size << endl;
   int maxval = max_of(input->maxc);
 
   // difference between operators
@@ -154,10 +155,14 @@ void LocalDivModel::post_diversification_hamming(void) {
   //
   for (uint o = 0; o < input -> ops[b].size(); o++) {
     operation i = input->ops[b][o];
-    BoolVar ifb = var (a(i) == 1);
-    IntVar thenb = var ( c(i) );
-    IntVar elseb = var ( -1 );
-    ite(*this, ifb,  thenb, elseb, hamm(o), IPL_DOM);
+
+    if (is_real_type(i)) {
+        //BoolVar ifb = var (a(i) == 1);
+        //IntVar thenb = var ( c(i) );
+        //IntVar elseb = var ( -1 );
+        //ite(*this, ifb,  thenb, elseb, hamm(o), IPL_DOM);
+        constraint(hamm(o) == c(i));
+    }
   }
 }
 
@@ -205,12 +210,35 @@ void LocalDivModel::constrain(const Space & _b) {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
+    //cout << "constrain: "  << b << " : " << input -> ops[b].size() << endl;
+    //for (uint o = input -> ops[b].size()/2; o < input -> ops[b].size()/2 + input -> ops[b].size()/8; o++) {
+    //for (uint o = input -> ops[b].size()/2; o < input -> ops[b].size()/2 + input -> ops[b].size()/16; o++) {
+    //for (uint o = input -> ops[b].size()/2 + input -> ops[b].size()/8; o < input -> ops[b].size()/2 + input -> ops[b].size()/8 + + input -> ops[b].size()/16; o++) {
       operation op = input->ops[b][o];
-      if (is_real_type(op))
-          bh << var (hamm(o) != bi.hamm(o));
+      //if (op == 46 && b == 0) 
+      //      continue;
+      //if (op == 248 && b == 21) 
+      //      continue;
+      if (is_real_type(op)) {
+       if (bi.a(op).assigned() && bi.a(op).val() == 1) {
+         //cout << "b.hamm0: " << b << ":op:" << op << endl;
+         //cout << "b.hamm0: " << b << ":op:" << op << ": ham:" << bi.c(op) << endl;
+         //cout << "hamm0: " << b << ":op:" << op << ": oham:" << c(op) << endl;
+         //if ((b == 36 && op == 886) || (b == 47 && op == 1131) || (b == 6 && op == 244) || (b == 21 && op == 548))
+         //   continue;
+         bh << var (c(op) != bi.c(op)); //hamm(o) != bi.hamm(o));
+        }
+        bh << var (a(op) != bi.a(op));
+      /*for (operand p: input->operands[op]) {
+          if (bi.reghamm(p).assigned())
+            bh << var (reghamm(p) != bi.reghamm(p));
+        }*/
+ 
+      }
     }
-    if (bh.size() >0)           //
+    if (bh.size() >0) {          //
       constraint(sum(bh) >= 1); // hamming distance
+    }
     break;
   case DIST_REGHAMMING:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
@@ -298,7 +326,6 @@ void LocalDivModel::constrain(const Space & _b) {
 
 
 bool LocalDivModel::master(const MetaInfo& mi) {
-  // std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
@@ -316,7 +343,6 @@ bool LocalDivModel::master(const MetaInfo& mi) {
 
 
 bool LocalDivModel::slave(const MetaInfo& mi) {
-  // std::cerr << "master loc " << b << std::endl; // 
   if (mi.type() == MetaInfo::PORTFOLIO) {
     string portfolio = options->local_portfolio();
     assert(mi.asset() < portfolio.size());
@@ -340,7 +366,6 @@ bool LocalDivModel::slave(const MetaInfo& mi) {
 }
 
 void LocalDivModel::next(const LocalDivModel& l) {
-  // std::cerr << "next local " << b << std::endl; // 
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;
     for (operation o : input->ops[b]) {

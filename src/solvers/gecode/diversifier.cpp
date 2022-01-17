@@ -323,6 +323,7 @@ public:
 	   int b0):
     l(l0), e(e0), b(b0) {}
   virtual LocalSolution * run(int) {
+    
     // return 3;
     // cerr << "Running: " << b <<endl;
     LocalDivModel * nextl = e->next();
@@ -374,6 +375,12 @@ public:
 
 
 
+/*void print(string str) {
+
+    cout << str << endl;
+
+}*/
+
 
 class MLocalJob : public Support::Job<vector <LocalSolution *>* > {
 protected:
@@ -389,17 +396,22 @@ public:
     l(l0), e(e0), b(b0), max_num(max_num0) {}
   virtual vector<LocalSolution *> * run(int) {
     vector<LocalSolution *>* all_solutions = new vector<LocalSolution *>();
+    //if (b % 2) return all_solutions;
     // return 3;
-    // cerr << "Running: " << b << " max_num: " << max_num << endl;
+  //  cerr << "Running: " << b << " max_num: " << max_num << endl;
     LocalDivModel *nextl;
-    while (max_num >0 && (nextl = e->next())) {
-      if (nextl==NULL) {
-	 cerr << "Breaking: " << b <<endl;
+    while (max_num >0) {
+      nextl = e -> next();
+      if (nextl == NULL) {
+	//cerr << "Breaking: " << b <<endl;
+        //cerr << e -> stopped() << b << endl;
 	break;
       }
       all_solutions->push_back(new LocalSolution(nextl, b));
       max_num--;
     }
+
+//    cerr << "Done running: " << b << " max_num: " << max_num << endl;
     // cerr << "got next" << endl;
     // TODO(Romy): Fix this to return something relevant
     if (e -> stopped()) {
@@ -407,11 +419,6 @@ public:
       return all_solutions;
       //cerr << div() << "Job stopped" << endl;
     }
-    // if (!nextl) {
-    //   cerr << div() << "Job stopped by tno more solutions: " << b << endl;
-    //   // throw Support::JobStop<LocalDivModel*>(l);
-    //   return all_solutions;
-    // }
     return all_solutions;
 
   }
@@ -444,7 +451,8 @@ public:
     LocalDivModel * lb = new LocalDivModel(*l[b]);
     RBS<LocalDivModel,BAB> * eb = e[b];
     k++;
-    return new MLocalJob(lb, eb, b, max_num); //, local_solutions);
+    MLocalJob * mlj = new MLocalJob(lb, eb, b, max_num);
+    return mlj; //, local_solutions);
   }
 };
 
@@ -1257,7 +1265,6 @@ int main(int argc, char* argv[]) {
 	}
       
 	bool found_local_solution = true;
-	bool application_failed = false;
 	bool found_new_solution = false;
 	//Here
 	LocalJobs ljs(local_problems, local_engines, blocks);
@@ -1325,11 +1332,11 @@ int main(int argc, char* argv[]) {
 	  if (g1 != NULL) delete g1;
 	  break;
 	}
-	if (application_failed) {
+	/*if (application_failed) {
 	  // cerr << div() << "Trying again app failed." << endl;
 	  if (g1 != NULL) delete g1;
 	  continue;
-	}
+	}*/
 
 	if (!found_new_solution) {
 	  // cerr << div() << "Trying again found no new solution." << endl;
@@ -1485,8 +1492,6 @@ int main(int argc, char* argv[]) {
       unsigned int rn = maxcount; // r(maxcount-min_mc) + min_mc;
       
       bool found_local_solution = true;
-      bool application_failed = false;
-      bool found_new_solution = false;
       //Here
       MLocalJobs ljs(local_problems, local_engines, blocks, rn);
       Support::RunJobs<MLocalJobs, vector<LocalSolution *>*> js(ljs, threads);
@@ -1494,11 +1499,13 @@ int main(int argc, char* argv[]) {
       vector <LocalSolution *> *ls;
       //vector<int> failed_application;
       int total_size = 1;
-      while(js.run(ls)) {
+      while(true) {
+        if  (!js.run(ls)) break;
+        //cerr << div() << "No break: " << b <<  endl;
+      //while(js.run(ls)) {
 	int i;
 	vector<LocalSolution *> *fls;
 	if (js.stopped(i,fls)) {
-	  // cerr << div() << "js.stopped " <<  endl;
 	  found_local_solution = false;
 	  break;
 	  // local_problems[b] = fls;
@@ -1519,23 +1526,8 @@ int main(int argc, char* argv[]) {
 	    // 	 << (*ls)[0]->solution->b << endl; // 
 	    local_solutions[b] = ls;
 	    total_size *= local_solutions[b]->size();
-	    //total_size = (local_solutions[b]->size() > total_size) ? local_solutions[b]->size() : total_size;
-            //cerr << div() << "AFTER:" << b << ":" << ls->size() << endl;
-            //cerr << div() << "AFTER: total_size:" << total_size << endl;
-	
-	    // cerr << div() << "Applying solution " << ls->b << endl; // 
-	    // cerr << div() << ls->solution->f(b,0) << endl; //
-
-	    // g1->apply_solution(ls->solution);
-	    // if (g1->status() == SS_FAILED) {
-	    // 	cerr << div() << "Applying solution failed " << ls->b << endl; //
-	    // 	application_failed = true;
-	    // 	//break;
-	    // }
-	    // found_new_solution = true;
 	  }
 	}
-
       }
     
       //cerr << div() << "total_size: " << total_size << endl;
@@ -1544,18 +1536,6 @@ int main(int argc, char* argv[]) {
 	if (g1 != NULL) delete g1;
 	continue;
       }
-      // if (application_failed) {
-      //   cerr << div() << "Trying again app failed." << endl;
-      //   if (g1 != NULL) delete g1;
-      //   continue;
-      // }
-
-      // if (!found_new_solution) {
-      //   cerr << div() << "Trying again found no new solution." << endl;
-      //   if (g1 != NULL) delete g1;
-      //   break;
-
-      // }
       //found_local_solution = true;
       total_size = total_size;
       while(count < maxcount && rn > 0 && total_size > 0) {
@@ -1594,9 +1574,6 @@ int main(int argc, char* argv[]) {
 	  continue;
 	}
        
-        //g1 -> relax_div_solution(g);
-        //g1 -> post_div_branchers();
-
 	/*if (g1->status() == SS_FAILED) {
 	  //cerr << div() << "Applying previous solution failed " << endl; //
 	  if (g1 != NULL) delete g1;

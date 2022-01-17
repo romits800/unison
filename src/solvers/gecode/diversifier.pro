@@ -108,7 +108,7 @@ INCLUDEPATH = $$(CPATH)
 QMAKE_LIBDIR = $$(LIBRARY_PATH)
 QMAKE_LFLAGS = $$(LDFLAGS)
 
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++0x -g
 
 LIBS += -lpthread -lgecodedriver
 CONFIG(graphics) {

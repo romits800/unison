@@ -213,15 +213,16 @@ void DivModel::post_solution_brancher(void) {
 
     IntArgs sol;
     IntVarArgs vs;
+    IntArgs sol2;
+    BoolVarArgs vs2;
+    for (int c: solver->cycles) sol2 << ((c == -1) ? 0 : 1);
+    for (BoolVar a: v_a) vs2 << a;
+
     for (int c: solver->cycles) sol << c;
     for (int r: solver->registers) sol << r;
     for (IntVar c: v_c) vs << c;
     for (IntVar r: v_r) vs << r;
 
-    IntArgs sol2;
-    BoolVarArgs vs2;
-    for (int c: solver->cycles) sol2 << ((c == -1)?0:1);
-    for (BoolVar a: v_a) vs2 << a;
 
     if (options->div_method() == DIV_MONOLITHIC_DFS) {
       solution_branch_dfs(*this, vs2, sol2);
