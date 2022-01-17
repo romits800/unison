@@ -116,7 +116,7 @@ flags="--disable-copy-dominance-constraints --disable-infinite-register-dominanc
 
 gecode-diversify  ${flags} --acceptable-gap 10 --relax 0.7 --seed 123 --distance hamming --div-method monolithic_lns --restart constant --restart-scale 500 --number-divs 100 --solver-file factorial.out.json --use-optimal-for-diversification  --divs-dir $DIVS_DIR -o factorial.out.json --enable-solver-solution-brancher --branching clrandom  factorial.ext.json
 ```
-This will generate 99 files with names `{0..99}.factorial.out.json`.
+This will generate 100 files with names `{0..99}.factorial.out.json`.
 
 ## Documentation
 
@@ -136,11 +136,8 @@ make doc
 
 ## Contact
 
-
+For any questions or issues on DivCon contact:
 [Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/) [<tsoupidi@kth.se>]
-
-For questions or issues on Unison contact:
-[Roberto Castañeda Lozano](https://robcasloz.github.io/) [<rcas@acm.org>]
 
 
 ## License
