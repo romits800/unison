@@ -432,7 +432,7 @@ extendNonSymmetricOperands _ (
                                    -- use current temps and new operands for the new i_r
                                    oD1 = [mkOper 4 [ts3], mkOper 5 [ts4]]
                                    -- create new temps and operands for the new i_l
-                                   ts3' = mkCompleteTemp (tid) treg3
+                                   ts3' = mkCompleteTemp tid treg3
                                    ts4' = mkCompleteTemp (tid + 1) treg4
                                    oD2 = [mkOper 6 [ts3'], mkOper 7 [ts4']]
                                    -- The new instruction i_1, i_2 are optional, so 
@@ -451,7 +451,7 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
   in p {altTemps = ats'}
 
 -- TODO(Romy): Add more instructions similar to tEOR
-isNonSymmetric i = i `elem` [TEOR, TAND]
+isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBICs]
 
 
 
