@@ -45,6 +45,8 @@ import qualified Unison.Tools.Analyze as Analyze
 import qualified Unison.Tools.Model.InstructionScheduling as IS
 import qualified Unison.Tools.Model.RegisterAllocation as RA
 
+import qualified Unison.Target.API as API
+
 run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
      strictlyBetter, unsatisfiable, noCC, mirVersion, jsonFile)
     extUni target =
@@ -52,16 +54,25 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
      let f    = parse target extUni
          base = maybeNothing applyBaseFile baseMir
          aux  = auxiliarDataStructures target tightPressureBound base f
-         ps   = modeler (scaleFreq, noCC) aux target f
-         ps'  = optimization
+         ps   = aux `seq` modeler (scaleFreq, noCC) aux target f
+         ps'  = ps `seq` optimization
                 (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
                 aux target f ps
-         ps'' = presolver oldModel aux target f ps'
+         ps'' = ps' `seq` presolver oldModel aux target f ps'
      emitOutput jsonFile ((BSL.unpack (encodePretty ps'')))
 
+is_target_cortex (t,to) = 
+    API.isBoolOption "cortex-m0" to
+
+
+
+--modeler (scaleFreq, noCC) aux target f | is_target_cortex target =
+--        error "Another error modeler"
 modeler (scaleFreq, noCC) aux target f =
-  toJSON (M.fromList (IS.parameters scaleFreq aux f target ++
-                      RA.parameters noCC aux f target))
+  toJSON (M.fromList (is ++ ra))
+--                      RA.parameters noCC aux f target))
+    where is = IS.parameters scaleFreq aux f target
+          ra = is `seq` RA.parameters noCC aux f target
 
 auxiliarDataStructures target tight baseMir f @ Function {fCode = code} =
   let rwlf  = readWriteLatency target
@@ -77,10 +88,18 @@ auxiliarDataStructures target tight baseMir f @ Function {fCode = code} =
       ra'   = mkRegisterArray target inf
   in (cg, dgs, deps, t2w, ra', baseMir)
 
+
+  
+--optimization _ _ target _ _ | is_target_cortex target = 
+--    error "Another error"
 optimization flags aux target f ps =
-    let ops = toJSON (M.fromList (optimizationParameters flags aux target f))
+    let opt_pars = optimizationParameters flags aux target f
+        ops = toJSON (M.fromList opt_pars)
     in unionMaps ps ops
 
+
+--optimizationParameters _ _ target _ | is_target_cortex target = 
+ --   error "An error"
 optimizationParameters (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
   (_, _, deps, _, _, baseMir) target Function {fCode = code, fGoal = goal} =
     let rm    = resourceManager target

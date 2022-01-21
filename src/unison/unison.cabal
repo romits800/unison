@@ -33,6 +33,7 @@ Library
                    Unison.Target.Query
                    Unison.Target.Hexagon
                    Unison.Target.ARM
+                   Unison.Target.Thumb
                    Unison.Target.Mips
                    Unison.Target.Minimal
 
@@ -255,6 +256,28 @@ Library
                   Unison.Target.ARM.SpecsGen.AlignedPairs
                   Unison.Target.ARM.SpecsGen.Size
                   Unison.Target.ARM.SpecsGen.Parent
+
+                  Unison.Target.Thumb.Common
+                  Unison.Target.Thumb.Registers
+                  Unison.Target.Thumb.OperandInfo
+                  Unison.Target.Thumb.Transforms
+                  Unison.Target.Thumb.Usages
+                  Unison.Target.Thumb.ThumbRegisterDecl
+                  Unison.Target.Thumb.ThumbResourceDecl
+                  Unison.Target.Thumb.SpecsGen
+                  Unison.Target.Thumb.SpecsGen.ThumbInstructionDecl
+                  Unison.Target.Thumb.SpecsGen.ThumbItineraryDecl
+                  Unison.Target.Thumb.SpecsGen.ThumbRegisterClassDecl
+                  Unison.Target.Thumb.SpecsGen.ReadWriteInfo
+                  Unison.Target.Thumb.SpecsGen.OperandInfo
+                  Unison.Target.Thumb.SpecsGen.ReadOp
+                  Unison.Target.Thumb.SpecsGen.ShowInstance
+                  Unison.Target.Thumb.SpecsGen.Itinerary
+                  Unison.Target.Thumb.SpecsGen.InstructionType
+                  Unison.Target.Thumb.SpecsGen.AlignedPairs
+                  Unison.Target.Thumb.SpecsGen.Size
+                  Unison.Target.Thumb.SpecsGen.Parent
+
 
                   Unison.Target.Mips.Common
                   Unison.Target.Mips.Registers

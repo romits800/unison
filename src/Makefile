@@ -131,6 +131,11 @@ SGARMREMATYAML = $(SGARMROOTDIR)/input/arm-remat.yaml
 SGMINIMALROOTDIR   = $(UNISONDIR)/src/Unison/Target/Minimal/SpecsGen
 SGMINIMALINPUTYAML = $(SGMINIMALROOTDIR)/input/minimal.yaml
 
+SGTHUMBROOTDIR   = $(UNISONDIR)/src/Unison/Target/Thumb/SpecsGen
+SGTHUMBINPUTYAML = $(SGTHUMBROOTDIR)/input/arm.yaml
+SGTHUMBAUXYAML   = $(SGTHUMBROOTDIR)/input/arm-manual.yaml
+SGTHUMBREMATYAML = $(SGTHUMBROOTDIR)/input/arm-remat.yaml
+
 build-specsgen:
 	$(STACKBIN) build unison-specsgen \
 	--ghc-options="$(UNISON_GHC_CONFIG)" \
@@ -170,6 +175,17 @@ run-specsgen-arm:
 	         --promoteeffect CPSR \
 	         --infiniteregclass RM32 --infiniteregclass RM64 \
 	         --rematfile=$(SGARMREMATYAML)
+
+run-specsgen-thumb:
+	specsgen --targetname=Thumb $(SGTHUMBINPUTYAML) $(SGTHUMBAUXYAML) \
+	         --outputdir=$(SGTHUMBROOTDIR) \
+	         --regclass p2:CCR --infiniteregclass M32 --infiniteregclass M32t \
+	         --infiniteregclass M64 --infiniteregclass M128 \
+	         --infiniteregclass M512 \
+	         --promoteeffect CPSR \
+	         --infiniteregclass RM32 --infiniteregclass RM64 \
+	         --rematfile=$(SGTHUMBREMATYAML)
+
 
 run-specsgen-minimal:
 	specsgen --targetname=Minimal $(SGMINIMALINPUTYAML) $(SGMINIMALAUXYAML) \

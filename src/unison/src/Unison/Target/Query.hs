@@ -38,6 +38,7 @@ import Unison.Constructors
 import Unison.Util
 import Unison.Target.API
 
+
 data ResourceManager i s = ResourceManager {
       iResources :: [IndexedResource s],
       iUsages    :: Instruction i -> [IndexedUsage s]
