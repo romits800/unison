@@ -235,6 +235,8 @@ ModelOptions::ModelOptions(void)
   _distance.add(DIST_LEVENSHTEIN_SET, "levenshtein_set");
 
   _distance.add(DIST_REGHAMMING, "reg_hamming");
+  // either cycle or register hamming distance
+  _distance.add(DIST_REG_CYC_HAMMING, "reg_cyc_hamming"); 
   _distance.add(DIST_CYC_REG_GADGET, "cyc_reg_gadget");
   _distance.add(DIST_REG_GADGET, "reg_gadget");
   _distance.add(DIST_CYC_GADGET, "cyc_gadget");

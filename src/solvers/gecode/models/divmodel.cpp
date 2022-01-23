@@ -279,6 +279,10 @@ void DivModel::post_diversification_constraints(void) {
   case DIST_REGHAMMING:
     post_diversification_reghamming();
     break;
+  case DIST_REG_CYC_HAMMING:
+    post_diversification_reghamming();
+    post_diversification_hamming();
+    break;
   case DIST_CYC_REG_GADGET:
     post_diversification_reghamming();
     //post_diversification_reg_gadget();
@@ -538,10 +542,10 @@ void DivModel::constrain_solution(DivModel *b) {
 void DivModel::constrain(const Space & _b) {
   const DivModel& b = static_cast<const DivModel&>(_b);
 
+
   int maxval = max_of(input->maxc);
   BoolVarArgs bh;
   IntVarArgs ih;
-
 
   switch (options->dist_metric()) {
   case DIST_HAMMING:
@@ -549,7 +553,7 @@ void DivModel::constrain(const Space & _b) {
       if (b.hamm(o).assigned())
 	bh << var (hamm(o) != b.hamm(o));
     }
-    if (bh.size() >0) {           //
+    if (bh.size() >0) {
       dist = var( sum(bh));
       constraint(dist >= mindist); // hamming distance
 
@@ -629,6 +633,27 @@ void DivModel::constrain(const Space & _b) {
     } else {
       cerr << "No constraints @ constrain";
       // exit(EXIT_FAILURE);
+    }
+    break;
+
+  case DIST_REG_CYC_HAMMING:
+    for (operation o: real_operations) {
+      if (b.hamm(o).assigned())
+	bh << var (hamm(o) != b.hamm(o));
+    }
+    for (operand p : input->P) {
+      if (b.reghamm(p).assigned())
+	bh << var (reghamm(p) != b.reghamm(p));
+      if (b.x(p).assigned())
+	bh << var (x(p) != b.x(p));
+    }
+    if (bh.size() >0) {
+      dist = var( sum(bh));
+      constraint(dist >= mindist); // hamming distance
+
+    } else {
+      cerr << "No constraints @ constrain";
+      //exit(EXIT_FAILURE);
     }
     break;
 

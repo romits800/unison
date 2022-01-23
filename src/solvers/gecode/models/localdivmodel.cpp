@@ -210,30 +210,12 @@ void LocalDivModel::constrain(const Space & _b) {
   switch (options->dist_metric()) {
   case DIST_HAMMING:
     for (uint o = 0; o < input -> ops[b].size(); o++) {
-    //cout << "constrain: "  << b << " : " << input -> ops[b].size() << endl;
-    //for (uint o = input -> ops[b].size()/2; o < input -> ops[b].size()/2 + input -> ops[b].size()/8; o++) {
-    //for (uint o = input -> ops[b].size()/2; o < input -> ops[b].size()/2 + input -> ops[b].size()/16; o++) {
-    //for (uint o = input -> ops[b].size()/2 + input -> ops[b].size()/8; o < input -> ops[b].size()/2 + input -> ops[b].size()/8 + + input -> ops[b].size()/16; o++) {
       operation op = input->ops[b][o];
-      //if (op == 46 && b == 0) 
-      //      continue;
-      //if (op == 248 && b == 21) 
-      //      continue;
       if (is_real_type(op)) {
        if (bi.a(op).assigned() && bi.a(op).val() == 1) {
-         //cout << "b.hamm0: " << b << ":op:" << op << endl;
-         //cout << "b.hamm0: " << b << ":op:" << op << ": ham:" << bi.c(op) << endl;
-         //cout << "hamm0: " << b << ":op:" << op << ": oham:" << c(op) << endl;
-         //if ((b == 36 && op == 886) || (b == 47 && op == 1131) || (b == 6 && op == 244) || (b == 21 && op == 548))
-         //   continue;
-         bh << var (c(op) != bi.c(op)); //hamm(o) != bi.hamm(o));
+         bh << var (c(op) != bi.c(op)); 
         }
-        bh << var (a(op) != bi.a(op));
-      /*for (operand p: input->operands[op]) {
-          if (bi.reghamm(p).assigned())
-            bh << var (reghamm(p) != bi.reghamm(p));
-        }*/
- 
+        bh << var (a(op) != bi.a(op)); 
       }
     }
     if (bh.size() >0) {          //
@@ -250,6 +232,29 @@ void LocalDivModel::constrain(const Space & _b) {
             if (bi.x(p).assigned())
               bh << var (x(p) != bi.x(p));
          }
+    }
+    if (bh.size() >0)           //
+      constraint(sum(bh) >= 1); // hamming distance
+    break;
+
+  case DIST_REG_CYC_HAMMING:
+    for (uint o = 0; o < input -> ops[b].size(); o++) {
+      operation op = input->ops[b][o];
+      if (is_real_type(op)) {
+	if (bi.a(op).assigned() && bi.a(op).val() == 1)
+	  bh << var (c(op) != bi.c(op)); 
+        bh << var (a(op) != bi.a(op)); 
+      }
+    }
+    for (uint o = 0; o < input -> ops[b].size(); o++) {
+      operation op = input->ops[b][o];
+      if (is_real_type(op))
+	for (operand p: input->operands[op]) {
+	  if (bi.reghamm(p).assigned())
+	    bh << var (reghamm(p) != bi.reghamm(p));
+	  if (bi.x(p).assigned())
+	    bh << var (x(p) != bi.x(p));
+	}
     }
     if (bh.size() >0)           //
       constraint(sum(bh) >= 1); // hamming distance

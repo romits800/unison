@@ -321,7 +321,33 @@ void MaxDivModel::post_input_solution_constrain() {
       exit(EXIT_FAILURE);
     }
     break;
-  // TODO(Romy): Update    
+  case DIST_REG_CYC_HAMMING:
+    for (MaxDivModel *s: input_solutions) {
+      BoolVarArgs bhs;
+      for (operand p : input->P) {
+          bh << var (reghamm(p) != s->reghamm(p));
+          bh << var (x(p) != s->x(p));
+          bhs << var (reghamm(p) != s->reghamm(p));
+          bhs << var (x(p) != s->x(p));
+      }
+
+      for (operation o: real_operations) {
+          bh << var (hamm(o) != s->hamm(o));
+          bhs << var (hamm(o) != s->hamm(o));
+      }
+
+      if (bhs.size() >0) {           //
+          constraint(var( sum(bhs)) > 0);
+      }
+    }
+    if (bh.size() >0) {           //
+      constraint(maxdist == var( sum(bh)));
+    } else {
+      exit(EXIT_FAILURE);
+    }
+    break;
+
+    // TODO(Romy): Update    
   case DIST_CYC_REG_GADGET:
   case DIST_REG_GADGET:
   case DIST_CYC_GADGET:
@@ -461,6 +487,25 @@ void MaxDivModel::constrain(const Space & _b) {
       for (operand p : input->P) {
           bh << var (b.reghamm(p) != s->reghamm(p));
           bh << var (b.x(p) != s->x(p));
+      }
+    }
+    if (bh.size() >0) {           //
+      constraint(maxdist > sum(bh)); // hamming distance
+
+    } else {
+      cerr << "No constraints @ constrain" << endl;
+      exit(EXIT_FAILURE);
+    }
+    break;
+  case DIST_REG_CYC_HAMMING:
+    for (MaxDivModel *s: input_solutions) {
+      for (operand p : input->P) {
+          bh << var (b.reghamm(p) != s->reghamm(p));
+          bh << var (b.x(p) != s->x(p));
+      }
+      for (operation o: input -> O) {
+        if (is_real_type(o))
+          bh << var (b.hamm(o) != s->hamm(o));
       }
     }
     if (bh.size() >0) {           //
