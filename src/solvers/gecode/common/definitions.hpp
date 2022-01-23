@@ -117,6 +117,7 @@ typedef enum divdistance
     DIST_LEVENSHTEIN,          // Levenshtein for 1-1 cycle/operation and operation/cycle
     DIST_LEVENSHTEIN_SET,      // Levenshtein considering sets for multi issue
     DIST_REGHAMMING,           // Hamming of register array
+    DIST_REG_CYC_HAMMING,           // Hamming of register array
 // Gadget distances
     DIST_CYC_REG_GADGET,   // Hamming of either cycles or registers for each "gadget"
     DIST_REG_GADGET,           // Hamming of registers for each "gadget"
