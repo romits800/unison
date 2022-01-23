@@ -306,7 +306,7 @@ isGPR r = rTargetReg (regId r) `elem` registers (RegisterClass GPR)
 -- | Declares target architecture resources
 
 -- | TODO(Romy)
-resources to | cortex_m0 to =
+resources to | cortex_m0 to = 
     [
 
      -- Boundle width (times 16 bits): upper bound given by size of compound
@@ -605,7 +605,8 @@ isCSRegisterObject _ = False
 
 -- | Target dependent post-processing functions
 
-postProcess to = [expandPseudos to, removeAllNops, removeFrameIndex,
+postProcess to = [expandPseudos to, if keepNops to then replaceNops to else removeAllNops,
+                  removeFrameIndex,
                   cleanLoadMerges,
                   removeEmptyBundles, reorderImplicitOperands,
                   exposeCPSRRegister,
@@ -685,6 +686,23 @@ pushRegs i
   | i `elem` [VSTMDDB_UPD_d8_15, VLDMDIA_UPD_d8_15] =
       [D8, D9, D10, D11, D12, D13, D14, D15]
 pushRegs i = error ("unmatched: pushRegs " ++ show i)
+
+
+-- Replace NOP operations (llc doesn't recognize them) with
+--   movr %r8 %r8
+replaceNops to = mapToMachineBlock (expandBlockPseudos (replaceNop to))
+                   
+replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} | cortex_m0 to =
+       let r8 = mkMachineReg R8
+           mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
+                     msOperands = [r8, r8] ++ defaultMIRPred}
+       in [[mi']]
+replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} =
+       let r0 = mkMachineReg R0
+           mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
+                     msOperands = [r0, r0] ++ defaultMIRPred}
+       in [[mi']]
+replaceNop _ mi  = [[mi]]
 
 removeAllNops =
   filterMachineInstructions

@@ -61,13 +61,11 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
          ps'' = ps' `seq` presolver oldModel aux target f ps'
      emitOutput jsonFile ((BSL.unpack (encodePretty ps'')))
 
-is_target_cortex (t,to) = 
-    API.isBoolOption "cortex-m0" to
+-- is_target_cortex (t,to) = 
+--     API.isBoolOption "cortex-m0" to
 
 
 
---modeler (scaleFreq, noCC) aux target f | is_target_cortex target =
---        error "Another error modeler"
 modeler (scaleFreq, noCC) aux target f =
   toJSON (M.fromList (is ++ ra))
 --                      RA.parameters noCC aux f target))
@@ -90,16 +88,12 @@ auxiliarDataStructures target tight baseMir f @ Function {fCode = code} =
 
 
   
---optimization _ _ target _ _ | is_target_cortex target = 
---    error "Another error"
 optimization flags aux target f ps =
     let opt_pars = optimizationParameters flags aux target f
         ops = toJSON (M.fromList opt_pars)
     in unionMaps ps ops
 
 
---optimizationParameters _ _ target _ | is_target_cortex target = 
- --   error "An error"
 optimizationParameters (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
   (_, _, deps, _, _, baseMir) target Function {fCode = code, fGoal = goal} =
     let rm    = resourceManager target

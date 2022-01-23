@@ -14,7 +14,7 @@ module Unison.Target.Thumb.Common
      defaultMIRPred, defaultUniPred, isRematerializable, isSourceInstr,
      isDematInstr, isRematInstr, sourceInstr, dematInstr, rematInstr,
      originalInstr, spillInstrs, condMoveInstrs, ccInstrs, isRedefableInstr,
-     isRedefInstr, redefInstr, cortex_m0) where
+     isRedefInstr, redefInstr, cortex_m0, keepNops) where
 
 import qualified Data.Map as M
 import Data.Tuple
@@ -69,6 +69,8 @@ isRInstrOf f i = i `elem` [f t | t <- M.elems rematVersions]
 sourceInstr i = source $ rematVersions M.! i
 dematInstr  i = demat $ rematVersions M.! i
 rematInstr  i = remat $ rematVersions M.! i
+
+keepNops to = API.isBoolOption "keep-nops" to
 
 originalInstr i =
   (M.fromList [(remat ris, i) | (i, ris) <- M.toList rematVersions]) M.! i
