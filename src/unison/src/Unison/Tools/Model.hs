@@ -54,11 +54,11 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
      let f    = parse target extUni
          base = maybeNothing applyBaseFile baseMir
          aux  = auxiliarDataStructures target tightPressureBound base f
-         ps   = aux `seq` modeler (scaleFreq, noCC) aux target f
-         ps'  = ps `seq` optimization
+         ps   = modeler (scaleFreq, noCC) aux target f
+         ps'  = optimization
                 (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
                 aux target f ps
-         ps'' = ps' `seq` presolver oldModel aux target f ps'
+         ps'' = presolver oldModel aux target f ps'
      emitOutput jsonFile ((BSL.unpack (encodePretty ps'')))
 
 -- is_target_cortex (t,to) = 
