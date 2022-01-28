@@ -526,7 +526,7 @@ alignedPairs i ([_, _, _, _, _], [])
   | i `elem`
       [STRBi12, STRi12, T2STRBi12, T2STRBi12_fi, T2STRBi8, T2STRHi12,
        T2STRHi12_fi, T2STRHi8, T2STRi12, T2STRi12_fi, T2STRi8, TSTRBi,
-       TSTRBr, TSTRHi, TSTRHr, TSTRi, TSTRr, TSTRspi]
+       TSTRBr, TSTRHi, TSTRHr, TSTRi, TSTRr, TSTRspi, TSTRspi_fi]
     = []
 alignedPairs i ([_, _, _, _, _], [_]) | i `elem` [T2STREX] = []
 alignedPairs i ([_, _, _, _, _], [_])

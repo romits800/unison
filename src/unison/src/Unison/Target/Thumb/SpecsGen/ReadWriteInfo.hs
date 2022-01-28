@@ -436,9 +436,9 @@ readWriteInfo i
        TMOVi8s_remat, TMOVi8s_source, TMOVr, TMUL, TMULz, TMVN, TMVNs,
        TORR, TORRs, TPICADD, TREV, TREV16, TREVSH, TROR, TRORs, TRSB,
        TRSBs, TSETEND, TSTRBi, TSTRBr, TSTRBrz, TSTRHi, TSTRHr, TSTRHrz,
-       TSTRi, TSTRr, TSTRrz, TSTRspi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s,
-       TSUBrr, TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH, TSXTHz,
-       TTRAP, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
+       TSTRi, TSTRr, TSTRrz, TSTRspi, TSTRspi_fi, TSUBi3, TSUBi3s, TSUBi8,
+       TSUBi8s, TSUBrr, TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH,
+       TSXTHz, TTRAP, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
     = ([], [])
   | i `elem`
       [STLEX, STLEXB, STLEXD, STLEXH, STMDA, STMDA_UPD, STMDB, STMDB_UPD,

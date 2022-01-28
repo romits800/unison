@@ -3070,6 +3070,7 @@ instance Show ThumbInstruction where
         show T2ADDrrcc = "t2ADDrrcc"
         show T2ADDrscc = "t2ADDrscc"
         show Register_class_decl_dummy = "register_class_decl_dummy"
+        show TSTRspi_fi = "tSTRspi_fi"
         show T2MOVi_source = "t2MOVi_source"
         show T2MOVi_demat = "t2MOVi_demat"
         show T2MOVi_remat = "t2MOVi_remat"

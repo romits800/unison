@@ -3069,6 +3069,7 @@ data ThumbInstruction = ABS
                       | T2ADDrrcc
                       | T2ADDrscc
                       | Register_class_decl_dummy
+                      | TSTRspi_fi
                       | T2MOVi_source
                       | T2MOVi_demat
                       | T2MOVi_remat

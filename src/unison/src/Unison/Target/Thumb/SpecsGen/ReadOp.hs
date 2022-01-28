@@ -3068,6 +3068,7 @@ readOp "t2SUBrrcc" = T2SUBrrcc
 readOp "t2ADDrrcc" = T2ADDrrcc
 readOp "t2ADDrscc" = T2ADDrscc
 readOp "register_class_decl_dummy" = Register_class_decl_dummy
+readOp "tSTRspi_fi" = TSTRspi_fi
 readOp "t2MOVi_source" = T2MOVi_source
 readOp "t2MOVi_demat" = T2MOVi_demat
 readOp "t2MOVi_remat" = T2MOVi_remat

@@ -636,8 +636,8 @@ instructionType i
        TPUSH_4, TPUSH_4_5, TPUSH_4_6, TPUSH_4_7, TREV, TREV16, TREVSH,
        TROR, TRORs, TRSB, TRSBs, TSBC, TSETEND, TSTMIA_UPD, TSTRBi,
        TSTRBr, TSTRBrz, TSTRHi, TSTRHr, TSTRHrz, TSTRi, TSTRr, TSTRrz,
-       TSTRspi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr, TSUBrrs,
-       TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH, TSXTHz, TTRAP, TTST,
-       TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
+       TSTRspi, TSTRspi_fi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr,
+       TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH, TSXTHz, TTRAP,
+       TTST, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
     = LinearInstructionType
 
