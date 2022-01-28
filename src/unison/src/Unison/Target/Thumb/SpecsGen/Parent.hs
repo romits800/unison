@@ -707,6 +707,7 @@ parent i
   | i `elem` [TSTRBrz] = Just TSTRBr
   | i `elem` [TSTRHrz] = Just TSTRHr
   | i `elem` [TSTRrz] = Just TSTRr
+  | i `elem` [TSTRspi_fi] = Just TSTRspi
   | i `elem` [TSUBspi_pseudo] = Just TSUBspi
   | i `elem` [TSXTHz] = Just TSXTH
   | i `elem` [TTST_cpsr] = Just TTST

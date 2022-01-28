@@ -106,12 +106,12 @@ optimizationParameters (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
         fact  = if scaleFreq then scaleFactor (rm, oif, deps) code else 1.0
         factd = fromRational fact :: Double
         maxf0 = case baseMir of
-                 (Just mir) ->
-                     let mf = fromSingleton $ MIR.parse mirVersion mir
-                         mc = maximumCost mirVersion fact cf
-                         mx = map (\g -> mc g (mir, mf) target code) gl
-                     in if strictlyBetter then decrementLast mx else mx
-                 Nothing -> replicate (length gl) maxInt
+                  (Just mir) ->
+                    let mf = fromSingleton $ MIR.parse mirVersion mir
+                        mc = maximumCost mirVersion fact cf
+                        mx = map (\g -> mc g (mir, mf) target code) gl
+                    in if strictlyBetter then decrementLast mx else mx
+                  Nothing -> replicate (length gl) maxInt
         maxf  = if unsatisfiable then replicate (length gl) 0 else maxf0
     in
       [

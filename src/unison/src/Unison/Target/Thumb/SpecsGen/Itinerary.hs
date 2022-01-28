@@ -817,7 +817,7 @@ itinerary i
     IIC_iStore_d_ru
   | i `elem`
       [STORE, STORE_T, T2STRT, T2STRi12, T2STRi12_fi, T2STRi8, TSTRi,
-       TSTRspi]
+       TSTRspi, TSTRspi_fi]
     = IIC_iStore_i
   | i `elem`
       [STR_POST_IMM, STR_PRE_IMM, T2STRH_PRE, T2STR_POST, T2STR_PRE]

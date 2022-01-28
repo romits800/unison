@@ -665,14 +665,15 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc TFP} =
   [[mi {msOpcode = mkMachineTargetOpc TADDrSPi}]]
 
 expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
-                                   msOperands = [off]}
+                                   msOperands = [MachineImm {miValue = off}]}
   | i `elem` [TSUBspi_pseudo, TADDspi_pseudo] =
     let i' = case i of
               TSUBspi_pseudo -> TSUBspi
               TADDspi_pseudo -> TADDspi
         sp = mkMachineReg SP
+        off' = mkMachineImm (off `div` 4)
     in [[mi {msOpcode = mkMachineTargetOpc i',
-             msOperands = [sp, sp, off] ++ defaultMIRPred}]]
+             msOperands = [sp, sp, off'] ++ defaultMIRPred}]]
 
 
 
@@ -697,7 +698,7 @@ replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} | cortex_m0 t
            mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
                      msOperands = [r8, r8] ++ defaultMIRPred}
        in [[mi']]
-replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} =
+replaceNop _ mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} =
        let r0 = mkMachineReg R0
            mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
                      msOperands = [r0, r0] ++ defaultMIRPred}
@@ -745,9 +746,17 @@ removeFrameIndex = mapToMachineInstruction removeFrameIndexInstr
 removeFrameIndexInstr
   mi @ MachineSingle {msOpcode = MachineTargetOpc TLDRspi_fi,
                       msOperands = [d, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} = 
-    let mioff = mkMachineImm (off `div` 4) -- TODO(Romy): Very hacky.
+    let mioff = mkMachineImm (off `div` 4) 
         mos = [d, mkMachineReg SP, mioff, cc, p]
     in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TLDRspi_fi, msOperands = mos}
+-- Frame store using sp
+removeFrameIndexInstr
+  mi @ MachineSingle {msOpcode = MachineTargetOpc TSTRspi_fi,
+                      msOperands = [s, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} =
+
+  let mioff = mkMachineImm (off `div` 4) 
+      mos = [s, mkMachineReg SP, mioff, cc, p]
+  in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TSTRspi_fi, msOperands = mos}
 
 removeFrameIndexInstr
   mi @ MachineSingle {msOpcode = MachineTargetOpc i,

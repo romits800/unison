@@ -59,7 +59,7 @@ fromBlock rwlf rm oif Block {bCode = code} =
                    extendedEdges lfs,
                    callFunctionEdges
                   ]
-  in edg
+  in  edg
 
 insertEdges code dg f =
     let newEdges = f dg code
