@@ -278,6 +278,8 @@ stackSize i
   | i `elem` [STORE, STORE_T, LOAD, LOAD_T] = 1
   | i `elem` [STORE_D, LOAD_D] = 2
 
+
+-- TODO(Romy): fix the LOAD/STORE instructions for ARM cortex m0
 fromCopyInstr MOVE     _ = TMOVr
 fromCopyInstr MOVE_D   _ = VMOVD
 fromCopyInstr STORE    _ = T2STRi12
