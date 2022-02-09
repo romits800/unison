@@ -278,6 +278,8 @@ stackSize i
   | i `elem` [STORE, STORE_T, LOAD, LOAD_T] = 1
   | i `elem` [STORE_D, LOAD_D] = 2
 
+
+-- TODO(Romy): fix the LOAD/STORE instructions for ARM cortex m0
 fromCopyInstr MOVE     _ = TMOVr
 fromCopyInstr MOVE_D   _ = VMOVD
 fromCopyInstr STORE    _ = T2STRi12
@@ -745,16 +747,16 @@ removeFrameIndex = mapToMachineInstruction removeFrameIndexInstr
 
 removeFrameIndexInstr
   mi @ MachineSingle {msOpcode = MachineTargetOpc TLDRspi_fi,
-                      msOperands = [d, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} = 
-    let mioff = mkMachineImm (off `div` 4) 
-        mos = [d, mkMachineReg SP, mioff, cc, p]
-    in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TLDRspi_fi, msOperands = mos}
+                      msOperands = [d, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} =
+  let mioff = mkMachineImm (off `div` 4)
+      mos = [d, mkMachineReg SP, mioff, cc, p]
+  in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TLDRspi_fi, msOperands = mos}
 -- Frame store using sp
 removeFrameIndexInstr
   mi @ MachineSingle {msOpcode = MachineTargetOpc TSTRspi_fi,
                       msOperands = [s, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} =
 
-  let mioff = mkMachineImm (off `div` 4) 
+  let mioff = mkMachineImm (off `div` 4)
       mos = [s, mkMachineReg SP, mioff, cc, p]
   in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TSTRspi_fi, msOperands = mos}
 

@@ -430,15 +430,15 @@ readWriteInfo i
        TCMPi8_cpsr, TCMPr_cpsr, TCPS, TEOR, TEORs, THINT, THLT, TLDRBi,
        TLDRBr, TLDRBrz, TLDRHi, TLDRHr, TLDRHrz, TLDRLIT_ga_abs,
        TLDRLIT_ga_pcrel, TLDRSB, TLDRSBz, TLDRSH, TLDRSHz, TLDRi, TLDRpci,
-       TLDRpci_pic, TLDRr, TLDRrz, TLDRspi, TLDRspi_fi, TLEApcrel,
-       TLEApcrelJT, TLSLri, TLSLris, TLSLrr, TLSLrrs, TLSRri, TLSRris,
-       TLSRrr, TLSRrrs, TMOVCCr_pseudo, TMOVi8, TMOVi8s, TMOVi8s_demat,
-       TMOVi8s_remat, TMOVi8s_source, TMOVr, TMUL, TMULz, TMVN, TMVNs,
-       TORR, TORRs, TPICADD, TREV, TREV16, TREVSH, TROR, TRORs, TRSB,
-       TRSBs, TSETEND, TSTRBi, TSTRBr, TSTRBrz, TSTRHi, TSTRHr, TSTRHrz,
-       TSTRi, TSTRr, TSTRrz, TSTRspi, TSTRspi_fi, TSUBi3, TSUBi3s, TSUBi8,
-       TSUBi8s, TSUBrr, TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH,
-       TSXTHz, TTRAP, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
+       TLDRpci_pic, TLDRr, TLDRrz, TLDRspi, TLEApcrel, TLEApcrelJT,
+       TLSLri, TLSLris, TLSLrr, TLSLrrs, TLSRri, TLSRris, TLSRrr, TLSRrrs,
+       TMOVCCr_pseudo, TMOVi8, TMOVi8s, TMOVi8s_demat, TMOVi8s_remat,
+       TMOVi8s_source, TMOVr, TMUL, TMULz, TMVN, TMVNs, TORR, TORRs,
+       TPICADD, TREV, TREV16, TREVSH, TROR, TRORs, TRSB, TRSBs, TSETEND,
+       TSTRBi, TSTRBr, TSTRBrz, TSTRHi, TSTRHr, TSTRHrz, TSTRi, TSTRr,
+       TSTRrz, TSTRspi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr, TSUBrrs,
+       TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH, TSXTHz, TTRAP, TTST_cpsr,
+       TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
     = ([], [])
   | i `elem`
       [STLEX, STLEXB, STLEXD, STLEXH, STMDA, STMDA_UPD, STMDB, STMDB_UPD,
@@ -692,8 +692,8 @@ readWriteInfo i
   | i `elem` [WIN__CHKSTK] =
     ([OtherSideEffect R4], [OtherSideEffect R4, OtherSideEffect SP])
   | i `elem`
-      [SVC, TAILJMPd, TAILJMPr, TCRETURNdi, TCRETURNri, TFP, TSVC,
-       TTAILJMPd, TTAILJMPdND, TTAILJMPr]
+      [SVC, TAILJMPd, TAILJMPr, TCRETURNdi, TCRETURNri, TFP, TLDRspi_fi,
+       TSTRspi_fi, TSVC, TTAILJMPd, TTAILJMPdND, TTAILJMPr]
     = ([OtherSideEffect SP], [])
   | i `elem` [TPUSH, TPUSH_4, TPUSH_4_5, TPUSH_4_6, TPUSH_4_7] =
     ([OtherSideEffect SP], [Memory "mem", OtherSideEffect SP])

@@ -596,9 +596,9 @@ parent i
        TPOP_RET, TPOP_r4_7, TPOP_r8_11, TPUSH, TPUSH2_r4_11, TPUSH2_r4_7,
        TPUSH_r4_7, TPUSH_r8_11, TREV, TREV16, TREVSH, TROR, TRSB, TRSBs,
        TSBC, TSETEND, TSTMIA_UPD, TSTRBi, TSTRBr, TSTRHi, TSTRHr, TSTRi,
-       TSTRr, TSTRspi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr, TSUBrrs,
-       TSUBspi, TSVC, TSXTB, TSXTH, TTAILJMPd, TTAILJMPdND, TTAILJMPr,
-       TTPsoft, TTRAP, TTST, TUDF, TUXTB, TUXTH]
+       TSTRr, TSTRspi, TSTRspi_fi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s,
+       TSUBrr, TSUBrrs, TSUBspi, TSVC, TSXTB, TSXTH, TTAILJMPd,
+       TTAILJMPdND, TTAILJMPr, TTPsoft, TTRAP, TTST, TUDF, TUXTB, TUXTH]
     = Nothing
   | i `elem` [FMSTAT_cpsr] = Just FMSTAT
   | i `elem`
@@ -707,7 +707,6 @@ parent i
   | i `elem` [TSTRBrz] = Just TSTRBr
   | i `elem` [TSTRHrz] = Just TSTRHr
   | i `elem` [TSTRrz] = Just TSTRr
-  | i `elem` [TSTRspi_fi] = Just TSTRspi
   | i `elem` [TSUBspi_pseudo] = Just TSUBspi
   | i `elem` [TSXTHz] = Just TSXTH
   | i `elem` [TTST_cpsr] = Just TTST
