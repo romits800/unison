@@ -142,6 +142,7 @@ machineBlockFreq =
 
 filterMachineInstructions = mapToMachineBlock . filterMachineInstructionsBlock
 
+
 filterMachineInstructionsBlock f mb @ MachineBlock {mbInstructions = mis} =
   mb {mbInstructions = concatMap (filterInstruction f) mis}
 

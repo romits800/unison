@@ -2939,7 +2939,6 @@ data ThumbInstruction = ABS
                       | TUDF
                       | TUXTB
                       | TUXTH
-                      | TLDRspi_fi
                       | T2ADDri_fi
                       | T2LDRi12_fi
                       | T2LDRBi12_fi
@@ -3069,6 +3068,8 @@ data ThumbInstruction = ABS
                       | T2ADDrrcc
                       | T2ADDrscc
                       | Register_class_decl_dummy
+                      | TLDRspi_fi
+                      | TSTRspi_fi
                       | T2MOVi_source
                       | T2MOVi_demat
                       | T2MOVi_remat

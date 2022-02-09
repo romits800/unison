@@ -278,6 +278,8 @@ stackSize i
   | i `elem` [STORE, STORE_T, LOAD, LOAD_T] = 1
   | i `elem` [STORE_D, LOAD_D] = 2
 
+
+-- TODO(Romy): fix the LOAD/STORE instructions for ARM cortex m0
 fromCopyInstr MOVE     _ = TMOVr
 fromCopyInstr MOVE_D   _ = VMOVD
 fromCopyInstr STORE    _ = T2STRi12
@@ -306,7 +308,7 @@ isGPR r = rTargetReg (regId r) `elem` registers (RegisterClass GPR)
 -- | Declares target architecture resources
 
 -- | TODO(Romy)
-resources to | cortex_m0 to =
+resources to | cortex_m0 to = 
     [
 
      -- Boundle width (times 16 bits): upper bound given by size of compound
@@ -605,7 +607,8 @@ isCSRegisterObject _ = False
 
 -- | Target dependent post-processing functions
 
-postProcess to = [expandPseudos to, removeAllNops, removeFrameIndex,
+postProcess to = [expandPseudos to, if keepNops to then replaceNops to else removeAllNops,
+                  removeFrameIndex,
                   cleanLoadMerges,
                   removeEmptyBundles, reorderImplicitOperands,
                   exposeCPSRRegister,
@@ -664,14 +667,15 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc TFP} =
   [[mi {msOpcode = mkMachineTargetOpc TADDrSPi}]]
 
 expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
-                                   msOperands = [off]}
+                                   msOperands = [MachineImm {miValue = off}]}
   | i `elem` [TSUBspi_pseudo, TADDspi_pseudo] =
     let i' = case i of
               TSUBspi_pseudo -> TSUBspi
               TADDspi_pseudo -> TADDspi
         sp = mkMachineReg SP
+        off' = mkMachineImm (off `div` 4)
     in [[mi {msOpcode = mkMachineTargetOpc i',
-             msOperands = [sp, sp, off] ++ defaultMIRPred}]]
+             msOperands = [sp, sp, off'] ++ defaultMIRPred}]]
 
 
 
@@ -685,6 +689,23 @@ pushRegs i
   | i `elem` [VSTMDDB_UPD_d8_15, VLDMDIA_UPD_d8_15] =
       [D8, D9, D10, D11, D12, D13, D14, D15]
 pushRegs i = error ("unmatched: pushRegs " ++ show i)
+
+
+-- Replace NOP operations (llc doesn't recognize them) with
+--   movr %r8 %r8
+replaceNops to = mapToMachineBlock (expandBlockPseudos (replaceNop to))
+                   
+replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} | cortex_m0 to =
+       let r8 = mkMachineReg R8
+           mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
+                     msOperands = [r8, r8] ++ defaultMIRPred}
+       in [[mi']]
+replaceNop _ mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} =
+       let r0 = mkMachineReg R0
+           mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
+                     msOperands = [r0, r0] ++ defaultMIRPred}
+       in [[mi']]
+replaceNop _ mi  = [[mi]]
 
 removeAllNops =
   filterMachineInstructions
@@ -727,9 +748,17 @@ removeFrameIndex = mapToMachineInstruction removeFrameIndexInstr
 removeFrameIndexInstr
   mi @ MachineSingle {msOpcode = MachineTargetOpc TLDRspi_fi,
                       msOperands = [d, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} = 
-    let mioff = mkMachineImm (off `div` 4) -- TODO(Romy): Very hacky.
+    let mioff = mkMachineImm (off `div` 4)
         mos = [d, mkMachineReg SP, mioff, cc, p]
     in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TLDRspi_fi, msOperands = mos}
+-- Frame store using sp
+removeFrameIndexInstr
+  mi @ MachineSingle {msOpcode = MachineTargetOpc TSTRspi_fi,
+                      msOperands = [s, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} =
+
+  let mioff = mkMachineImm (off `div` 4)
+      mos = [s, mkMachineReg SP, mioff, cc, p]
+  in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TSTRspi_fi, msOperands = mos}
 
 removeFrameIndexInstr
   mi @ MachineSingle {msOpcode = MachineTargetOpc i,

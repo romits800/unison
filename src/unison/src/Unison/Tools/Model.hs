@@ -54,20 +54,18 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
      let f    = parse target extUni
          base = maybeNothing applyBaseFile baseMir
          aux  = auxiliarDataStructures target tightPressureBound base f
-         ps   = aux `seq` modeler (scaleFreq, noCC) aux target f
-         ps'  = ps `seq` optimization
+         ps   = modeler (scaleFreq, noCC) aux target f
+         ps'  = optimization
                 (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
                 aux target f ps
-         ps'' = ps' `seq` presolver oldModel aux target f ps'
+         ps'' = presolver oldModel aux target f ps'
      emitOutput jsonFile ((BSL.unpack (encodePretty ps'')))
 
-is_target_cortex (t,to) = 
-    API.isBoolOption "cortex-m0" to
+-- is_target_cortex (t,to) = 
+--     API.isBoolOption "cortex-m0" to
 
 
 
---modeler (scaleFreq, noCC) aux target f | is_target_cortex target =
---        error "Another error modeler"
 modeler (scaleFreq, noCC) aux target f =
   toJSON (M.fromList (is ++ ra))
 --                      RA.parameters noCC aux f target))
@@ -90,16 +88,12 @@ auxiliarDataStructures target tight baseMir f @ Function {fCode = code} =
 
 
   
---optimization _ _ target _ _ | is_target_cortex target = 
---    error "Another error"
 optimization flags aux target f ps =
     let opt_pars = optimizationParameters flags aux target f
         ops = toJSON (M.fromList opt_pars)
     in unionMaps ps ops
 
 
---optimizationParameters _ _ target _ | is_target_cortex target = 
- --   error "An error"
 optimizationParameters (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
   (_, _, deps, _, _, baseMir) target Function {fCode = code, fGoal = goal} =
     let rm    = resourceManager target
@@ -112,12 +106,12 @@ optimizationParameters (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
         fact  = if scaleFreq then scaleFactor (rm, oif, deps) code else 1.0
         factd = fromRational fact :: Double
         maxf0 = case baseMir of
-                 (Just mir) ->
-                     let mf = fromSingleton $ MIR.parse mirVersion mir
-                         mc = maximumCost mirVersion fact cf
-                         mx = map (\g -> mc g (mir, mf) target code) gl
-                     in if strictlyBetter then decrementLast mx else mx
-                 Nothing -> replicate (length gl) maxInt
+                  (Just mir) ->
+                    let mf = fromSingleton $ MIR.parse mirVersion mir
+                        mc = maximumCost mirVersion fact cf
+                        mx = map (\g -> mc g (mir, mf) target code) gl
+                    in if strictlyBetter then decrementLast mx else mx
+                  Nothing -> replicate (length gl) maxInt
         maxf  = if unsatisfiable then replicate (length gl) 0 else maxf0
     in
       [

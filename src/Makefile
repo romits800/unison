@@ -149,7 +149,8 @@ install-specsgen:
 	cp $(UNISONSPECSGENDIR)/build/specsgen $(BINDIR)
 
 run-specsgen: run-specsgen-hexagon run-specsgen-mips run-specsgen-arm \
-	            run-specsgen-minimal
+	            run-specsgen-minimal \
+	            run-specsgen-thumb
 
 run-specsgen-hexagon:
 	specsgen --targetname=Hexagon $(SGHEXAGONINPUTYAML) $(SGHEXAGONAUXYAML) \

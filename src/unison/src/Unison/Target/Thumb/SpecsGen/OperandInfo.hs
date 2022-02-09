@@ -2692,7 +2692,7 @@ operandInfo i
     ([TemporaryInfo (RegisterClass TGPR) 0 False],
      [TemporaryInfo (RegisterClass TGPR) 1 False,
       TemporaryInfo (AbstractRegisterClass Unknown) 1 False])
-  | i `elem` [TSTRspi] =
+  | i `elem` [TSTRspi, TSTRspi_fi] =
     ([TemporaryInfo (RegisterClass TGPR) 0 False,
       TemporaryInfo (RegisterClass GPR) 0 False, BoundInfo, BoundInfo,
       TemporaryInfo (RegisterClass CCR) 0 False],

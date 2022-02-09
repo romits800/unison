@@ -6,22 +6,6 @@ instruction-set:
   - group: MANUAL
     instructions:
 
-        - id:                 tLDRspi_fi
-          type:               linear
-          operands:
-           - Rt:              [register, def, tGPR]
-           - addr1:           [register, use, GPR]
-           - addr2:           bound
-           - p1:              bound
-           - p2:              bound
-          uses:               [addr1, addr2, p1, p2]
-          defines:            [Rt]
-          size:               2
-          affects:
-          affected-by:
-          itinerary:          IIC_iLoad_i
-
-
         - id:                 t2ADDri_fi
           type:               linear
           operands:
@@ -1520,3 +1504,37 @@ instruction-set:
           affects:
           affected-by:
           itinerary:          NoItinerary
+
+
+        - id:                 tLDRspi_fi
+          type:               linear
+          operands:
+           - Rt:              [register, def, tGPR]
+           - addr1:           [register, use, GPR]
+           - addr2:           bound
+           - p1:              bound
+           - p2:              bound
+          uses:               [addr1, addr2, p1, p2]
+          defines:            [Rt]
+          size:               2
+          affects:
+          affected-by:
+           - SP:              register
+          itinerary:          IIC_iLoad_i
+
+
+        - id:                 tSTRspi_fi
+          type:               linear
+          operands:
+           - Rt:              [register, use, tGPR]
+           - addr1:           [register, use, GPR]
+           - addr2:           bound
+           - p1:              bound
+           - p2:              bound
+          uses:               [Rt, addr1, addr2, p1, p2]
+          defines:            []
+          size:               2
+          affects:
+          affected-by:
+           - SP:              register
+          itinerary:          IIC_iStore_i
