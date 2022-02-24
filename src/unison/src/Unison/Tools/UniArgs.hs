@@ -45,7 +45,7 @@ data Uni =
                scaleFreq :: Bool, oldModel :: Bool, applyBaseFile :: Bool,
                tightPressureBound :: Bool, strictlyBetter :: Bool,
                unsatisfiable :: Bool, noCC :: Bool,
-               mirVersion :: MachineIRVersion} |
+               mirVersion :: MachineIRVersion, policy :: Maybe FilePath} |
     Export    {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, removeReds :: Bool,
                keepNops :: Bool, baseFile :: Maybe FilePath,
@@ -151,7 +151,9 @@ model' = Model {
   applyBaseFile      = True &= help "Apply base file to limit the maximum cost of the function",
   tightPressureBound = False &= help "Compute a tight bound of the register atoms contained in an infinite register space (incompatible with presolver's infinite register dominance constraints)",
   strictlyBetter     = True &= help "Require the solver to find a strictly better solution than the base (as opposed to better or equal)",
-  unsatisfiable      = False &= help "Make the constraint problem trivially unsatisfiable"}
+  unsatisfiable      = False &= help "Make the constraint problem trivially unsatisfiable",
+  policy          = Nothing &= help "Security Policy"
+  }
   &= help "Generate a code generation problem for a Unison function"
 
 export' = Export {

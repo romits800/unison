@@ -82,7 +82,7 @@ mainWithTargets targets = do
                  Model.run
                  (baseFile, scaleFreq, oldModel, applyBaseFile,
                   tightPressureBound, strictlyBetter, unsatisfiable, noCC,
-                  mirVersion, outFile)
+                  mirVersion, outFile, policy)
                  input (target, targetOption)
     Export{..} ->
         do input <- strictReadFile inFile

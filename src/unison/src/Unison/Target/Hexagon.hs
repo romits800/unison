@@ -78,7 +78,8 @@ target =
       API.tAlternativeTemps = const alternativeTemps,
       API.tExpandCopy       = const expandCopy,
       API.tConstraints      = constraints,
-      API.tSpillOverhead    = const spillOverhead
+      API.tSpillOverhead    = const spillOverhead,
+      API.tIsXor            = const isXor
     }
 
 -- | Gives the type of natural operation according to the instruction
@@ -729,6 +730,10 @@ alternativeTemps _ _ _ ts = map fst ts
 -- | Copy expansion
 
 expandCopy _ _ o = [o]
+
+-- | TODO: Security processor constraints
+
+isXor i = error "isXor not implemented for this target."
 
 -- | Custom processor constraints
 

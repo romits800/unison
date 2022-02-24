@@ -44,13 +44,18 @@ import qualified Unison.Tools.Analyze as Analyze
 
 import qualified Unison.Tools.Model.InstructionScheduling as IS
 import qualified Unison.Tools.Model.RegisterAllocation as RA
+import qualified Unison.Tools.Model.SecurityModel as SM
 
 import qualified Unison.Target.API as API
 
+
+import qualified Unison.Tools.Model.ParseSecurityPolicies as PSP
+
 run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
-     strictlyBetter, unsatisfiable, noCC, mirVersion, jsonFile)
+     strictlyBetter, unsatisfiable, noCC, mirVersion, jsonFile, policy)
     extUni target =
   do baseMir <- maybeStrictReadFile baseFile
+     secPolicy <- maybeStrictReadFile policy
      let f    = parse target extUni
          base = maybeNothing applyBaseFile baseMir
          aux  = auxiliarDataStructures target tightPressureBound base f
@@ -59,11 +64,11 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
                 (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
                 aux target f ps
          ps'' = presolver oldModel aux target f ps'
-     emitOutput jsonFile ((BSL.unpack (encodePretty ps'')))
+         ps''' = securityModeler aux target f secPolicy ps''
+     emitOutput jsonFile ((BSL.unpack (encodePretty ps''')))
 
 -- is_target_cortex (t,to) = 
 --     API.isBoolOption "cortex-m0" to
-
 
 
 modeler (scaleFreq, noCC) aux target f =
@@ -72,6 +77,15 @@ modeler (scaleFreq, noCC) aux target f =
     where is = IS.parameters scaleFreq aux f target
           ra = is `seq` RA.parameters noCC aux f target
 
+securityModeler aux target f policyFile ps = 
+  let
+      policies =  case policyFile of
+        (Just pfile) -> PSP.parse pfile
+        Nothing -> []
+      sec_pars = SM.parameters aux target f policies
+      ops = toJSON (M.fromList sec_pars)
+  in unionMaps ps ops
+  
 auxiliarDataStructures target tight baseMir f @ Function {fCode = code} =
   let rwlf  = readWriteLatency target
       oif   = operandInfo target

@@ -412,10 +412,10 @@ extendNonSymmetricOperands _ (
               oIs = [ TargetInstruction i ],
                 -- oUs = p1:p2:roUs,
                 -- oDs = [p3, p4]
-                oUs = (MOperand {altTemps = ts1}):
-                      (MOperand {altTemps = ts2}):roUs,
-                oDs = [(MOperand {altTemps = [ts3 @ Temporary {tReg = treg3} ]}),
-                       (MOperand {altTemps = [ts4 @ Temporary {tReg = treg4} ]})]
+              oUs = (MOperand {altTemps = ts1}):
+                    (MOperand {altTemps = ts2}):roUs,
+              oDs = [(MOperand {altTemps = [ts3 @ Temporary {tReg = treg3} ]}),
+                     (MOperand {altTemps = [ts4 @ Temporary {tReg = treg4} ]})]
               }
           }
       }:rest)  (tid, oid, pid) | isNonSymmetric i =

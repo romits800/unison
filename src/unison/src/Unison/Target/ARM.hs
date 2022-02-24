@@ -77,7 +77,8 @@ target =
       API.tAlternativeTemps = const alternativeTemps,
       API.tExpandCopy       = const expandCopy,
       API.tConstraints      = const constraints,
-      API.tSpillOverhead    = const spillOverhead
+      API.tSpillOverhead    = const spillOverhead,
+      API.tIsXor            = const isXor
     }
 
 instance Read ARMInstruction where
@@ -836,6 +837,11 @@ alternativeTemps _ _ _ ts = map fst ts
 -- | Copy expansion
 
 expandCopy _ _ o = [o]
+
+
+-- | TODO: Security processor constraints
+
+isXor i = error "isXor not implemented for this target."
 
 -- | Custom processor constraints
 

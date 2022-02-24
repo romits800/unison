@@ -198,6 +198,8 @@ Library
                   Unison.Tools.Model.PresolverParameters
                   Unison.Tools.Model.InstructionScheduling
                   Unison.Tools.Model.RegisterAllocation
+                  Unison.Tools.Model.ParseSecurityPolicies
+                  Unison.Tools.Model.SecurityModel
                   Unison.Tools.Model.Presolver
                   Unison.Tools.Export.SelectTemporaries
                   Unison.Tools.Export.AssignRegisters

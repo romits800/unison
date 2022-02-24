@@ -62,7 +62,8 @@ module Unison.Target.API (
   alternativeTemps,
   expandCopy,
   constraints,
-  spillOverhead
+  spillOverhead,
+  isXor
   ) where
 
 import Data.List
@@ -223,6 +224,9 @@ alternativeTemps (ti, to) = tAlternativeTemps ti to
 expandCopy (ti, to) = tExpandCopy ti to
 constraints (ti, to) = tConstraints ti to
 spillOverhead (ti, to) = tSpillOverhead ti to
+
+-- ROMY (add new function)
+isXor (ti, to) = tIsXor ti to
 
 -- | Container with information about a 'Function' along with the
 -- function itself.
@@ -397,7 +401,9 @@ data TargetDescription i r rc s = TargetDescription {
       -- | Spill sign and overhead of a given instruction and operands
       -- (analysis only)
       tSpillOverhead    :: TargetOptions -> (i, [Operand r], [Operand r]) ->
-                           Maybe (Bool, Latency)
+                           Maybe (Bool, Latency),
+      tIsXor            :: TargetOptions -> Instruction i ->
+                           Bool
 }
 
 -- | Any 'TargetDescription'. Used to support multiple targets without

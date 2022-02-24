@@ -77,7 +77,8 @@ target =
       API.tAlternativeTemps = const alternativeTemps,
       API.tExpandCopy       = const expandCopy,
       API.tConstraints      = const constraints,  -- TODO(Romy): Check
-      API.tSpillOverhead    = const spillOverhead
+      API.tSpillOverhead    = const spillOverhead,
+      API.tIsXor            = const isXor
     }
 
 instance Read ThumbInstruction where
@@ -894,6 +895,11 @@ alternativeTemps _ _ _ ts = map fst ts
 -- | Copy expansion
 
 expandCopy _ _ o = [o]
+
+-- | Return true if the instruction is a xor instruction
+
+isXor (TargetInstruction i) | i `elem` [TEOR] = True
+isXor _ = False
 
 -- | Custom processor constraints
 

@@ -130,7 +130,8 @@ runFunction
            maybePutStrLn "Running 'uni model'..."
            Model.run
              (baseFile', scaleFreq, oldModel, applyBaseFile, tightPressureBound,
-              strictlyBetter, unsatisfiable, noCC, mirVersion, Just jsonFile)
+              strictlyBetter, unsatisfiable, noCC, mirVersion, Just jsonFile,
+              Nothing)
              altUniInput targetWithOption
 
            let extJsonFile   = addExtension "ext.json" prefix
