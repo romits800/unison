@@ -3071,6 +3071,7 @@ instance Show ThumbInstruction where
         show Register_class_decl_dummy = "register_class_decl_dummy"
         show TLDRspi_fi = "tLDRspi_fi"
         show TSTRspi_fi = "tSTRspi_fi"
+        show TADDframe_cpsr = "tADDframe_cpsr"
         show T2MOVi_source = "t2MOVi_source"
         show T2MOVi_demat = "t2MOVi_demat"
         show T2MOVi_remat = "t2MOVi_remat"

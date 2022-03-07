@@ -115,10 +115,10 @@ size i
        T2MOVi16_ga_pcrel, T2MOVi16_source, T2MOVi32imm, T2MOVi32imm_demat,
        T2MOVi32imm_remat, T2MOVi32imm_source, T2MOVi_demat, T2MOVi_source,
        T2MOVsi, T2MOVsr, T2MVNi_demat, T2MVNi_source, TADDframe,
-       TADJCALLSTACKDOWN, TADJCALLSTACKUP, TInt_WIN_eh_sjlj_longjmp,
-       TInt_eh_sjlj_longjmp, TInt_eh_sjlj_setjmp, TLDRLIT_ga_abs,
-       TLDRLIT_ga_pcrel, TLDRpci_pic, TMOVCCr_pseudo, TMOVi8s_demat,
-       TMOVi8s_source]
+       TADDframe_cpsr, TADJCALLSTACKDOWN, TADJCALLSTACKUP,
+       TInt_WIN_eh_sjlj_longjmp, TInt_eh_sjlj_longjmp,
+       TInt_eh_sjlj_setjmp, TLDRLIT_ga_abs, TLDRLIT_ga_pcrel, TLDRpci_pic,
+       TMOVCCr_pseudo, TMOVi8s_demat, TMOVi8s_source]
     = 0
   | i `elem`
       [LOAD_T, MOVE, STORE_T, T2IT, T2SETPAN, TADC, TADDhirr, TADDhirrs,
