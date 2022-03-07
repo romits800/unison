@@ -455,6 +455,16 @@ promoteImplicitOperands
            msOperands = mos'}
 
 promoteImplicitOperands
+  mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
+                      msOperands = mos}
+  | i `elem` [TADDframe] && writesSideEffect i CPSR =
+    let
+      fu   = length $ snd $ operandInfo i
+      mos' = insertAt (mkMachineReg CPSR) (fu - 1) mos
+    in mi {msOpcode = mkMachineTargetOpc (toExplicitCpsrDef i),
+           msOperands = mos'}
+
+promoteImplicitOperands
   mi @ MachineSingle {msOpcode = MachineTargetOpc i, msOperands = mos} =
     let fu   = length $ snd $ operandInfo i
         mos' = if writesSideEffect i CPSR

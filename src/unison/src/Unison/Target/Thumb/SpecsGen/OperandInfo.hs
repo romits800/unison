@@ -2936,6 +2936,10 @@ operandInfo i
   | i `elem` [T2LDRpci_pic, T2MOVi16_ga_pcrel] =
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass RGPR) 1 False])
+  | i `elem` [TADDframe_cpsr] =
+    ([BoundInfo, BoundInfo],
+     [TemporaryInfo (RegisterClass TGPR) 1 False,
+      TemporaryInfo (RegisterClass CCR) 1 False])
   | i `elem` [TADDframe] =
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass TGPR) 1 False,

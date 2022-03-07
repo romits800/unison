@@ -680,6 +680,7 @@ parent i
   | i `elem` [T2TSTri_cpsr] = Just T2TSTri
   | i `elem` [T2TSTrr_cpsr] = Just T2TSTrr
   | i `elem` [T2TSTrs_cpsr] = Just T2TSTrs
+  | i `elem` [TADDframe_cpsr] = Just TADDframe
   | i `elem` [TFP] = Just TADDrSPi
   | i `elem` [TADDspi_pseudo] = Just TADDspi
   | i `elem` [TANDs] = Just TAND

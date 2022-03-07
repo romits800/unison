@@ -71,6 +71,8 @@ size i
     i `elem` [T2MOVCCi32imm] = sum $ map size $ ccInstrs i
 size i
   | i `elem` [JUMPTABLE_INSTS, Load_merge] = 0
+size i
+  | i `elem` [TADDframe, TADDframe_cpsr] = 2 -- TODO(Romy): Check with Roberto
 size MEMCPY_4 = size T2LDMIA_4 + size T2STMIA_4
 size i
   | isSourceInstr i || isDematInstr i = 0
