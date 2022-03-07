@@ -161,6 +161,12 @@ protected:
   Driver::UnsignedIntOption _reg_gadget_size;  
   Driver::BoolOption _enable_solver_solution_brancher; // Enable a brancher to find the solution first
   Driver::DoubleOption _decomp_r; // Relax rate for decomposition model
+  Driver::StringOption _sec_implementation; // Select security implementation
+
+  Driver::BoolOption _disable_sec_regreg_constraints;
+  Driver::BoolOption _disable_sec_secret_constraints;
+  Driver::BoolOption _disable_sec_mem_constraints;
+  
 public:
 
   ModelOptions(void);
@@ -265,6 +271,11 @@ public:
 
   bool enable_solver_solution_brancher(void) const {return _enable_solver_solution_brancher.value();}
   double decomp_r(void) const {return _decomp_r.value();}
-};
 
+  SecImplementation sec_implementation(void) const { return static_cast <SecImplementation>( _sec_implementation.value());}
+
+  bool disable_sec_regreg_constraints(void) const {return _disable_sec_regreg_constraints.value();}
+  bool disable_sec_secret_constraints(void) const {return _disable_sec_secret_constraints.value();}
+  bool disable_sec_mem_constraints(void) const {return _disable_sec_mem_constraints.value();}
+};
 #endif

@@ -78,7 +78,8 @@ target =
       API.tExpandCopy       = const expandCopy,
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
-      API.tIsXor            = const isXor
+      API.tIsXor            = const isXor,
+      API.tHardwareRegs     = const hardwareRegisters
     }
 
 instance Read ARMInstruction where

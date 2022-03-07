@@ -79,7 +79,8 @@ target =
       API.tExpandCopy       = const expandCopy,
       API.tConstraints      = constraints,
       API.tSpillOverhead    = const spillOverhead,
-      API.tIsXor            = const isXor
+      API.tIsXor            = const isXor,
+      API.tHardwareRegs     = const hardwareRegisters
     }
 
 -- | Gives the type of natural operation according to the instruction

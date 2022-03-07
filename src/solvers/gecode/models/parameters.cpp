@@ -143,7 +143,15 @@ Parameters::Parameters(Json::Value root) :
   long_latency_def_use  (get_2d_vector<int>(getRoot(root, "long_latency_def_use"))),
   subsumed_resources  (get_2d_vector<int>(getRoot(root, "subsumed_resources"))),
   temp_domain  (get_2d_vector<int>(getRoot(root, "temp_domain"))),
-  wcet     (get_vector<PresolverWCET>(getRoot(root, "wcet")))
+  wcet     (get_vector<PresolverWCET>(getRoot(root, "wcet"))),
+
+  // Power side-channel parameters
+  
+  rpairs     (get_2d_vector<int>(getRoot(root, "pairs"))),
+  // cpairs     (get_3d_vector<int>(getRoot(root, "cpairs"))),
+  mpairs     (get_3d_vector<int>(getRoot(root, "mpairs"))),
+  spairs     (get_3d_vector<int>(getRoot(root, "spairs"))),
+  HR        (get_vector<int>(getRoot(root, "HR")))
 {
   compute_derived();
 }
@@ -914,6 +922,44 @@ void Parameters::compute_derived() {
   }
 
   N = maxf.size();
+
+
+  for (unsigned int i = 0; i < rpairs.size(); i++)
+    randpairs.push_back(make_pair(rpairs[i][0], rpairs[i][1]));
+
+
+  for (unsigned int i = 0; i < spairs.size(); i++) {
+    vector<int> tmp;
+    for (unsigned int j = 0; j < spairs[i][1].size(); j++)
+      tmp.push_back(spairs[i][1][j]);
+    secpairs.push_back(make_pair(spairs[i][0][0], tmp));
+  }
+
+
+  for (unsigned int i = 0; i < mpairs.size(); i++) {
+    vector<int> tmp1, tmp2;
+    for (unsigned int j = 0; j < mpairs[i][0].size(); j++)
+      tmp1.push_back(mpairs[i][0][j]);
+    for (unsigned int j = 0; j < mpairs[i][1].size(); j++)
+      tmp2.push_back(mpairs[i][1][j]);
+
+    mempairs.push_back(make_pair(tmp1, tmp2));
+  }
+
+  // for (unsigned int i = 0; i < cpairs.size(); i++) {
+  //   vector<int> tmp1, tmp2;
+  //   for (unsigned int j = 0; j < cpairs[i][0].size(); j++)
+  //     tmp1.push_back(cpairs[i][0][j]);
+  //   for (unsigned int j = 0; j < cpairs[i][1].size(); j++)
+  //     tmp2.push_back(cpairs[i][1][j]);
+
+  //   copypairs.push_back(make_pair(tmp1, tmp2));
+  // }
+
+
+  // for (unsigned int i = 0; i < hr.size(); i++)
+  //   HR.push_back(hr[i]);
+
 }
 
 string Parameters::emit_json() {

@@ -44,7 +44,6 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
   div_p = p_options->relax();
   mindist = p_options->min_dist();
 
-
   int op_size = O().size();
   
   int operand_size = P().size();
@@ -86,6 +85,40 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     g.end = size;
     gadgets.push_back(g);
   }
+
+  // print pairs of rands that should not be assigned to the same regs
+  // for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+  //   std::cout << tp.first << " " << tp.second << std::endl;
+  // }  
+
+  // print pairs of rands that should not be assigned to the same regs
+  // for (std::pair<const temporary, const vector<temporary>> tp : input -> secpairs) {
+  //   std::cout << tp.first;
+  //   for (const temporary t: tp.second) 
+  //     std::cout << " " << t;
+  //   std::cout << std:: endl;
+  // }
+
+  // print pairs of rands that should not be assigned to the same regs
+  // for (std::pair<const vector<operation>, const vector<operation>> tp : input -> mempairs) {
+  //   for (const operation o: tp.first) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  //   for (const operation o: tp.second) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  // }
+
+  // for (std::pair<const vector<operation>, const vector<operation>> tp : input -> copypairs) {
+  //   for (const operation o: tp.first) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  //   for (const operation o: tp.second) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  // }
+
+
 
   // difference between operations and branch operations
   if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) ||

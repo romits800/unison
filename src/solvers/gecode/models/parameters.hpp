@@ -345,6 +345,22 @@ public:
   // [MC] max tolerable latency to the following issue
   vector<PresolverWCET> wcet;
 
+  // [SEC] pairs of temporaries that should not share registers
+  vector<vector<int> > rpairs;
+
+  // [SEC] pairs of one secret memory operations and copies that can hide them
+  vector<vector<vector<int>> > cpairs;
+
+  // [SEC] pairs of one secret memory operations and memory accesses that may hide them
+  vector<vector<vector<int>> > mpairs;
+
+  // [SEC] pairs of one secret operand and other operands that should precede them
+  vector<vector<vector<int>> > spairs;
+  
+  // [SEC] hardware registers
+  vector<int> HR;
+
+
   Parameters(Json::Value root);
 
   // emit parameters in JSON format
@@ -649,6 +665,21 @@ public:
   // Number of objectives
   unsigned int N;
 
+  // Not compatible random pairs
+  vector<pair<temporary, temporary> > randpairs;
+
+  // Compatible secret pairs
+  vector<pair<temporary, vector<temporary>> > secpairs;
+
+  // Compatible secret mem - random mem pairs
+  vector<pair<vector<operation>, vector<operation>> > mempairs;
+
+  // Compatible secret mem - copy pairs - instruction should be the last
+  // vector<pair<vector<operation>, vector<operation>> > copypairs;
+
+  // Hardware registers
+  // vector<int> HR;
+  
 protected:
 
   Parameters() {};

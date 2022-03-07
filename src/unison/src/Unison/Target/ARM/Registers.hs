@@ -12,7 +12,7 @@ This file is part of Unison, see http://unison-code.github.io
 module Unison.Target.ARM.Registers
     (registerArray, registerAtoms, regClasses, registers,
      subRegIndexType, infRegClassUsage, infRegClassBound,
-     reserved, callerSaved, calleeSaved) where
+     reserved, callerSaved, calleeSaved,hardwareRegisters) where
 
 import Data.List
 import qualified Data.Map as M
@@ -204,3 +204,7 @@ regStrings = M.fromList $
 
 regStringsWithIndex pre rc =
   [(r, pre ++ show idx) | (r, idx) <- zip (registers (RegisterClass rc)) [0..]]
+
+
+hardwareRegisters = [R0, R1, R2, R3, R4, R5, R6, R7, R8,
+                     R9, R10, R11, R12, SP, LR, PC]

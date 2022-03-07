@@ -137,6 +137,18 @@ typedef enum divmethod
    DIV_MONOLITHIC_DFS,
    DIV_MAX_DIV
   } DivMethod;
+
+// SecDivCon implementations
+typedef enum secimplementation
+  {
+    SEC_R1_M1,
+    SEC_R1_M2,
+    SEC_R2_M1,
+    SEC_R2_M2
+  } SecImplementation;
+
+
+
 // Unison constraint expression
 
 // Branching options

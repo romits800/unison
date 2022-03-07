@@ -41,6 +41,7 @@ HEADERS += common/definitions.hpp \
            models/localmodel.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
+           models/secmodel.hpp \
            models/divmodel.hpp \
            models/decompdivmodel.hpp \
            models/localdivmodel.hpp \
@@ -77,6 +78,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            models/localmodel.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
+           models/secmodel.cpp \
            models/divmodel.cpp \
            models/decompdivmodel.cpp \
            models/localdivmodel.cpp \

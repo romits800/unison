@@ -37,6 +37,7 @@
 
 #include "completemodel.hpp"
 #include "globalmodel.hpp"
+#include "secmodel.hpp" // TODO(Romy): Remove?
 //#include "localdivmodel.hpp"
 #include "solver-parameters.hpp"
 #include "branchers/solutionbrancher.hpp"
@@ -53,6 +54,7 @@ typedef struct  {
 } gadget_t;
 
 class LocalDivModel;
+//class SecModel; // TODO(Romy): Remove?
 
 class DivModel : public GlobalModel {
 

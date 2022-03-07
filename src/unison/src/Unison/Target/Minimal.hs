@@ -64,7 +64,8 @@ target =
       API.tExpandCopy       = const expandCopy,
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
-      API.tIsXor            = const isXor
+      API.tIsXor            = const isXor,
+      API.tHardwareRegs     = const hardwareRegisters
     }
 
 instance Read MinimalInstruction where
@@ -259,3 +260,7 @@ constraints _ = []
 
 -- | Spill sign and overhead of each instruction and operands
 spillOverhead _ = Nothing
+
+
+-- | Hardware registers
+hardwareRegisters = [R0, R1, R2, R3, R4, R5, R6, R7]
