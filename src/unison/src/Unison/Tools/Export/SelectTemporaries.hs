@@ -14,16 +14,8 @@ module Unison.Tools.Export.SelectTemporaries (selectTemporaries) where
 import Data.List
 import qualified Data.Map as M
 
-import Unison.Target.API
 import Unison
 
-selectTemporaries temporaries f @ Function {fCode = code} _target |
-  Unison.Target.API.isBoolOption "select-tmp" $ snd _target =
-    let t2r   = M.fromList $ [(mkTemp t, r) | (Temporary t (Just r))
-                                                <- uniqueTemps (flatten code)]
-        p2t   = M.fromList $ zip (map mkOperandRef [0..]) temporaries
-        code' = mapToOperationInBlocks (selectTemporariesInInstr p2t t2r) code
-    in error ("Temps" ++ show code') 
 selectTemporaries temporaries f @ Function {fCode = code} _target =
     let t2r   = M.fromList $ [(mkTemp t, r) | (Temporary t (Just r))
                                                 <- uniqueTemps (flatten code)]
