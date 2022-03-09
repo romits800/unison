@@ -1549,6 +1549,5 @@ instruction-set:
            - cpsr:            [register, def, CCR]
           uses:               [base, offset]
           defines:            [dst, cpsr]
-          affects:
 
 
