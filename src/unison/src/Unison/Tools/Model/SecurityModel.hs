@@ -11,10 +11,10 @@ This file is part of DivCon
 -}
 module Unison.Tools.Model.SecurityModel (parameters) where
 
--- import Data.List
+import Data.List
 import Data.Map (Map)
 import qualified Data.Map as Map
--- import qualified Data.Set as S
+import qualified Data.Set as S
 import Data.Aeson (toJSON)
 
 import Unison
@@ -27,17 +27,20 @@ import Unison.Tools.Model.ParseSecurityPolicies
 
 import MachineIR
 
--- import qualified Unison.Graphs.SG as SG
--- import qualified Unison.Graphs.BCFG as BCFG
+import qualified Unison.Graphs.SG as SG
+import qualified Unison.Graphs.BCFG as BCFG
 
 
-type StateTuple = (Map String (Policy String), Map String (Policy String),
-                   Map String (Map String String),
-                   Map String (Map String String),
-                   Map String (Map String String),
-                   Map String Bool,
-                   Map String (Map Integer Integer),
-                   Map String (Map Integer Integer))
+type StateTuple r = (Map String (Policy String), Map String (Policy String),
+                     Map String (Map String String),
+                     Map String (Map String String),
+                     Map String (Map String String),
+                     Map String Bool,
+                     Map String (Map Integer Integer),
+                     Map String (Map Integer Integer),
+                     Map Integer Integer,
+                     Map Integer [Operand r])
+--                   Map String (Map Integer Integer))
 
 
 parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
@@ -50,45 +53,47 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
       xor             = createXorMap policies Map.empty
       m2o             = Map.empty -- mem to operations
       c2o             = Map.empty -- copies to operations
-      (pmap',_,supp',unq',dom',xor',m2o',c2o') = inferTypes target (pmap, inmap, supp, unq, dom, xor, m2o, c2o) f
-      -- Required for adjacent
+
+      -- Get adjacent
+      bif             = branchInfo target
+      apf             = alignedPairs target
+      bcfg            = BCFG.fromFunction bif f
+      sg              = SG.fromFunction (Just apf) f
+      congr           = sort $ map sort $ SG.sameOperandPartitions sg
+      pp              = map S.fromList congr
+      adjacent        = sort $ BCFG.eqvNeighborTemps bcfg pp
+      p2p             = createP2p adjacent Map.empty -- adjacent operands
+
+      p2t             = Map.empty -- o2t operands to temps
+
+      t               = (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t)
+      nt @ (pmap',_,supp',unq',dom',xor',m2o',c2o', _, p2t') = inferTypes target t f
+      
       (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
       ran'            = filter (\x -> head x == 't') ran
       sec'            = filter (\x -> head x == 't') sec
       sec''           = filter (\x -> head x == 'F') sec  -- memory secrets
       ran''           = filter (\x -> head x == 'F' || head x == 't') ran  -- memory randoms
-      pairs           = findPairs ran' (pmap', inmap, supp', unq', dom', xor', m2o', c2o') []
-      secdom          = findRandSec sec' ran' (pmap', inmap, supp', unq', dom', xor', m2o', c2o') []
-      -- secdommem       = findRandSecMC sec'' ran'' (pmap', inmap, supp', unq', dom', xor', m2o', c2o') m2o' []
+
+      -- Parameters
+      pairs           = findPairs ran' nt []
+      secdom          = findRandSec sec' ran' nt []
       p2o             = Map.union c2o' m2o'
-      secdommem       = findRandSecMC sec'' ran''  (pmap', inmap, supp', unq', dom', xor', m2o', c2o') p2o [] 
+      secdommem       = findRandSecMC sec'' ran'' nt p2o [] 
       hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
       hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
-      -- bif             = branchInfo target
-      -- apf             = alignedPairs target
-      -- bcfg            = BCFG.fromFunction bif f
-      -- sg              = SG.fromFunction (Just apf) f
-      -- congr           = sort $ map sort $ SG.sameOperandPartitions sg
-      -- pp              = map S.fromList congr
-      -- adjacent        = sort $ BCFG.eqvNeighborTemps bcfg pp
       
   in
     [
+      ("Types",     toJSON $ [sec,pub,ran]),
       -- Security parameters
-      -- set of blocks
-      -- ("Policy",    toJSON inpol),
-      -- ("DomsOrder", toJSON $ map fst  $ Map.toAscList dom'),      
-      -- ("Doms",      toJSON $ map printMap  $ Map.toAscList dom'),      
-      -- ("UnqsOrder", toJSON $ map fst  $ Map.toAscList unq'),      
-      -- ("Unqs",      toJSON $ map printMap  $ Map.toAscList unq'),
-      -- ("Xor",       toJSON $ Map.toAscList xor'),      
-      -- ("Types",     toJSON $ [sec,pub,ran]),
-      -- ("TypesDbg",  toJSON $ map printPmap $ Map.toAscList pmap'),
       ("pairs",     toJSON $ map toInt pairs), -- pairs of random vars that should not reside in the same register
-      -- todo(Romy): is it enought with random x random or should I check public x random
+      -- todo(Romy): is it enough with random x random or should I check public x random
       ("spairs",    toJSON $ map toInt2 secdom), -- secret vars that should be preceeded by a random variable in the same register.
-      -- ("cpairs",    toJSON secdomcop), -- secret memory - copies
       ("mpairs",    toJSON secdommem), -- secret memory - operations
+      ("adj2",      toJSON $ Map.toList p2p), -- secret memory - operations
+      ("adj25",     toJSON adjacent), -- secret memory - operations
+      ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
       ("HR",        toJSON hregs)
     ]
 
@@ -166,14 +171,34 @@ createXorMap ((Secret a):ps) m =
   createXorMap ps $ Map.insert a True m 
 
 
+createP2p:: Show r => [(Operand r, Operand r)] -> Map Integer Integer -> Map Integer Integer
+createP2p [] mp = mp
+createP2p ops mp = foldl (\mp' -> \op -> createP2pi op mp') mp ops
 
-inferTypes:: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> StateTuple -> Function i r -> StateTuple 
+
+createP2pi::Show r => (Operand r, Operand r) -> Map Integer Integer -> Map Integer Integer
+createP2pi (o1, o2) mp =
+  let oid1 = getOid o1
+      oid2 = getOid o2
+  in Map.insert oid2 oid1 mp
+
+
+getOid OperandRef {operandRefId = orid}  = orid
+getOid op = error $ "GetOid failed: " ++ show op
+
+
+getOpidTemps MOperand {operandId = oid,
+                       altTemps = ts} = (oid, ts)
+getOpidTemps op = error $ "GetOidTemps failed: " ++ show op
+
+
+inferTypes:: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> StateTuple r -> Function i r -> StateTuple r 
 inferTypes target types f @ Function {fCode = code} =
   foldl (inferTypesBlock target f) types code
   
 
 
-inferTypesBlock:: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> Function i r -> StateTuple -> Block i r -> StateTuple
+inferTypesBlock:: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> Function i r -> StateTuple r -> Block i r -> StateTuple r
 inferTypesBlock target f types Block {bCode = code} =
   foldl (inferTypesOperation target f) types code
 
@@ -181,7 +206,7 @@ inferTypesBlock target f types Block {bCode = code} =
 -- TODO:
 -- Create a Map for policies with tempid
 -- Check what to do with the phis
-inferTypesOperation :: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> Function i r -> StateTuple -> BlockOperation i r -> StateTuple
+inferTypesOperation :: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> Function i r -> StateTuple r -> BlockOperation i r -> StateTuple r
 inferTypesOperation target f types Bundle {bundleOs = bs } =
   foldl (inferTypesOperation target f) types bs
 -- Normal Operations
@@ -194,7 +219,7 @@ inferTypesOperation target _ types SingleOperation
                       oDs = d:_ }}} =
   let
     -- exception for control register???
-    (pmap, init, supp, unq, dom, xor, m2o, c2o) = types
+    (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
     supp' = updateSupps supp (ts1 ++ ts2) [d]
     unq' = updateBUnqs (unq, supp) ts1 ts2 [d]
     -- if is xor
@@ -206,11 +231,11 @@ inferTypesOperation target _ types SingleOperation
     xor' = if isxor
            then updateXor xor ts1 ts2 True [d]
            else updateXor xor ts1 ts2 False [d]
-    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o) ts1 ts2 [d]
-  in (pmap', init, supp', unq', dom', xor', m2o, c2o)
+    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t) ts1 ts2 [d]
+  in (pmap', init, supp', unq', dom', xor', m2o, c2o, p2p, p2t)
 -- store operation
 inferTypesOperation target _ types SingleOperation
-  { oId  = oid, -- ena map apo mem se op
+  { oId  = oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = i, -- Instruction i
                       oUs = MOperand {altTemps = ts} :
@@ -219,15 +244,15 @@ inferTypesOperation target _ types SingleOperation
   -- if join of uops is...
   -- add defops to the map
   let
-    (pmap, init, supp, unq, dom, xor, m2o, c2o) = types
+    (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
     supp' = updateSupps supp ts [mfi]
     unq'  = updateUnqs unq ts [mfi]
     dom'  = updateDoms dom ts [mfi]
     isxor = any (isXor target) i
     isgmul= False
     m2o' = updateM2o m2o ("F" ++ show mf) oid
-    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor, m2o', c2o) ts [] [mfi]
-  in (pmap', init, supp', unq', dom', xor, m2o', c2o)
+    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor, m2o', c2o, p2p, p2t) ts [] [mfi]
+  in (pmap', init, supp', unq', dom', xor, m2o', c2o, p2p, p2t)
 -- operation with one operand
 inferTypesOperation target _ types SingleOperation
   {oOpr = Natural {oNatural = Linear {
@@ -237,15 +262,15 @@ inferTypesOperation target _ types SingleOperation
   -- if join of uops is...
   -- add defops to the map
   let
-    (pmap, init, supp, unq, dom, xor, m2o, c2o) = types
+    (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
     supp' = updateSupps supp ts defops
     unq'  = updateUnqs unq ts defops
     dom'  = updateDoms dom ts defops
     isxor = any (isXor target) i
     isgmul= False
     xor' = updateXor xor ts [] True defops
-    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o) ts [] defops 
-  in (pmap', init, supp', unq', dom', xor', m2o, c2o)
+    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t) ts [] defops 
+  in (pmap', init, supp', unq', dom', xor', m2o, c2o, p2p, p2t)
 -- stack operations
 inferTypesOperation _ _ types SingleOperation
   {oOpr = Natural {oNatural = Linear {
@@ -262,7 +287,7 @@ inferTypesOperation _ _ types SingleOperation
                       oUs = (u @ (Bound (MachineFrameIndex {mfiIndex = mf}))) : _,
                       oDs = [MOperand {altTemps = d}] }}} =
   let
-    (pmap, init, supp, unq, dom, xor, m2o, c2o) = types
+    (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
     supp' = updateSupps supp [u] d
     unq'  = updateUnqs unq [u] d
     dom'  = updateDoms dom [u] d
@@ -270,8 +295,8 @@ inferTypesOperation _ _ types SingleOperation
     isgmul= False
     xor' = updateXor xor d [] True d
     m2o' = updateM2o m2o ("F" ++ show mf) oid
-    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o', c2o) [u] [] d
-  in (pmap', init, supp', unq', dom', xor', m2o', c2o)
+    pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o', c2o, p2p, p2t) [u] [] d
+  in (pmap', init, supp', unq', dom', xor', m2o', c2o, p2p, p2t)
 inferTypesOperation _ _ _ SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = ins, -- Instruction i
@@ -302,11 +327,11 @@ inferTypesOperation _ _ types SingleOperation
 inferTypesOperation _ _ types SingleOperation
   { oId  = oid, 
     oOpr = Copy { oCopyIs = _,
-                 oCopyS = sop,
-                 oCopyUs = uops,
-                 oCopyD = dop,
-                 oCopyDs = defops }} =
-  let (pmap, init, supp, unq, dom, xor, m2o, c2o) = types
+                  oCopyS = sop,
+                  oCopyUs = uops,
+                  oCopyD = dop,
+                  oCopyDs = defops }} =
+  let (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
       supp' = updateSupps supp (sop:uops) (dop:defops)
       unq'  = updateUnqs unq (sop:uops) (dop:defops)
       dom'  = updateDoms dom (sop:uops) (dop:defops)
@@ -314,27 +339,48 @@ inferTypesOperation _ _ types SingleOperation
       isgmul= False
       xor' = updateXor xor (sop:uops) [] True (dop:defops)
       c2o' = updateC2o c2o (dop:defops) oid -- take only destinations - dests and sources are the same..
-      pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o') (sop:uops) [] (dop:defops)
-  in (pmap', init, supp', unq', dom', xor', m2o, c2o')
+      pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o', p2p, p2t) (sop:uops) [] (dop:defops)
+  in (pmap', init, supp', unq', dom', xor', m2o, c2o', p2p, p2t)
 -- virtual copies
 inferTypesOperation _ _ types SingleOperation
   { oId  = oid, 
     oOpr = Virtual (VirtualCopy { oVirtualCopyS = s,
                                   oVirtualCopyD = d })} =
-  let (pmap, init, supp, unq, dom, xor, m2o, c2o) = types
+  let (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
       supp' = updateSupps supp [s] [d]
       unq'  = updateUnqs unq [s] [d]
       dom'  = updateDoms dom [s] [d]
       xor'  = updateXor xor [s] [] True [d]
       c2o' = updateC2o c2o [d] oid -- take only destinations - dests and sources are the same..
-      pmap' = updatePmaps False False (pmap, init, supp', unq', dom', xor', m2o, c2o') [s] [] [d]
-  in (pmap', init, supp', unq', dom', xor', m2o, c2o')
+      pmap' = updatePmaps False False (pmap, init, supp', unq', dom', xor', m2o, c2o', p2p, p2t) [s] [] [d]
+  in (pmap', init, supp', unq', dom', xor', m2o, c2o', p2p, p2t)
 -- TODO(VirtualOperation): Phi/Delimiter/Kill/Define
+inferTypesOperation _ _ types o @ SingleOperation
+  { oId = oid,
+    oOpr = Virtual ( Delimiter (In {
+                                   oIns = oins
+                                   })
+                   )} =
+  let
+    (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
+    ins = map getOpidTemps oins
+    res = foldl (updateNewTemps p2t p2p) types ins
+  in res
 inferTypesOperation _ _ types SingleOperation
-  {oOpr = Virtual (_)} = types --error ("virtual: " ++ show b) 
--- stack pull
--- Make it Maybe x
+  { oId = oid,
+    oOpr = Virtual ( Delimiter (Out {
+                                   oOuts = oouts
+                                   })
+                   )} =
+  let
+    (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
+    p2t' = foldl (\p2t'' -> \(p,ts) -> Map.insert p ts p2t'') p2t $ map getOpidTemps oouts
+  in (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t')
 
+
+inferTypesOperation _ _ types SingleOperation
+  { oId = oid,
+    oOpr = Virtual (_)} = types
 
 -- inferTypeOperand _ types Temporary {tId = tid} =
 --   case (Map.lookup (show tid) types) of
@@ -349,6 +395,33 @@ inferTypesOperation _ _ types SingleOperation
 -- inferTypeOperand _ _ _ = Nothing
 
 -- TODO (Check if this is correct)
+updateNewTemps :: Show r => Map Integer [Operand r] -> Map Integer Integer -> StateTuple r -> (Integer, [Operand r]) -> StateTuple r
+updateNewTemps p2t p2p types (oid, tmps) = 
+  let 
+    (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
+    adj = Map.lookup oid p2p
+    f oldtmps tmps =
+      let
+        supp' = updateSupps supp oldtmps tmps
+        unq'  = updateUnqs unq oldtmps tmps
+        dom'  = updateDoms dom oldtmps tmps
+        xor'  = updateXor xor oldtmps [] True tmps
+        pmap' = updatePmaps False False (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t) oldtmps [] tmps
+      in (pmap', init, supp', unq', dom', xor', m2o, c2o, p2p, p2t)
+  in case adj of
+       Just 62 ->
+         -- case Map.lookup a p2t of
+         --   Just oldtmps -> f oldtmps tmps
+         --   Nothing -> 
+         error $ "updateNewTemps: " ++ show oid ++ " " ++ show tmps 
+       Just a ->
+         case Map.lookup a p2t of
+           Just oldtmps -> f oldtmps tmps
+           Nothing -> error $ "updateNewTemps: " ++ show oid ++ " " ++ show tmps 
+       Nothing -> types
+  
+
+
 
 mergeTypes [] = Nothing
 mergeTypes (Nothing:rest) = mergeTypes rest
@@ -362,22 +435,6 @@ mergeTypes1 ((Just (Random a)):rest) (Random _) = mergeTypes1 rest (Random a)
 mergeTypes1 ((Just (Random _)):rest) t = mergeTypes1 rest t
 mergeTypes1 (Nothing:rest) t = mergeTypes1 rest t 
 
-
--- inserttype _ _ types = types
-
--- TODO: Currently Union, check this out
--- updateSupps supp sts dts =
---   let stids = getTids sts [] -- sources
---       dtids = getTids dts [] -- destinations
---       f val v = case v of
---                   Just v -> Just (Map.union val v)
---                   Nothing -> Just val
---       innerf = \dtid -> \s -> \tid ->
---         let val = Map.findWithDefault Map.empty (show tid) s -- supp(t0)
---         in Map.alter (f val) (show dtid) s            -- supp(t1) <- supp(t0)
---       outerf = \s -> \dtid -> foldl (innerf dtid) s stids
---       supp' = foldl outerf supp dtids
---   in supp'
 
 updateM2o m2o fid oid =
   let
@@ -480,25 +537,25 @@ updateBDomsEmpty dom dts =
       dom'    = foldl f2 dom dtids
   in dom'
 
-updatePmaps _ _ (pmap, _, _, _, _, _, _, _) _ _ [] = pmap
-updatePmaps isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o) ts1 ts2 dts =
+updatePmaps _ _ (pmap, _, _, _, _, _, _, _, _, _) _ _ [] = pmap
+updatePmaps isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) ts1 ts2 dts =
   let stids1 = getTids ts1 [] -- sources1
       stids2 = getTids ts2 [] -- sources2
       dtids  = getTids dts [] -- sources
-  in updatePmapsID isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o) stids1 stids2 dtids
+  in updatePmapsID isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) stids1 stids2 dtids
 
-updatePmapsID _ _ (pmap, _, _, _, _, _, _, _) _ _ [] = pmap
-updatePmapsID isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o) ts1 ts2 (dt:dts) =
-  let pmap' = updatePmapID isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o) ts1 ts2 dt
-  in updatePmapsID isxor isgmul (pmap', init, supp, unq, dom, xor, m2o, c2o) ts1 ts2 dts
+updatePmapsID _ _ (pmap, _, _, _, _, _, _, _, _, _) _ _ [] = pmap
+updatePmapsID isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) ts1 ts2 (dt:dts) =
+  let pmap' = updatePmapID isxor isgmul (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) ts1 ts2 dt
+  in updatePmapsID isxor isgmul (pmap', init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) ts1 ts2 dts
 
-updatePmapID _ _ (pmap, _, _, _, dom, _, _, _) _ _ dt
+updatePmapID _ _ (pmap, _, _, _, dom, _, _, _, _, _) _ _ dt
   | not $ isEmpty dt dom =
     Map.insert dt (Random dt) pmap
-updatePmapID _ _ (pmap, init, supp, _, dom, _, _, _) _ _ dt
+updatePmapID _ _ (pmap, init, supp, _, dom, _, _, _, _, _) _ _ dt
   | (isEmpty dt dom) && (not $ intersectSec supp init $ dt)  =
     Map.insert dt (Public dt) pmap   
-updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _) ts1 ts2 dt =
+updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _) ts1 ts2 dt =
   let supp1  = unionMaps supp ts1 
       supp2  = unionMaps supp ts2
       dom1   = unionMaps dom ts1 
@@ -582,7 +639,7 @@ getTids (_:ts) tids = getTids ts tids
 findPairs [] _ res = res
 findPairs (p:ps) types res = 
   let
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o) res p2 =
+    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t) res p2 =
       let
         s1   = Map.findWithDefault Map.empty p supp
         s2   = Map.findWithDefault Map.empty p2 supp
@@ -601,7 +658,7 @@ findPairs (p:ps) types res =
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o) [p] [p2] "tmp"
+        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t) [p] [p2] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if isMaybeSecret typ
          then (p,p2):res
@@ -614,13 +671,13 @@ findPairs (p:ps) types res =
 
 
 findRandSec [] _ _ res = res
-findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _) res = 
+findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _) res = 
   let
     s1   = Map.findWithDefault Map.empty s supp
     u1   = Map.findWithDefault Map.empty s unq
     d1   = Map.findWithDefault Map.empty s dom
     x1   = Map.findWithDefault False s xor
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o) res r = 
+    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t) res r = 
       let
         s2   = Map.findWithDefault Map.empty r supp
         u2   = Map.findWithDefault Map.empty r unq
@@ -635,7 +692,7 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _) res =
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o) [s] [r] "tmp"
+        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t) [s] [r] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if not $ isMaybeSecret typ
          then r:res
@@ -645,14 +702,14 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _) res =
 
 
 findRandSecMC [] _ _ _ res = res
-findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _) t2o res = 
+findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _) t2o res = 
   let
     s1   = Map.findWithDefault Map.empty s supp
     u1   = Map.findWithDefault Map.empty s unq
     d1   = Map.findWithDefault Map.empty s dom
     x1   = Map.findWithDefault False s xor
     ops1 = map fst $ Map.toList $ Map.findWithDefault Map.empty s m2o
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o) res r = 
+    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t) res r = 
       let
         s2   = Map.findWithDefault Map.empty r supp
         u2   = Map.findWithDefault Map.empty r unq
@@ -668,7 +725,7 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _) t2o res =
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
         ops2 = Map.findWithDefault Map.empty r t2o
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o) [s] [r] "tmp"
+        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t) [s] [r] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if not $ isMaybeSecret typ
          then Map.union ops2 res
