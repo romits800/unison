@@ -732,7 +732,7 @@ reorderImplicitOperandsInInstr
 
 reorderImplicitOperandsInInstr
   mi @ MachineSingle {msOpcode = MachineTargetOpc i}
-  | i `elem` [T2CMPri_cpsr, TADDframe_cpsr] =
+  | i `elem` [T2CMPri_cpsr] =
       mi {msOpcode = mkMachineTargetOpc $ fromExplicitCpsrDef i}
 
 reorderImplicitOperandsInInstr
@@ -742,12 +742,13 @@ reorderImplicitOperandsInInstr
     let mos' = [d, mkMachineReg CPSR, u1, p1, p2]
     in mi {msOpcode = mkMachineTargetOpc TMOVi8, msOperands = mos'}
 
--- reorderImplicitOperandsInInstr
---   mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
---                       msOperands = [d, cpsr, u1, u2]}
---   | i == TADDframe_cpsr = 
---     let mos' = [d, cpsr, u1]
---     in mi {msOpcode = mkMachineTargetOpc TADDframe, msOperands = mos'}
+-- probably requires adjustment with the actual frame
+reorderImplicitOperandsInInstr
+  mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
+                      msOperands = [d, _, base, offset]}
+  | i == TADDframe_cpsr = 
+    let mos' = [d, mkMachineReg SP, base] ++ defaultMIRPred
+    in mi {msOpcode = mkMachineTargetOpc TADDrSPi, msOperands = mos'}
 
 
 reorderImplicitOperandsInInstr mi = mi
