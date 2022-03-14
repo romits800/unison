@@ -742,6 +742,15 @@ reorderImplicitOperandsInInstr
     let mos' = [d, mkMachineReg CPSR, u1, p1, p2]
     in mi {msOpcode = mkMachineTargetOpc TMOVi8, msOperands = mos'}
 
+-- probably requires adjustment with the actual frame
+reorderImplicitOperandsInInstr
+  mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
+                      msOperands = [d, _, base, offset]}
+  | i == TADDframe_cpsr = 
+    let mos' = [d, mkMachineReg SP, base] ++ defaultMIRPred
+    in mi {msOpcode = mkMachineTargetOpc TADDrSPi, msOperands = mos'}
+
+
 reorderImplicitOperandsInInstr mi = mi
 
 exposeCPSRRegister = mapToMachineInstruction exposeCPSRRegisterInInstr
@@ -752,6 +761,7 @@ exposeCPSRRegisterInInstr mi @ MachineSingle {msOperands = mos} =
 
 exposeCPSR mr @ MachineReg {mrName = PRED} = mr {mrName = CPSR}
 exposeCPSR mr = mr
+
 
 removeFrameIndex = mapToMachineInstruction removeFrameIndexInstr
 
