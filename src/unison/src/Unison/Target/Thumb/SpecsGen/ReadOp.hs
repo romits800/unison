@@ -3069,6 +3069,7 @@ readOp "t2ADDrscc" = T2ADDrscc
 readOp "register_class_decl_dummy" = Register_class_decl_dummy
 readOp "tLDRspi_fi" = TLDRspi_fi
 readOp "tSTRspi_fi" = TSTRspi_fi
+readOp "tADDframe_cpsr" = TADDframe_cpsr
 readOp "t2MOVi_source" = T2MOVi_source
 readOp "t2MOVi_demat" = T2MOVi_demat
 readOp "t2MOVi_remat" = T2MOVi_remat

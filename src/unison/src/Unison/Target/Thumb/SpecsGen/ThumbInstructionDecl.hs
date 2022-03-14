@@ -3070,6 +3070,7 @@ data ThumbInstruction = ABS
                       | Register_class_decl_dummy
                       | TLDRspi_fi
                       | TSTRspi_fi
+                      | TADDframe_cpsr
                       | T2MOVi_source
                       | T2MOVi_demat
                       | T2MOVi_remat

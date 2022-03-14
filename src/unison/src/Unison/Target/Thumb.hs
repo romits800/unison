@@ -457,6 +457,16 @@ promoteImplicitOperands
            msOperands = mos'}
 
 promoteImplicitOperands
+  mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
+                      msOperands = mos}
+  | i `elem` [TADDframe] && writesSideEffect i CPSR =
+    let
+      fu   = length $ snd $ operandInfo i
+      mos' = insertAt (mkMachineReg CPSR) (fu - 1) mos
+    in mi {msOpcode = mkMachineTargetOpc (toExplicitCpsrDef i),
+           msOperands = mos'}
+
+promoteImplicitOperands
   mi @ MachineSingle {msOpcode = MachineTargetOpc i, msOperands = mos} =
     let fu   = length $ snd $ operandInfo i
         mos' = if writesSideEffect i CPSR
@@ -734,6 +744,15 @@ reorderImplicitOperandsInInstr
     let mos' = [d, mkMachineReg CPSR, u1, p1, p2]
     in mi {msOpcode = mkMachineTargetOpc TMOVi8, msOperands = mos'}
 
+-- probably requires adjustment with the actual frame
+reorderImplicitOperandsInInstr
+  mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
+                      msOperands = [d, _, base, offset]}
+  | i == TADDframe_cpsr = 
+    let mos' = [d, mkMachineReg SP, base] ++ defaultMIRPred
+    in mi {msOpcode = mkMachineTargetOpc TADDrSPi, msOperands = mos'}
+
+
 reorderImplicitOperandsInInstr mi = mi
 
 exposeCPSRRegister = mapToMachineInstruction exposeCPSRRegisterInInstr
@@ -744,6 +763,7 @@ exposeCPSRRegisterInInstr mi @ MachineSingle {msOperands = mos} =
 
 exposeCPSR mr @ MachineReg {mrName = PRED} = mr {mrName = CPSR}
 exposeCPSR mr = mr
+
 
 removeFrameIndex = mapToMachineInstruction removeFrameIndexInstr
 

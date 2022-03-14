@@ -50,7 +50,8 @@ cpsrMap =
    (T2ANDri, T2ANDri_cpsr),
    (T2TEQrr, T2TEQrr_cpsr),
    (FMSTAT, FMSTAT_cpsr),
-   (T2ADDri, T2ADDri_cpsr)]
+   (T2ADDri, T2ADDri_cpsr),
+   (TADDframe, TADDframe_cpsr)]
 
 defaultMIRPred = [mkMachineImm 14, mkMachineNullReg]
 

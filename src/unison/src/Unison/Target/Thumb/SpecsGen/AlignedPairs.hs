@@ -951,6 +951,7 @@ alignedPairs i ([_, _, _], [_])
 alignedPairs i ([_, _, _, _], [])
   | i `elem` [T2TBB_JT, T2TBH_JT] = []
 alignedPairs i ([_, _], [_, _]) | i `elem` [TADDframe] = []
+alignedPairs i ([_, _], [_, _]) | i `elem` [TADDframe_cpsr] = []
 alignedPairs i ([_, _, _, _], []) | i `elem` [BCCZi64] = []
 alignedPairs i ([_, _, _, _, _, _], []) | i `elem` [BCCi64] = []
 alignedPairs i ([_, _], []) | i `elem` [ITasm, T2IT] = []

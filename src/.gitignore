@@ -11,3 +11,6 @@ unison-specsgen/build
 *~
 *#
 *.qmake.stash
+*~
+\#*\#
+.\#*
