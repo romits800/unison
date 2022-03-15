@@ -85,15 +85,15 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
       
   in
     [
-      ("Types",     toJSON $ [sec,pub,ran]),
+      -- ("Types",     toJSON $ [sec,pub,ran]),
       -- Security parameters
       ("pairs",     toJSON $ map toInt pairs), -- pairs of random vars that should not reside in the same register
       -- todo(Romy): is it enough with random x random or should I check public x random
       ("spairs",    toJSON $ map toInt2 secdom), -- secret vars that should be preceeded by a random variable in the same register.
       ("mpairs",    toJSON secdommem), -- secret memory - operations
-      ("adj2",      toJSON $ Map.toList p2p), -- secret memory - operations
-      ("adj25",     toJSON adjacent), -- secret memory - operations
-      ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
+      -- ("adj2",      toJSON $ Map.toList p2p), -- secret memory - operations
+      -- ("adj25",     toJSON adjacent), -- secret memory - operations
+      -- ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
       ("HR",        toJSON hregs)
     ]
 
@@ -382,17 +382,6 @@ inferTypesOperation _ _ types SingleOperation
   { oId = oid,
     oOpr = Virtual (_)} = types
 
--- inferTypeOperand _ types Temporary {tId = tid} =
---   case (Map.lookup (show tid) types) of
---     Nothing -> error ("SecTypeInf: Not found temporary" ++ show tid)
---     Just val -> Just val
--- inferTypeOperand _ _ NullTemporary =
---   Nothing
--- inferTypeOperand f types MOperand {altTemps = temps} =
---   let temptypes = map (inferTypeOperand f types) temps 
---       mtype = mergeTypes temptypes 
---   in mtype
--- inferTypeOperand _ _ _ = Nothing
 
 -- TODO (Check if this is correct)
 updateNewTemps :: Show r => Map Integer [Operand r] -> Map Integer Integer -> StateTuple r -> (Integer, [Operand r]) -> StateTuple r
