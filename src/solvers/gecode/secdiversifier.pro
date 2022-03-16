@@ -42,10 +42,10 @@ HEADERS += common/definitions.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
            models/secmodel.hpp \
-           models/divmodel.hpp \
-           models/decompdivmodel.hpp \
-           models/localdivmodel.hpp \
-           models/maxdivmodel.hpp \
+           models/secdivmodel.hpp \
+           models/secdecompdivmodel.hpp \
+           models/seclocaldivmodel.hpp \
+           models/secmaxdivmodel.hpp \
            models/simplemodel.hpp \
            models/relaxedmodel.hpp \
            branchers/filters.hpp \
@@ -58,12 +58,12 @@ HEADERS += common/definitions.hpp \
            branchers/solutionbrancher_dfs.hpp \
            branchers/boolsolutionbrancher.hpp \
            branchers/boolsolutionbrancher_dfs.hpp \
-           procedures/localdivprocedures.hpp \
+           procedures/seclocaldivprocedures.hpp \
            procedures/commonprocedures.hpp \
-           procedures/divprocedures.hpp \
+           procedures/secdivprocedures.hpp \
            procedures/globalprocedures.hpp \
            procedures/localprocedures.hpp \
-           procedures/divcommon.hpp
+           procedures/divcommon.hpp \
 
 
 SOURCES += third-party/jsoncpp/json_reader.cpp \
@@ -80,10 +80,10 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
            models/secmodel.cpp \
-           models/divmodel.cpp \
-           models/decompdivmodel.cpp \
-           models/localdivmodel.cpp \
-           models/maxdivmodel.cpp \
+           models/secdivmodel.cpp \
+           models/secdecompdivmodel.cpp \
+           models/seclocaldivmodel.cpp \
+           models/secmaxdivmodel.cpp \
            models/simplemodel.cpp \
            models/relaxedmodel.cpp \
            branchers/filters.cpp \
@@ -96,12 +96,12 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/solutionbrancher_dfs.cpp \
            branchers/boolsolutionbrancher.cpp \
            branchers/boolsolutionbrancher_dfs.cpp \
-           procedures/localdivprocedures.cpp \
+           procedures/seclocaldivprocedures.cpp \
            procedures/commonprocedures.cpp \
            procedures/localprocedures.cpp \
            procedures/globalprocedures.cpp \
-           procedures/divprocedures.cpp \
-           diversifier.cpp
+           procedures/secdivprocedures.cpp \
+           secdiversifier.cpp
 
 ENV_CXX = $$(CXX)
 ! isEmpty( ENV_CXX ) {
@@ -121,7 +121,7 @@ CONFIG(graphics) {
 LIBS += -lgecodesearch -lgecodeminimodel -lgecodeset -lgecodefloat -lgecodeint \
         -lgecodekernel -lgecodesupport
 
-TARGET = gecode-diversify
+TARGET = gecode-secdiversify
 CONFIG -= qt
 CONFIG += warn_on
 QT += script

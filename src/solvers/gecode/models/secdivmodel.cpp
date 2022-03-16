@@ -32,12 +32,12 @@
  */
 
 
-#include "divmodel.hpp"
+#include "secdivmodel.hpp"
 
 
-DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
-                   IntPropLevel p_ipl) :
-  GlobalModel(p_input, p_options, p_ipl)
+SecDivModel::SecDivModel(Parameters * p_input, ModelOptions * p_options,
+			 IntPropLevel p_ipl) :
+  SecModel(p_input, p_options, p_ipl)
 {
 
   div_r.seed(p_options->seed());
@@ -86,7 +86,41 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
     gadgets.push_back(g);
   }
 
+  // print pairs of rands that should not be assigned to the same regs
+  // for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+  //   std::cout << tp.first << " " << tp.second << std::endl;
+  // }  
 
+  // print pairs of rands that should not be assigned to the same regs
+  // for (std::pair<const temporary, const vector<temporary>> tp : input -> secpairs) {
+  //   std::cout << tp.first;
+  //   for (const temporary t: tp.second) 
+  //     std::cout << " " << t;
+  //   std::cout << std:: endl;
+  // }
+
+  // print pairs of rands that should not be assigned to the same regs
+  // for (std::pair<const vector<operation>, const vector<operation>> tp : input -> mempairs) {
+  //   for (const operation o: tp.first) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  //   for (const operation o: tp.second) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  // }
+
+  // for (std::pair<const vector<operation>, const vector<operation>> tp : input -> copypairs) {
+  //   for (const operation o: tp.first) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  //   for (const operation o: tp.second) 
+  //     std::cout << " " << o;
+  //   std::cout << std:: endl;
+  // }
+
+
+
+  
   // difference between operations and branch operations
   if ((options->dist_metric() == DIST_HAMMING_DIFF_BR) ||
       (options->dist_metric() == DIST_DIFF_BR)) {
@@ -112,8 +146,8 @@ DivModel::DivModel(Parameters * p_input, ModelOptions * p_options,
 }
 
 
-DivModel::DivModel(DivModel& cg) :
-  GlobalModel(cg),
+SecDivModel::SecDivModel(SecDivModel& cg) :
+  SecModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
   mindist(cg.mindist),
@@ -132,15 +166,15 @@ DivModel::DivModel(DivModel& cg) :
   dist.update(*this, cg.dist);
 }
 
-DivModel* DivModel::copy(void) {
-  return new DivModel(*this);
+SecDivModel* SecDivModel::copy(void) {
+  return new SecDivModel(*this);
 }
 
-void DivModel::set_solver(Json::Value root) {
+void SecDivModel::set_solver(Json::Value root) {
   solver = new SolverParameters(root);
 }
 
-void DivModel::post_random_branchers(void) {
+void SecDivModel::post_random_branchers(void) {
   branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
          NULL, &print_global_cost_decision);
   Rnd r;
@@ -165,7 +199,7 @@ void DivModel::post_random_branchers(void) {
 
 
 
-void DivModel::post_clrandom_branchers(void) {
+void SecDivModel::post_clrandom_branchers(void) {
   Rnd r;
   r.seed(options->seed());
   //branch(*this, v_gadget, INT_VAR_RND(r), INT_VAL_RND(r),
@@ -188,7 +222,7 @@ void DivModel::post_clrandom_branchers(void) {
 
 }
 
-void DivModel::post_cloriginal_branchers(void) {
+void SecDivModel::post_cloriginal_branchers(void) {
   Rnd r;
   r.seed(options->seed());
   branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
@@ -209,7 +243,7 @@ void DivModel::post_cloriginal_branchers(void) {
 }
 
 
-void DivModel::post_solution_brancher(void) {
+void SecDivModel::post_solution_brancher(void) {
 
     IntArgs sol;
     IntVarArgs vs;
@@ -233,8 +267,8 @@ void DivModel::post_solution_brancher(void) {
     }
 }
 
-// int  DivModel::commit(IntVar x, int i) 
-void DivModel::post_div_branchers(void) {
+// int  SecDivModel::commit(IntVar x, int i) 
+void SecDivModel::post_div_branchers(void) {
   if (options->enable_solver_solution_brancher() && solver->has_solution) {
     post_solution_brancher();
   }
@@ -254,7 +288,7 @@ void DivModel::post_div_branchers(void) {
 
 
 
-void DivModel::post_diversification_constraints(void) {
+void SecDivModel::post_diversification_constraints(void) {
   // TODO(Romy: Check for other distance measures 
   post_global_cycles();
   switch (options->dist_metric()) {
@@ -311,7 +345,7 @@ void DivModel::post_diversification_constraints(void) {
 }
 
 
-void DivModel::post_diversification_channel(void) {
+void SecDivModel::post_diversification_channel(void) {
   IntVarArgs bs;
   uint smaxc = sum_of(input->maxc);
   for (operation i : input->O) { //real_operations) {
@@ -332,7 +366,7 @@ void DivModel::post_diversification_channel(void) {
 
 }
 
-void DivModel::post_diversification_diffs(void) {
+void SecDivModel::post_diversification_diffs(void) {
   int k=0;
   int maxval = max_of(input->maxc);
   for (uint i = 0; i < real_operations.size(); i++) {
@@ -347,7 +381,7 @@ void DivModel::post_diversification_diffs(void) {
   }
 }
 
-void DivModel::post_diversification_br_diffs(void) {
+void SecDivModel::post_diversification_br_diffs(void) {
   int maxval = max_of(input->maxc);
   int prevbr = 0; 
   int k=0;
@@ -366,7 +400,7 @@ void DivModel::post_diversification_br_diffs(void) {
 }
 
 
-void DivModel::post_diversification_reg_gadget(void) {
+void SecDivModel::post_diversification_reg_gadget(void) {
   int maxval = max_of(input->maxc);
   //int prevbr = 0; 
   int k=0;
@@ -386,14 +420,14 @@ void DivModel::post_diversification_reg_gadget(void) {
 }
 
 
-void DivModel::post_diversification_reghamming(void) {
+void SecDivModel::post_diversification_reghamming(void) {
   for (operand p: input->P) {
     constraint(reghamm(p) == ry(p));
   }
 }
 
 
-void DivModel::post_diversification_hamming(void) {
+void SecDivModel::post_diversification_hamming(void) {
   for (operation i : real_operations) {
     BoolVar ifb = var (a(i) == 1);
     IntVar thenb = var ( gc(i) );
@@ -402,7 +436,7 @@ void DivModel::post_diversification_hamming(void) {
   }
 }
 
-void DivModel::post_global_cycles(void) {
+void SecDivModel::post_global_cycles(void) {
   // VarInt offset;
   for (block b: input->B) {
     for (operation o: input->ops[b]) {
@@ -417,7 +451,7 @@ void DivModel::post_global_cycles(void) {
 
 
 
-void DivModel::post_levenshtein(const DivModel & b)
+void SecDivModel::post_levenshtein(const SecDivModel & b)
 {
   uint sizex = v_oc.size(); // size of maxc
   // uint num_gadgets = branch_operations.size();
@@ -446,7 +480,7 @@ void DivModel::post_levenshtein(const DivModel & b)
   constraint(dist >= mindist); // Levenshtein distance
 }
 
-void DivModel::post_levenshtein_set(const DivModel & b)
+void SecDivModel::post_levenshtein_set(const SecDivModel & b)
 {
   uint sizex = v_oc.size();// + 1; // size of maxc
   // int op_size = O().size();
@@ -489,7 +523,7 @@ void DivModel::post_levenshtein_set(const DivModel & b)
   dist = var( mat(sizex-1, sizex-1));
   constraint( dist >= mindist); // Levenshtein distance
 }
-bool DivModel::is_real_type(int o) {
+bool SecDivModel::is_real_type(int o) {
 
   return (input->type[o] == BRANCH ||
           input->type[o] == LINEAR ||
@@ -498,7 +532,7 @@ bool DivModel::is_real_type(int o) {
           input->type[o] == COPY);
 }
 
-bool DivModel::is_branch_type(int o) {
+bool SecDivModel::is_branch_type(int o) {
 //  bool may_branch = input->type[o] == BRANCH || input->type[o] == TAILCALL || input->type[o] == CALL;
 //  return may_branch;
  
@@ -517,7 +551,7 @@ bool DivModel::is_branch_type(int o) {
 
 }
 
-void DivModel::constrain_solution(DivModel *b) {
+void SecDivModel::constrain_solution(SecDivModel *b) {
 
   BoolVarArgs cs;
   for (operation o: real_operations) {
@@ -539,8 +573,8 @@ void DivModel::constrain_solution(DivModel *b) {
 
 
 
-void DivModel::constrain(const Space & _b) {
-  const DivModel& b = static_cast<const DivModel&>(_b);
+void SecDivModel::constrain(const Space & _b) {
+  const SecDivModel& b = static_cast<const SecDivModel&>(_b);
 
 
   int maxval = max_of(input->maxc);
@@ -1000,7 +1034,7 @@ break;
 
 
 
-bool DivModel::master(const MetaInfo& mi) {
+bool SecDivModel::master(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {
     assert(mi.type() == MetaInfo::PORTFOLIO);
     return true; // default return value for portfolio master (no meaning)
@@ -1016,14 +1050,14 @@ bool DivModel::master(const MetaInfo& mi) {
 
 
 
-bool DivModel::slave(const MetaInfo& mi) {
+bool SecDivModel::slave(const MetaInfo& mi) {
   if (mi.type() == MetaInfo::PORTFOLIO) {
     post_complete_branchers(mi.asset());
     return true; // default return value for portfolio slave (no meaning)
   } else if (mi.type() == MetaInfo::RESTART) {
     if ((mi.restart() > 0) && (div_p > 0.0)) {
       if (mi.last() != NULL)// {
-        next(static_cast<const DivModel&>(*mi.last()));
+        next(static_cast<const SecDivModel&>(*mi.last()));
       return false;
     } else if (mi.restart() == 0) {
       first();
@@ -1037,12 +1071,12 @@ bool DivModel::slave(const MetaInfo& mi) {
 }
 
 
-void DivModel::first(void) {
+void SecDivModel::first(void) {
 
   return;
 }
 
-void DivModel::next(const DivModel& b) {
+void SecDivModel::next(const SecDivModel& b) {
   // Instructions
   if (!options->disable_relax_i()) {
     IntVarArgs instr, linstr;

@@ -32,89 +32,51 @@
  */
 
 
-#ifndef __SEC_MODEL__
-#define __SEC_MODEL__
+#ifndef __SEC_MAX_DIV_MODEL__
+#define __SEC_MAX_DIV_MODEL__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
-//#include "localdivmodel.hpp"
-// #include "solver-parameters.hpp"
-// #include "branchers/solutionbrancher.hpp"
-// #include "branchers/boolsolutionbrancher.hpp"
-// #include "branchers/solutionbrancher_dfs.hpp"
-// #include "branchers/boolsolutionbrancher_dfs.hpp"
+#include "secdivmodel.hpp"
 
 using namespace Gecode;
 using namespace std;
 
-// typedef struct  {
-//   uint start;
-//   uint end;
-// } gadget_t;
-
 // class LocalDivModel;
 
-class SecModel : public GlobalModel {
+class SecMaxDivModel : public SecDivModel {
 
 public:
 
-  // Implementation 1
-  
-  // Register Array
-  IntVarArray v_rtle;
 
-  // Register Array Sorted Mapping
-  IntVarArray v_rtlemap;
+  // Distance
+  IntVar maxdist; //  = IntVar(*this, 1, 10000);
+  // // Levenshtein distance
+  // IntVarArray v_lev;
 
-  // Operation Array
-  IntVarArray v_opcy;
-
-  // Operation Cycle Array Sorted Map
-  IntVarArray v_opcymap;
-
-  
-  // Implementation 2
-  
-  // temp size array with max (le(t'))
-  IntVarArray v_lk;
-
-  // operation size array with max (le(t'))
-  IntVarArray v_ok;
+  vector<SecMaxDivModel *> input_solutions;
 
   // Gecode space methods
-  SecModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
-  SecModel(SecModel& cg);
+  SecMaxDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
+  SecMaxDivModel(SecMaxDivModel& cg);
 
-  SecModel* copy(void);
+  SecMaxDivModel* copy(void);
 
-  // Branchers
-  
-  // Security Constraints
-  void post_random_register_constraints(void);
-  void post_secret_register_constraints(void);
-  void post_secret_mem_constraints(void);
-  void post_security_constraints(void);
+  // Post input solutions
 
-  void post_m1_constraints(void);
-  void post_m2_constraints(void);
-  void post_r1_constraints(void);
-  void post_r2_constraints(void);
+  void post_input_solution_constrain(void);
 
-  
-  BoolVar subseq(temporary t1, temporary t2);
-  BoolVar msubseq(operation o1, operation o2);
-  
-  BoolVar subseq1(temporary t1, temporary t2);
-  BoolVar msubseq1(operation o1, operation o2);
+  //
+
+  // Constrain function
+
+  void constrain(const Space & _b);
+  void constrain_levenshtein(const SecMaxDivModel & b);
+  void constrain_levenshtein_set(const SecMaxDivModel & b);
+  void post_levenshtein_set(void);
+  void post_levenshtein(void);
 
 
-  BoolVar subseq2(temporary t1, temporary t2);
-  BoolVar msubseq2(operation o1, operation o2);
 
-
- 
-  // void next(const SecModel& l);
 
 };
 

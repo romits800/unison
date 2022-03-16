@@ -32,89 +32,50 @@
  */
 
 
-#ifndef __SEC_MODEL__
-#define __SEC_MODEL__
+#ifndef __SEC_DECOMP_DIV_MODEL__
+#define __SEC_DECOMP_DIV_MODEL__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
-//#include "localdivmodel.hpp"
-// #include "solver-parameters.hpp"
-// #include "branchers/solutionbrancher.hpp"
-// #include "branchers/boolsolutionbrancher.hpp"
-// #include "branchers/solutionbrancher_dfs.hpp"
-// #include "branchers/boolsolutionbrancher_dfs.hpp"
+#include "secdivmodel.hpp"
+#include "branchers/boolsolutionbrancher.hpp"
 
 using namespace Gecode;
 using namespace std;
 
-// typedef struct  {
-//   uint start;
-//   uint end;
-// } gadget_t;
-
-// class LocalDivModel;
-
-class SecModel : public GlobalModel {
+class SecDecompDivModel : public SecDivModel {
 
 public:
 
-  // Implementation 1
-  
-  // Register Array
-  IntVarArray v_rtle;
-
-  // Register Array Sorted Mapping
-  IntVarArray v_rtlemap;
-
-  // Operation Array
-  IntVarArray v_opcy;
-
-  // Operation Cycle Array Sorted Map
-  IntVarArray v_opcymap;
-
-  
-  // Implementation 2
-  
-  // temp size array with max (le(t'))
-  IntVarArray v_lk;
-
-  // operation size array with max (le(t'))
-  IntVarArray v_ok;
 
   // Gecode space methods
-  SecModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
-  SecModel(SecModel& cg);
+  SecDecompDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
-  SecModel* copy(void);
+  SecDecompDivModel(SecDecompDivModel& cg);
+
+  SecDecompDivModel* copy(void);
 
   // Branchers
+  void post_div_decomp_branchers(void);
+  void apply_div_solution(SecDivModel * d);
+  void relax_div_solution(SecDecompDivModel * d);
   
-  // Security Constraints
-  void post_random_register_constraints(void);
-  void post_secret_register_constraints(void);
-  void post_secret_mem_constraints(void);
-  void post_security_constraints(void);
+  // Branch types
 
-  void post_m1_constraints(void);
-  void post_m2_constraints(void);
-  void post_r1_constraints(void);
-  void post_r2_constraints(void);
+  // Constrain function
 
-  
-  BoolVar subseq(temporary t1, temporary t2);
-  BoolVar msubseq(operation o1, operation o2);
-  
-  BoolVar subseq1(temporary t1, temporary t2);
-  BoolVar msubseq1(operation o1, operation o2);
+  void constrain(const Space & _b); // 
+  // The same constraints as the constrain function
+  void post_constrain(SecDecompDivModel* b);
 
+  // Master and slave configuration
 
-  BoolVar subseq2(temporary t1, temporary t2);
-  BoolVar msubseq2(operation o1, operation o2);
+  bool master(const MetaInfo& mi);
+  bool slave(const MetaInfo& mi);
 
+  // Next for relaxing variable for LNS
 
- 
-  // void next(const SecModel& l);
+  void next(const SecDecompDivModel& l);
+
 
 };
 

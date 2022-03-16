@@ -47,89 +47,24 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
 
   v_lk = int_var_array(temp_size, -1, maxval);
   v_ok = int_var_array(op_size, -1, maxval);
-  if (options -> sec_implementation() == SEC_R2_M2 ||
-      options -> sec_implementation() == SEC_R2_M1)
-    {
-      IntVarArgs lts;
-      for (temporary t1 : input -> T) { 
-	for (temporary t2 : input -> T) {
-	  if (t1 != t2) {
-	    BoolVar ifb  = var(l(t2) && r(t1) == r(t2) &&
-			       le(t2) <= ls(t1));
-	    IntVar thenb = var( le(t2) );
-	    IntVar elseb = var( -1); 
-	    IntVar res = IntVar(*this, -1, maxval);
-	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
-	    lts <<  res;
-	  }
-	  max(*this, lts, v_lk[t1]);
-	}
-      }
-    }
-
-  if (options -> sec_implementation() == SEC_R2_M2 ||
-      options -> sec_implementation() == SEC_R1_M2)
-    {
-      IntVarArgs lts;
-      for (operation o1 : input -> O) { 
-	for (operation o2 : input -> O) {
-	  if (o1 != o2) {
-	    BoolVar ifb  = var(a(o2) && (c(o2) <= c(o1)));
-	    IntVar thenb = var( c(o2) );
-	    IntVar elseb = var( -1 ); 
-	    IntVar res = IntVar(*this, -1, maxval);
-	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
-	    lts <<  res;
-	  }
-	  max(*this, lts, v_ok[o1]);
-	}
-      }
-    }
   //}
+  post_r2_constraints();
+  post_m2_constraints();
   // Implementation 1
 
   int reg_size = input->HR.size();
   v_rtle = int_var_array(reg_size * temp_size, -1, maxval);
   v_rtlemap = int_var_array(reg_size * temp_size, -1, maxval);
-  if (options -> sec_implementation() == SEC_R1_M1 ||
-      options -> sec_implementation() == SEC_R1_M2)
-    {
-      IntVarArgs lts;
-      for (register_atom ra: input -> HR) { // Hardware registers
-	IntVarArray sorted_lts = int_var_array(temp_size, -1, maxval);
-	IntVarArray rs_map = int_var_array(temp_size, -1, maxval);
-	for (temporary t: input -> T) {
-	  BoolVar ifb  = var(l(t) && (r(t) == ra)); 
-	  IntVar thenb = var( ls(t) );
-	  IntVar elseb = var( -1 ); 
-	  IntVar res = IntVar(*this, -1, maxval);
-	  ite(*this, ifb,  thenb, elseb, res, IPL_BND);
-	  constraint(v_rtle[ra*temp_size + t] == res);
-	  constraint(v_rtlemap[ra*temp_size + t] == rs_map[t]);
-	  lts <<  res;
-	}
-	sorted(*this, lts, sorted_lts, rs_map);      
-      }
-    }
 
 
   v_opcy = int_var_array(op_size, -1, maxval);
   v_opcymap = int_var_array(op_size, -1, maxval);
-  if (options -> sec_implementation() == SEC_R1_M1 ||
-      options -> sec_implementation() == SEC_R2_M1)
-    {
-      // IntVarArgs lts;
-      IntVarArray sorted_lts = int_var_array(op_size, -1, maxval);
-      // IntVarArray os_map = int_var_array(op_size, -1, maxval);
-      for (operation o: input -> O) { // Hardware registers
-	BoolVar ifb  = var(a(o) == 1); 
-	IntVar thenb = var(c(o));
-	IntVar elseb = var(-1); 
-	ite(*this, ifb,  thenb, elseb, v_opcy[o], IPL_BND);
-      }
-      sorted(*this, v_opcy, sorted_lts, v_opcymap);
-    }
 
+  post_r1_constraints();
+  post_m1_constraints();
+
+  post_security_constraints();
+  
 }
 
 
@@ -204,6 +139,97 @@ BoolVar SecModel::subseq(temporary t1, temporary t2) {
 
 }
 
+void SecModel::post_m1_constraints(void) {
+  int maxval = sum_of(input->maxc);
+  int op_size = O().size();
+  if (options -> sec_implementation() == SEC_R1_M1 ||
+      options -> sec_implementation() == SEC_R2_M1)
+    {
+      // IntVarArgs lts;
+      IntVarArray sorted_lts = int_var_array(op_size, -1, maxval);
+      // IntVarArray os_map = int_var_array(op_size, -1, maxval);
+      for (operation o: input -> O) { // Hardware registers
+	BoolVar ifb  = var(a(o) == 1); 
+	IntVar thenb = var(c(o));
+	IntVar elseb = var(-1); 
+	ite(*this, ifb,  thenb, elseb, v_opcy[o], IPL_BND);
+      }
+      sorted(*this, v_opcy, sorted_lts, v_opcymap);
+    }
+}
+
+ 
+void SecModel::post_r1_constraints(void) {
+  int maxval = sum_of(input->maxc);
+  int temp_size = T().size();
+  if (options -> sec_implementation() == SEC_R1_M1 ||
+      options -> sec_implementation() == SEC_R1_M2)
+    {
+      for (register_atom ra: input -> HR) { // Hardware registers
+	IntVarArgs lts;
+	IntVarArray sorted_lts = int_var_array(temp_size, -1, maxval);
+	IntVarArray rs_map = int_var_array(temp_size, -1, maxval);
+	for (temporary t: input -> T) {
+	  BoolVar ifb  = var(l(t) && (r(t) == ra)); 
+	  IntVar thenb = var( ls(t) );
+	  IntVar elseb = var( -1 ); 
+	  IntVar res = IntVar(*this, -1, maxval);
+	  ite(*this, ifb,  thenb, elseb, res, IPL_BND);
+	  constraint(v_rtle[ra*temp_size + t] == res);
+	  constraint(v_rtlemap[ra*temp_size + t] == rs_map[t]);
+	  lts <<  res;
+	}
+	sorted(*this, lts, sorted_lts, rs_map);      
+      }
+    }
+}
+
+void SecModel::post_r2_constraints(void) {
+
+  int maxval = sum_of(input->maxc);
+  if (options -> sec_implementation() == SEC_R2_M2 ||
+      options -> sec_implementation() == SEC_R2_M1)
+    {
+      IntVarArgs lts;
+      for (temporary t1 : input -> T) { 
+      	for (temporary t2 : input -> T) {
+      	  if (t1 != t2) {
+      	    BoolVar ifb  = var(l(t2) && r(t1) == r(t2) &&
+      			       le(t2) <= ls(t1));
+      	    IntVar thenb = var( le(t2) );
+      	    IntVar elseb = var( -1); 
+      	    IntVar res = IntVar(*this, -1, maxval);
+      	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
+      	    lts << res;
+      	  }
+	}
+	max(*this, lts, v_lk[t1]);
+      }
+    }
+}
+
+void SecModel::post_m2_constraints(void) {
+  int maxval = sum_of(input->maxc);
+  if (options -> sec_implementation() == SEC_R2_M2 ||
+      options -> sec_implementation() == SEC_R1_M2)
+    {
+      IntVarArgs lts;
+      for (operation o1 : input -> O) { 
+      	for (operation o2 : input -> O) {
+      	  if (o1 != o2) {
+      	    BoolVar ifb  = var(a(o2) && (c(o2) <= c(o1)));
+      	    IntVar thenb = var( c(o2) );
+      	    IntVar elseb = var( -1 ); 
+      	    IntVar res = IntVar(*this, -1, maxval);
+      	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
+      	    lts <<  res;
+      	  }
+      	}
+	max(*this, lts, v_ok[o1]);
+      }
+    }
+}
+
 
 
 
@@ -242,6 +268,7 @@ void SecModel::post_secret_mem_constraints(void) {
 	b << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
       }
       constraint(sum(b) >0);
+      
     }
   }
 }

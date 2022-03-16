@@ -1,6 +1,6 @@
 #
 #  Main authors:
-#    Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+#    Roberto Castaneda Lozano <rcas@acm.org>
 #
 #  This file is part of Unison, see http://unison-code.github.io
 #
@@ -35,17 +35,12 @@ HEADERS += common/definitions.hpp \
            common/util.hpp \
            common/jsonutil.hpp \
            models/parameters.hpp \
-           models/solver-parameters.hpp \
            models/options.hpp \
            models/model.hpp \
            models/localmodel.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
            models/secmodel.hpp \
-           models/divmodel.hpp \
-           models/decompdivmodel.hpp \
-           models/localdivmodel.hpp \
-           models/maxdivmodel.hpp \
            models/simplemodel.hpp \
            models/relaxedmodel.hpp \
            branchers/filters.hpp \
@@ -54,16 +49,9 @@ HEADERS += common/definitions.hpp \
            branchers/printers.hpp \
            branchers/pressureschedulingbrancher.hpp \
            branchers/routingbrancher.hpp \
-           branchers/solutionbrancher.hpp \
-           branchers/solutionbrancher_dfs.hpp \
-           branchers/boolsolutionbrancher.hpp \
-           branchers/boolsolutionbrancher_dfs.hpp \
-           procedures/localdivprocedures.hpp \
            procedures/commonprocedures.hpp \
-           procedures/divprocedures.hpp \
-           procedures/globalprocedures.hpp \
-           procedures/localprocedures.hpp \
-           procedures/divcommon.hpp
+           procedures/secprocedures.hpp \
+           procedures/localprocedures.hpp
 
 
 SOURCES += third-party/jsoncpp/json_reader.cpp \
@@ -73,17 +61,12 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            common/util.cpp \
            common/jsonutil.cpp \
            models/parameters.cpp \
-           models/solver-parameters.cpp \
            models/options.cpp \
            models/model.cpp \
            models/localmodel.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
            models/secmodel.cpp \
-           models/divmodel.cpp \
-           models/decompdivmodel.cpp \
-           models/localdivmodel.cpp \
-           models/maxdivmodel.cpp \
            models/simplemodel.cpp \
            models/relaxedmodel.cpp \
            branchers/filters.cpp \
@@ -92,16 +75,10 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/printers.cpp \
            branchers/pressureschedulingbrancher.cpp \
            branchers/routingbrancher.cpp \
-           branchers/solutionbrancher.cpp \
-           branchers/solutionbrancher_dfs.cpp \
-           branchers/boolsolutionbrancher.cpp \
-           branchers/boolsolutionbrancher_dfs.cpp \
-           procedures/localdivprocedures.cpp \
            procedures/commonprocedures.cpp \
+           procedures/secprocedures.cpp \
            procedures/localprocedures.cpp \
-           procedures/globalprocedures.cpp \
-           procedures/divprocedures.cpp \
-           diversifier.cpp
+           secsolver.cpp
 
 ENV_CXX = $$(CXX)
 ! isEmpty( ENV_CXX ) {
@@ -111,7 +88,7 @@ INCLUDEPATH = $$(CPATH)
 QMAKE_LIBDIR = $$(LIBRARY_PATH)
 QMAKE_LFLAGS = $$(LDFLAGS)
 
-QMAKE_CXXFLAGS += -std=c++0x -g
+QMAKE_CXXFLAGS += -std=c++0x
 
 LIBS += -lpthread -lgecodedriver
 CONFIG(graphics) {
@@ -121,14 +98,15 @@ CONFIG(graphics) {
 LIBS += -lgecodesearch -lgecodeminimodel -lgecodeset -lgecodefloat -lgecodeint \
         -lgecodekernel -lgecodesupport
 
-TARGET = gecode-diversify
+TARGET = gecode-secsolver
 CONFIG -= qt
 CONFIG += warn_on
-QT += script
 
 CONFIG(graphics) {
 
   CONFIG += qt
+
+  QT += widgets
 
   DEFINES += GRAPHICS NEWGV
 

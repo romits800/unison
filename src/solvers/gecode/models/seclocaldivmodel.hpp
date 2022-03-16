@@ -32,24 +32,29 @@
  */
 
 
-#ifndef __DIV_MODEL__
-#define __DIV_MODEL__
+#ifndef __SEC_LOCAL_DIV_MODEL__
+#define __SEC_LOCAL_DIV_MODEL__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
-#include "divcommon.hpp" 
+#include "localmodel.hpp"
+#include "secdecompdivmodel.hpp"
+#include "branchers/filters.hpp"
+#include "branchers/printers.hpp"
+#include "branchers/routingbrancher.hpp"
+#include "branchers/pressureschedulingbrancher.hpp"
+
 #include "solver-parameters.hpp"
 #include "branchers/solutionbrancher.hpp"
-#include "branchers/boolsolutionbrancher.hpp"
-#include "branchers/solutionbrancher_dfs.hpp"
-#include "branchers/boolsolutionbrancher_dfs.hpp"
+
+// #include <gecode/int.hh>
 
 using namespace Gecode;
 using namespace std;
 
-class LocalDivModel;
+// class GlobalModel;
+class SecDecompDivModel;                 //
+// class DivModel;                 //
 
-class DivModel : public GlobalModel {
+class SecLocalDivModel : public LocalModel {
 
 public:
 
@@ -62,99 +67,59 @@ public:
   // Register Hamming distance between operands
   IntVarArray v_reghamm;
 
-  // Gadgets distance between operations
-  IntVarArray v_gadget;
-
-  // Global cycles array
-  IntVarArray v_gc;
-
-  // Channel of gc
-  SetVarArray v_oc;
-
-  // Distance
-  IntVar dist;
-  // // Levenshtein distance
-  // IntVarArray v_lev;
-
-
   // p: relax parameter for LNS
   double div_p;
   // r: random number for LNS
   Rnd div_r;
-
-  // Minimum allowed distance
-  int mindist;
-
-  SolverParameters *solver;
-
-
-  vector<operation> branch_operations;
-  vector<operation> real_operations;
-
-  vector<gadget_t> gadgets;
-  vector<int> gadgets_operations;
-  void set_solver(Json::Value root);
+  int branch_op;
 
   void set_random(Rnd r) {div_r = r;};
 
   void set_relax(double p) {div_p = p;};
 
+  SolverParameters *solver;
+
+  void set_solver(Json::Value root);
+  
   // Variable accessors
 
   IntVar diff(operation o) const {return v_diff[o]; }
 
   IntVar hamm(operation o) const {return v_hamm[o]; }
+  IntVar reghamm(operand p) const {return v_reghamm[opr(p)]; }
+
+  // Gedode space methods
+
+  // SecLocalDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
+  //               const DecompDivModel * gs, block b);
+
+  SecLocalDivModel(Parameters * p_input, 
+                ModelOptions * p_options, 
+                IntPropLevel p_ipl,
+                const SecDecompDivModel * gs, 
+                block b, 
+                int seed_correction);
+
+  SecLocalDivModel(SecLocalDivModel& cg);
+
+  SecLocalDivModel* copy(void);
+
+  // Constrain cost
+  void constrain_total_cost(int cost);
   
-  IntVar reghamm(operand p) const {return v_reghamm[p]; }
-
-  IntVar gadget(operation o) const {return v_gadget[o]; }
-
-  IntVar gc(operation o) const {return v_gc[o]; }
-
-  // Ordered by the issue cycles
-  SetVar oc(int c) const {return v_oc[c]; }
-
-
-
-  // Gecode space methods
-
-  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
-
-  DivModel(DivModel& cg);
-
-  DivModel* copy(void);
-
-  // Branchers
-  void post_solution_brancher(void);
-  void post_div_branchers(void);
-  void post_random_branchers(void);
-  void post_clrandom_branchers(void);
-  void post_cloriginal_branchers(void);
-
-  // Diversification Constraints
-  void post_diversification_channel(void);
-  void post_diversification_constraints(void);
-  void post_diversification_diffs(void);
-  void post_diversification_br_diffs(void);
-  void post_diversification_hamming(void);
+  // Post constraints
+  void post_diversification_constraints(void); // Diversification constraints
+  void post_diversification_diffs(void); // Diversification constraints
+  void post_diversification_hamming(void); // Diversification constraints
   void post_diversification_reghamming(void);
-  void post_diversification_reg_gadget(void);
-  void post_global_cycles(void);
-  void post_levenshtein(const DivModel & b);
-  void post_levenshtein_set(const DivModel & b);
 
-
-  // Check if the type of the operation is a branch, i.e. BRANCH or CALL
-  bool is_real_type( int o);
+  // Branch types
   bool is_branch_type(int o);
-
+  bool is_real_type(int o);
 
   // Constrain function
 
   void constrain(const Space & _b);
-  void constrain_solution(DivModel* b);
-  // The same constraints as the constrain function
-  void post_constrain(DivModel* b);
 
   // Master and slave configuration
 
@@ -163,8 +128,10 @@ public:
 
   // Next for relaxing variable for LNS
 
-  void next(const DivModel& l);
-  void first(void);
+  void next(const SecLocalDivModel& l);
+
+  void post_div_branchers(void);
+
 
 };
 

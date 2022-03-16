@@ -32,12 +32,14 @@
  */
 
 
-#ifndef __DIV_MODEL__
-#define __DIV_MODEL__
+#ifndef __SEC_DIV_MODEL__
+#define __SEC_DIV_MODEL__
 
 #include "completemodel.hpp"
-#include "globalmodel.hpp"
+//#include "globalmodel.hpp"
+#include "secmodel.hpp"
 #include "divcommon.hpp" 
+//#include "localdivmodel.hpp"
 #include "solver-parameters.hpp"
 #include "branchers/solutionbrancher.hpp"
 #include "branchers/boolsolutionbrancher.hpp"
@@ -47,9 +49,10 @@
 using namespace Gecode;
 using namespace std;
 
-class LocalDivModel;
+class SecLocalDivModel;
+//class SecModel; // TODO(Romy): Remove?
 
-class DivModel : public GlobalModel {
+class SecDivModel : public SecModel {
 
 public:
 
@@ -118,11 +121,11 @@ public:
 
   // Gecode space methods
 
-  DivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
+  SecDivModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
-  DivModel(DivModel& cg);
+  SecDivModel(SecDivModel& cg);
 
-  DivModel* copy(void);
+  SecDivModel* copy(void);
 
   // Branchers
   void post_solution_brancher(void);
@@ -140,8 +143,8 @@ public:
   void post_diversification_reghamming(void);
   void post_diversification_reg_gadget(void);
   void post_global_cycles(void);
-  void post_levenshtein(const DivModel & b);
-  void post_levenshtein_set(const DivModel & b);
+  void post_levenshtein(const SecDivModel & b);
+  void post_levenshtein_set(const SecDivModel & b);
 
 
   // Check if the type of the operation is a branch, i.e. BRANCH or CALL
@@ -152,9 +155,9 @@ public:
   // Constrain function
 
   void constrain(const Space & _b);
-  void constrain_solution(DivModel* b);
+  void constrain_solution(SecDivModel* b);
   // The same constraints as the constrain function
-  void post_constrain(DivModel* b);
+  void post_constrain(SecDivModel* b);
 
   // Master and slave configuration
 
@@ -163,7 +166,7 @@ public:
 
   // Next for relaxing variable for LNS
 
-  void next(const DivModel& l);
+  void next(const SecDivModel& l);
   void first(void);
 
 };

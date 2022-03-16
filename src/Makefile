@@ -43,8 +43,15 @@ PRESOLVERBIN := $(PRESOLVERDIR)/gecode-presolver
 SOLVERDIR := solvers/gecode
 SOLVERBIN := $(SOLVERDIR)/gecode-solver
 
+SECSOLVERDIR := solvers/gecode
+SECSOLVERBIN := $(SOLVERDIR)/gecode-secsolver
+
 DIVERSIFIERDIR := solvers/gecode
 DIVERSIFIERBIN := $(DIVERSIFIERDIR)/gecode-diversify
+
+SECDIVERSIFIERDIR := solvers/gecode
+SECDIVERSIFIERBIN := $(DIVERSIFIERDIR)/gecode-secdiversify
+
 
 
 UNISON_SHOW_DETAILS ?= always
@@ -53,7 +60,7 @@ UNISON_GHC_CONFIG := -O2
 
 build:
 	$(MAKE) build-unison
-	$(MAKE) build-presolver build-solver build-diversifier
+	$(MAKE) build-presolver build-solver build-diversifier build-secsolver build-secdiversifier 
 
 build-solver: $(SOLVERBIN)
 
@@ -61,6 +68,9 @@ build-presolver: $(PRESOLVERBIN)
 
 build-diversifier: $(DIVERSIFIERBIN)
 
+build-secsolver: $(SECSOLVERBIN)
+
+build-secdiversifier: $(SECDIVERSIFIERBIN)
 #build-unison: prepare-unison
 #	cd $(UNISONDIR); $(CABALBIN) build --ghc-options="$(UNISON_GHC_CONFIG)"
 build-unison:
@@ -79,7 +89,7 @@ test:
 	--solver=$(CURDIR)/$(SOLVERBIN) \
 	--showprogress"
 
-install: install-unison install-diversifier install-solver install-presolver
+install: install-unison install-diversifier install-secdiversifier install-solver install-secsolver install-presolver
 
 install-unison:
 	cp $(UNISONDIR)/build/uni $(BINDIR)
@@ -90,13 +100,20 @@ install-solver:
 install-diversifier:
 	cp $(DIVERSIFIERBIN) $(BINDIR)
 
+install-secdiversifier:
+	cp $(SECDIVERSIFIERBIN) $(BINDIR)
+
+install-secsolver:
+	cp $(SECSOLVERBIN) $(BINDIR)
 
 install-presolver:
 	cp $(PRESOLVERBIN) $(BINDIR)
 
 include $(PRESOLVERDIR)/presolver.mk
 include $(SOLVERDIR)/solver.mk
-include $(SOLVERDIR)/diversifier.mk
+include $(SECSOLVERDIR)/secsolver.mk
+include $(DIVERSIFIERDIR)/diversifier.mk
+include $(SECDIVERSIFIERDIR)/secdiversifier.mk
 
 clean:
 	$(STACKBIN) clean unison
