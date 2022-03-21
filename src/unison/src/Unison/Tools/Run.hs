@@ -97,7 +97,7 @@ runFunction
        (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
         implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
         explicitCallRegs, inFile, debug, intermediate, lint, lintPragma,
-        Just uniFile) mirInput targetWithOption
+        Just uniFile, Nothing) mirInput targetWithOption
 
      case importResult of
       -- import succeeds:

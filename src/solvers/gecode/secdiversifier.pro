@@ -41,6 +41,7 @@ HEADERS += common/definitions.hpp \
            models/localmodel.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
+           models/seclocalmodel.hpp \
            models/secmodel.hpp \
            models/secdivmodel.hpp \
            models/secdecompdivmodel.hpp \
@@ -58,11 +59,11 @@ HEADERS += common/definitions.hpp \
            branchers/solutionbrancher_dfs.hpp \
            branchers/boolsolutionbrancher.hpp \
            branchers/boolsolutionbrancher_dfs.hpp \
-           procedures/seclocaldivprocedures.hpp \
            procedures/commonprocedures.hpp \
+           procedures/seclocaldivprocedures.hpp \
            procedures/secdivprocedures.hpp \
-           procedures/globalprocedures.hpp \
-           procedures/localprocedures.hpp \
+           procedures/secprocedures.hpp \
+           procedures/seclocalprocedures.hpp \
            procedures/divcommon.hpp \
 
 
@@ -79,6 +80,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            models/localmodel.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
+           models/seclocalmodel.cpp \
            models/secmodel.cpp \
            models/secdivmodel.cpp \
            models/secdecompdivmodel.cpp \
@@ -96,10 +98,10 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/solutionbrancher_dfs.cpp \
            branchers/boolsolutionbrancher.cpp \
            branchers/boolsolutionbrancher_dfs.cpp \
-           procedures/seclocaldivprocedures.cpp \
            procedures/commonprocedures.cpp \
-           procedures/localprocedures.cpp \
-           procedures/globalprocedures.cpp \
+           procedures/seclocalprocedures.cpp \
+           procedures/seclocaldivprocedures.cpp \
+           procedures/secprocedures.cpp \
            procedures/secdivprocedures.cpp \
            secdiversifier.cpp
 

@@ -1,10 +1,10 @@
 /*
  *  Main authors:
- *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
+ *    Roberto Castaneda Lozano <rcas@acm.org>
  *
- *  This file is part of DivCon
+ *  This file is part of Unison, see http://unison-code.github.io
  *
- *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
+ *  Copyright (c) 2016, RISE SICS AB
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,21 +32,22 @@
  */
 
 
-#ifndef __SEC_MODEL__
-#define __SEC_MODEL__
+#ifndef __SEC_LOCAL_MODEL__
+#define __SEC_LOCAL_MODEL__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
+// #include "model.hpp"
+#include "localmodel.hpp"
+#include "secmodel.hpp"
 
 using namespace Gecode;
 using namespace std;
 
-class SecModel : public GlobalModel {
+class SecModel;
+
+class SecLocalModel : public LocalModel {
 
 public:
 
-  // Implementation 1
-  
   // Register Array
   IntVarArray v_rtle;
 
@@ -68,15 +69,14 @@ public:
   // operation size array with max (le(t'))
   IntVarArray v_ok;
 
-  // Gecode space methods
-  SecModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
-
-  SecModel(SecModel& cg);
-
-  SecModel* copy(void);
-
-  // Branchers
   
+  SecLocalModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
+		const SecModel * gs, block b);
+  
+  SecLocalModel(SecLocalModel& cg);
+
+  SecLocalModel* copy(void);
+
   // Security Constraints
   void post_random_register_constraints(void);
   void post_secret_register_constraints(void);
@@ -99,10 +99,7 @@ public:
   BoolVar subseq2(temporary t1, temporary t2);
   BoolVar msubseq2(operation o1, operation o2);
 
-
- 
-  // void next(const SecModel& l);
-
+  
 };
 
 #endif

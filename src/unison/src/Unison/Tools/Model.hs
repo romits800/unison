@@ -49,7 +49,7 @@ import qualified Unison.Tools.Model.SecurityModel as SM
 import qualified Unison.Target.API as API
 
 
-import qualified Unison.Tools.Model.ParseSecurityPolicies as PSP
+import qualified Unison.ParseSecurityPolicies as PSP
 
 run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
      strictlyBetter, unsatisfiable, noCC, mirVersion, jsonFile, policy)
@@ -57,6 +57,7 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
   do baseMir <- maybeStrictReadFile baseFile
      secPolicy <- maybeStrictReadFile policy
      let f    = parse target extUni
+         -- add random copies
          base = maybeNothing applyBaseFile baseMir
          aux  = auxiliarDataStructures target tightPressureBound base f
          ps   = modeler (scaleFreq, noCC) aux target f
@@ -66,9 +67,6 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
          ps'' = presolver oldModel aux target f ps'
          ps''' = securityModeler aux target f secPolicy ps''
      emitOutput jsonFile ((BSL.unpack (encodePretty ps''')))
-
--- is_target_cortex (t,to) = 
---     API.isBoolOption "cortex-m0" to
 
 
 modeler (scaleFreq, noCC) aux target f =

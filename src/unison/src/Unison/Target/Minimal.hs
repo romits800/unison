@@ -65,7 +65,8 @@ target =
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
-      API.tHardwareRegs     = const hardwareRegisters
+      API.tHardwareRegs     = const hardwareRegisters,
+      API.tAddSecurityCopy  = const addSecurityCopy
     }
 
 instance Read MinimalInstruction where
@@ -254,6 +255,9 @@ expandCopy _ _ o = [o]
 -- | Security processor constraints
 
 isXor i = error "isXor not implemented for this target."
+
+-- | Add additional copies or random numbers
+addSecurityCopy f _ = f
 
 -- | Custom processor constraints
 constraints _ = []

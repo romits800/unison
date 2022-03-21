@@ -35,7 +35,7 @@
 #ifndef __SEC_LOCAL_DIV_MODEL__
 #define __SEC_LOCAL_DIV_MODEL__
 
-#include "localmodel.hpp"
+#include "seclocalmodel.hpp"
 #include "secdecompdivmodel.hpp"
 #include "branchers/filters.hpp"
 #include "branchers/printers.hpp"
@@ -54,7 +54,7 @@ using namespace std;
 class SecDecompDivModel;                 //
 // class DivModel;                 //
 
-class SecLocalDivModel : public LocalModel {
+class SecLocalDivModel : public SecLocalModel {
 
 public:
 

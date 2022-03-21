@@ -27,6 +27,7 @@ Library
                    Unison.Parser
                    Unison.Driver
                    Unison.Target
+                   Unison.ParseSecurityPolicies
 
                    Unison.Target.API
                    Unison.Target.RegisterArray
@@ -74,6 +75,7 @@ Library
                    Unison.Transformations.CleanPragmas
                    Unison.Transformations.AddPragmas
                    Unison.Transformations.RunTargetTransforms
+                   Unison.Transformations.SecurityTypeInference
 
                    Unison.Analysis.FrequencyEstimation
                    Unison.Analysis.TemporaryType
@@ -92,6 +94,7 @@ Library
                    Unison.Tools.Linearize
                    Unison.Tools.Extend
                    Unison.Tools.Augment
+                   Unison.Tools.SecAugment
                    Unison.Tools.Model
                    Unison.Tools.Export
                    Unison.Tools.Analyze
@@ -176,6 +179,7 @@ Library
                   Unison.Tools.Import.SimplifyCombinations
                   Unison.Tools.Import.SplitBlocks
                   Unison.Tools.Import.TagRemats
+                  Unison.Tools.Import.ReorderXorOperations                  
                   Unison.Tools.Linearize.SinkLiveOuts
                   Unison.Tools.Linearize.SourceLiveIns
                   Unison.Tools.Linearize.RemovePhis
@@ -198,7 +202,6 @@ Library
                   Unison.Tools.Model.PresolverParameters
                   Unison.Tools.Model.InstructionScheduling
                   Unison.Tools.Model.RegisterAllocation
-                  Unison.Tools.Model.ParseSecurityPolicies
                   Unison.Tools.Model.SecurityModel
                   Unison.Tools.Model.Presolver
                   Unison.Tools.Export.SelectTemporaries
@@ -217,6 +220,7 @@ Library
                   Unison.Tools.Analyze.InsertFuns
                   Unison.Tools.Analyze.FilterOverhead
                   Unison.Tools.Analyze.ComputeGoal
+                  Unison.Tools.SecAugment.AddRegisterCopies
 
                   Unison.Target.Hexagon.Common
                   Unison.Target.Hexagon.Registers

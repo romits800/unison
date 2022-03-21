@@ -28,7 +28,8 @@ data Uni =
                noCC :: Bool, noReserved :: Bool, maxBlockSize :: Maybe Integer,
                rematType :: RematType, function :: Maybe String,
                goal :: Maybe String, mirVersion :: MachineIRVersion,
-               sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool} |
+               sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool,
+               policy :: Maybe FilePath} |
     Linearize {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
                lint :: Bool, lintPragma :: Bool} |
@@ -40,6 +41,9 @@ data Uni =
                lint :: Bool, lintPragma :: Bool, implementFrames :: Bool,
                noCross :: Bool, oldModel :: Bool, expandCopies :: Bool,
                rematType :: RematType} |
+    SecAugment{targetName :: String, inFile :: FilePath, targetOption :: [String],
+               outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
+               lint :: Bool, lintPragma :: Bool, policy :: Maybe FilePath} |
     Model     {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, baseFile :: Maybe FilePath,
                scaleFreq :: Bool, oldModel :: Bool, applyBaseFile :: Bool,
@@ -102,7 +106,7 @@ data Uni =
                explicitCallRegs :: Bool}
     deriving (Data, Typeable, Show, Eq)
 
-allModes = [import', linearize', extend', augment', model', export', analyze',
+allModes = [import', linearize', extend', augment', secaugment', model', export', analyze',
             normalize', lint', count', legalize', plot', run']
 
 uniArgs = cmdArgsMode $ modes allModes &= program "uni"
@@ -132,7 +136,8 @@ import' = Import {
   function        = Nothing &= help "Name of the function to import from the input MachineIR",
   goal            = Nothing &= help "Optimization goal (one of {speed, size})",
   sizeThreshold   = Nothing &= help "Function size over which solving is skipped",
-  explicitCallRegs = False &= help "Extract call uses and definitions explicitly from their operands"}
+  explicitCallRegs = False &= help "Extract call uses and definitions explicitly from their operands",
+  policy          = Nothing &= help "Security Policy"}
   &= help "Import a MachineIR function into Unison"
 
 linearize' = Linearize {} &= help "Transform a Unison function into Linear SSA form"
@@ -145,6 +150,10 @@ augment' = Augment {
   expandCopies = True &= help "Expand copies in a target-dependent manner"}
   &= help "Augment a Unison function with alternative temporaries"
 
+secaugment' = SecAugment {
+  policy             = Nothing &= help "Security Policy"}
+  &= help "Security augment a Unison function with additional random copies"
+
 model' = Model {
   baseFile           = Nothing &= help "Base assembly solution" &= typFile,
   scaleFreq          = True  &= help "Scale down block frequencies if there is a potential cost function overflow",
@@ -152,7 +161,7 @@ model' = Model {
   tightPressureBound = False &= help "Compute a tight bound of the register atoms contained in an infinite register space (incompatible with presolver's infinite register dominance constraints)",
   strictlyBetter     = True &= help "Require the solver to find a strictly better solution than the base (as opposed to better or equal)",
   unsatisfiable      = False &= help "Make the constraint problem trivially unsatisfiable",
-  policy          = Nothing &= help "Security Policy"
+  policy             = Nothing &= help "Security Policy"
   }
   &= help "Generate a code generation problem for a Unison function"
 

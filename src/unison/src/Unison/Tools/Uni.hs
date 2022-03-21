@@ -25,6 +25,7 @@ import qualified Unison.Tools.Import as Import
 import qualified Unison.Tools.Linearize as Linearize
 import qualified Unison.Tools.Extend as Extend
 import qualified Unison.Tools.Augment as Augment
+import qualified Unison.Tools.SecAugment as SecAugment
 import qualified Unison.Tools.Model as Model
 import qualified Unison.Tools.Export as Export
 import qualified Unison.Tools.Analyze as Analyze
@@ -49,7 +50,7 @@ mainWithTargets targets = do
                           maxBlockSize, implementFrames, rematType, function,
                           goal, mirVersion, sizeThreshold, explicitCallRegs,
                           inFile, debug, intermediate, lint, lintPragma,
-                          outFile)
+                          outFile, policy)
                          input (target, targetOption)
                     return ()
     Linearize{..} ->
@@ -74,6 +75,14 @@ mainWithTargets targets = do
                  (implementFrames, noCross, oldModel, expandCopies,
                   rematType,
                   inFile, debug, intermediate, lint, lintPragma, outFile)
+                 input (target, targetOption)
+    SecAugment{..} ->
+        do input <- strictReadFile inFile
+           case pickTarget targetName targets of
+             (Any target) ->
+                 SecAugment.run
+                 (inFile, debug, intermediate, lint, lintPragma, outFile,
+                  policy)
                  input (target, targetOption)
     Model{..} ->
         do input <- strictReadFile inFile

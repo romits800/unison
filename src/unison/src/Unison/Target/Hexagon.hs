@@ -80,7 +80,8 @@ target =
       API.tConstraints      = constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
-      API.tHardwareRegs     = const hardwareRegisters
+      API.tHardwareRegs     = const hardwareRegisters,
+      API.tAddSecurityCopy  = const addSecurityCopy
     }
 
 -- | Gives the type of natural operation according to the instruction
@@ -735,6 +736,8 @@ expandCopy _ _ o = [o]
 -- | TODO: Security processor constraints
 
 isXor i = error "isXor not implemented for this target."
+
+addSecurityCopy f _ = f
 
 -- | Custom processor constraints
 

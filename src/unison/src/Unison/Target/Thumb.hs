@@ -79,7 +79,8 @@ target =
       API.tConstraints      = const constraints,  -- TODO(Romy): Check
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
-      API.tHardwareRegs     = const hardwareRegisters
+      API.tHardwareRegs     = const hardwareRegisters,
+      API.tAddSecurityCopy  = const addSecurityCopy
     }
 
 instance Read ThumbInstruction where
@@ -921,6 +922,81 @@ expandCopy _ _ o = [o]
 
 isXor (TargetInstruction i) | i `elem` [TEOR] = True
 isXor _ = False
+
+-- add copies of temporary t in each BB
+addSecurityCopy f @ Function {fCode = code} t =
+  let
+    ids = newIndexes $ flatten code
+    (_, code') = foldl (addSecurityCopyBlock t) (ids, []) code
+  in f {fCode = code'}
+
+-- TODO(Add pattern for the first operation - in operation
+addSecurityCopyBlock t (ids, accCode)
+  (b @ Block {bCode =
+              o1 @ SingleOperation {oOpr = Virtual ( Delimiter (
+                                                  In {oIns = oins}))}:
+              o2 @ SingleOperation {oOpr = Copy {oCopyIs = ins}}:
+              rest}) | t `elem` (getTemps oins [])  && copyContains ins [TPUSH2_r4_7, TPUSH2_r4_11] =
+  let
+    (tid, oid, pid) = ids
+    ins = [TargetInstruction TMOVr]
+    t1 = mkTemp t --getTemp oins t
+    t2 = mkTemp tid
+    pt1 = mkMOperand pid [t1] Nothing
+    pd1 = mkMOperand (pid+1) [t2] Nothing
+    op = makeOptional $ mkLinear oid ins (pt1:map mkBound defaultMIRPred) [pd1]
+    rest' = map (mapToModelOperand (replaceTemp t1 [t1, t2])) rest
+    code' = o1:o2:op:rest'
+    ids'  = updateIndexes ids code'
+  in (ids', accCode ++ [b {bCode = code'}])
+addSecurityCopyBlock t (ids, accCode)
+  (b @ Block {bCode =
+              o1 @ SingleOperation {oOpr = Virtual ( Delimiter (
+                                                       In {oIns = oins}))}:
+              rest}) | t `elem` (getTemps oins [])  =
+  let
+    (tid, oid, pid) = ids
+    ins = [TargetInstruction TMOVr]
+    t1 = mkTemp t
+    t2 = mkTemp tid
+    pt1 = mkMOperand pid [t1] Nothing
+    pd1 = mkMOperand (pid+1) [t2] Nothing
+    op = makeOptional $ mkLinear oid ins (pt1: map mkBound defaultMIRPred) [pd1]
+    rest' = map (mapToModelOperand (replaceTemp t1 [t1, t2])) rest
+    code' = o1:op:rest'
+    ids'  = updateIndexes ids code'
+  in (ids', accCode ++ [b {bCode = code'}])
+addSecurityCopyBlock _ (ids, accCode) b = (ids, accCode ++ [b])
+
+copyContains [] _ = False
+copyContains (TargetInstruction i:_) is | i `elem` is = True
+copyContains (_:ins) is  = copyContains ins is
+
+getTemps [] tids = tids
+getTemps ((Temporary {tId = tid}):ts) tids = getTemps ts (tid:tids)
+getTemps (NullTemporary:ts) tids = getTemps ts tids
+getTemps ((MOperand {altTemps = temps}):ts) tids = getTemps (temps ++ ts) tids
+getTemps (_:ts) tids = getTemps ts tids
+
+-- getTemp [] _ = error "getTemp: could not find temp"
+-- getTemp ((t @ Temporary {tId = tid}):_) ltid | ltid == tid = t
+-- getTemp ((MOperand {altTemps = temps}):ts) ltid = getTemp (temps ++ ts) ltid
+-- getTemp (_:ts) ltid = getTemp ts ltid
+
+
+updateIndexes (ti, ii, pi) code =
+  let ti' = maxIndex ti (newTempIndex code)
+      ii' = maxIndex ii (newOprIndex code)
+      pi' = maxIndex pi (newOperIndex code)
+  in (ti', ii', pi')
+
+maxIndex id f = max id f + 1
+
+replaceTemp t ts p @ MOperand {altTemps = ats} =
+  let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
+  in p {altTemps = ats'}
+
+  
 
 -- | Custom processor constraints
 

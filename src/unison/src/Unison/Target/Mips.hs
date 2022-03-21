@@ -75,7 +75,8 @@ target =
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
-      API.tHardwareRegs     = const hardwareRegisters
+      API.tHardwareRegs     = const hardwareRegisters,
+      API.tAddSecurityCopy  = const addSecurityCopy
     }
 
 instance Read MipsInstruction where
@@ -511,7 +512,10 @@ expandCopy _ _ o = [o]
 
 -- | Is xor
 
-isXor i = error "isXor not implemented for this target."
+isXor (TargetInstruction i) | i `elem` [XOR] = True
+isXor _ = False
+
+addSecurityCopy f _ = f
 
 -- | Custom processor constraints
 

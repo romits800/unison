@@ -1,10 +1,13 @@
 /*
  *  Main authors:
- *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
+ *    Roberto Castaneda Lozano <rcas@acm.org>
  *
- *  This file is part of DivCon
+ *  Contributing authors:
+ *    Mats Carlsson <mats.carlsson@ri.se>
  *
- *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
+ *  This file is part of Unison, see http://unison-code.github.io
+ *
+ *  Copyright (c) 2016, RISE SICS AB
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,30 +35,30 @@
  */
 
 
-#include "secmodel.hpp"
+#include "seclocalmodel.hpp"
 
 
-SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
-                   IntPropLevel p_ipl) :
-  GlobalModel(p_input, p_options, p_ipl)
+SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
+			     IntPropLevel p_ipl,
+			     const SecModel * gs, block p_b) :
+  LocalModel(p_input, p_options, p_ipl, gs, p_b)
 {
 
-  // Implementation 2
-  int temp_size = T().size();
+  int temp_size = T().size(); // These come from LocalModel
   int op_size = O().size();
   int maxval = sum_of(input->maxc);
-
+  int reg_size = input->HR.size();
+  
+  // Implementation 2
   v_lk = int_var_array(temp_size, -1, maxval);
   v_ok = int_var_array(op_size, -1, maxval);
-  //}
+  
   post_r2_constraints();
   post_m2_constraints();
-  // Implementation 1
 
-  int reg_size = input->HR.size();
+  // Implementation 1
   v_rtle = int_var_array(reg_size * temp_size, -1, maxval);
   v_rtlemap = int_var_array(reg_size * temp_size, -1, maxval);
-
 
   v_opcy = int_var_array(op_size, -1, maxval);
   v_opcymap = int_var_array(op_size, -1, maxval);
@@ -66,9 +69,8 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   post_security_constraints();
 }
 
-
-SecModel::SecModel(SecModel& cg) :
-  GlobalModel(cg)
+SecLocalModel::SecLocalModel(SecLocalModel& cg) :
+  LocalModel(cg)
 {
   // Implementation 1
   v_rtle.update(*this, cg.v_rtle);
@@ -78,47 +80,43 @@ SecModel::SecModel(SecModel& cg) :
   
   // Implementation 2
   v_lk.update(*this, cg.v_lk);
-  v_ok.update(*this, cg.v_ok);
+  v_ok.update(*this, cg.v_ok);  
 }
 
-SecModel* SecModel::copy(void) {
-  return new SecModel(*this);
+SecLocalModel* SecLocalModel::copy(void) {
+  return new SecLocalModel(*this);
 }
 
 
 
-BoolVar SecModel::subseq1(temporary t1, temporary t2) {
+BoolVar SecLocalModel::subseq1(temporary t1, temporary t2) {
   int temp_size = T().size();
   BoolVarArgs b;
   for (register_atom ra: input -> HR) { // Hardware registers
-    b << var( (v_rtle[(temp_size*ra) + t1] != -1)
-	      && (v_rtlemap[(temp_size*ra) + t1] + 1 == v_rtlemap[(temp_size*ra) + t2]));
+    b << var( (v_rtle[(temp_size*ra) + temp(t1)] != -1)
+	      && (v_rtlemap[(temp_size*ra) + temp(t1)] + 1 == v_rtlemap[(temp_size*ra) + temp(t2)]));
 
   }
   return var( sum(b) > 0 );
 }
 
 
-BoolVar SecModel::msubseq1(operation o1, operation o2) {
-
-  return var ( (v_opcy[o1] != -1) && (v_opcymap[o1] + 1 == v_opcymap[o2]) );
+BoolVar SecLocalModel::msubseq1(operation o1, operation o2) {
+  return var ((v_opcy[instr(o1)] != -1) && (v_opcymap[instr(o1)] + 1 == v_opcymap[instr(o2)]));
 }
 
 
-
-
-BoolVar SecModel::subseq2(temporary t1, temporary t2) {
-  return var (l(t1) && l(t2) && v_lk[t2] == le(t1));
+BoolVar SecLocalModel::subseq2(temporary t1, temporary t2) {
+  return var (l(t1) && l(t2) && v_lk[temp(t2)] == le(t1));
 }
 
 
-BoolVar SecModel::msubseq2(operation o1, operation o2) {
-
-  return var (a(o1) && a(o2) && v_ok[o2] == c(o1));
+BoolVar SecLocalModel::msubseq2(operation o1, operation o2) {
+  return var (a(o1) && a(o2) && v_ok[instr(o2)] == c(o1));
 }
 
 
-BoolVar SecModel::msubseq(operation o1, operation o2) {
+BoolVar SecLocalModel::msubseq(operation o1, operation o2) {
   if (options-> sec_implementation() == SEC_R1_M1 ||
       options-> sec_implementation() == SEC_R2_M1) 
     return msubseq1(o1, o2);
@@ -127,16 +125,17 @@ BoolVar SecModel::msubseq(operation o1, operation o2) {
 }
 
 
-BoolVar SecModel::subseq(temporary t1, temporary t2) {
+BoolVar SecLocalModel::subseq(temporary t1, temporary t2) {
   if (options-> sec_implementation() == SEC_R1_M1 ||
       options-> sec_implementation() == SEC_R1_M2) 
     return subseq1(t1, t2);
   else
     return subseq2(t1, t2);
-
 }
 
-void SecModel::post_m1_constraints(void) {
+
+
+void SecLocalModel::post_m1_constraints(void) {
   int maxval = sum_of(input->maxc);
   int op_size = O().size();
   if (options -> sec_implementation() == SEC_R1_M1 ||
@@ -145,18 +144,18 @@ void SecModel::post_m1_constraints(void) {
       // IntVarArgs lts;
       IntVarArray sorted_lts = int_var_array(op_size, -1, maxval);
       // IntVarArray os_map = int_var_array(op_size, -1, maxval);
-      for (operation o: input -> O) { // Hardware registers
+      for (operation o: O()) { // Hardware registers
 	BoolVar ifb  = var(a(o) == 1); 
 	IntVar thenb = var(c(o));
 	IntVar elseb = var(-1); 
-	ite(*this, ifb,  thenb, elseb, v_opcy[o], IPL_BND);
+	ite(*this, ifb,  thenb, elseb, v_opcy[instr(o)], IPL_BND);
       }
       sorted(*this, v_opcy, sorted_lts, v_opcymap);
     }
 }
 
  
-void SecModel::post_r1_constraints(void) {
+void SecLocalModel::post_r1_constraints(void) {
   int maxval = sum_of(input->maxc);
   int temp_size = T().size();
   if (options -> sec_implementation() == SEC_R1_M1 ||
@@ -166,14 +165,14 @@ void SecModel::post_r1_constraints(void) {
 	IntVarArgs lts;
 	IntVarArray sorted_lts = int_var_array(temp_size, -1, maxval);
 	IntVarArray rs_map = int_var_array(temp_size, -1, maxval);
-	for (temporary t: input -> T) {
+	for (temporary t: T()) {
 	  BoolVar ifb  = var(l(t) && (r(t) == ra)); 
 	  IntVar thenb = var( ls(t) );
 	  IntVar elseb = var( -1 ); 
 	  IntVar res = IntVar(*this, -1, maxval);
 	  ite(*this, ifb,  thenb, elseb, res, IPL_BND);
-	  constraint(v_rtle[ra*temp_size + t] == res);
-	  constraint(v_rtlemap[ra*temp_size + t] == rs_map[t]);
+	  constraint(v_rtle[ra*temp_size + temp(t)] == res);
+	  constraint(v_rtlemap[ra*temp_size + temp(t)] == rs_map[temp(t)]);
 	  lts <<  res;
 	}
 	sorted(*this, lts, sorted_lts, rs_map);      
@@ -181,38 +180,38 @@ void SecModel::post_r1_constraints(void) {
     }
 }
 
-void SecModel::post_r2_constraints(void) {
+void SecLocalModel::post_r2_constraints(void) {
 
   int maxval = sum_of(input->maxc);
   if (options -> sec_implementation() == SEC_R2_M2 ||
       options -> sec_implementation() == SEC_R2_M1)
     {
-      for (temporary t1 : input -> T) { 
+      for (temporary t1 : T()) { 
 	IntVarArgs lts;
- 	for (temporary t2 : input -> T) {
+ 	for (temporary t2 : T()) {
       	  if (t1 != t2) {
-      	    BoolVar ifb  = var(l(t2) && (r(t1) == r(t2)) &&
-      			       (le(t2) <= ls(t1)));
-      	    IntVar thenb = var( le(t2) );
-      	    IntVar elseb = var( -1); 
+      	    BoolVar ifb  = var(l(t2) && r(t1) == r(t2) &&
+      			       le(t2) <= ls(t1));
+      	    IntVar thenb = var(le(t2));
+      	    IntVar elseb = var(-1); 
       	    IntVar res = IntVar(*this, -1, maxval);
       	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
       	    lts << res;
       	  }
 	}
-	max(*this, lts, v_lk[t1]);
+	max(*this, lts, v_lk[temp(t1)]);
       }
     }
 }
 
-void SecModel::post_m2_constraints(void) {
+void SecLocalModel::post_m2_constraints(void) {
   int maxval = sum_of(input->maxc);
   if (options -> sec_implementation() == SEC_R2_M2 ||
       options -> sec_implementation() == SEC_R1_M2)
     {
-      for (operation o1 : input -> O) { 
+      for (operation o1 : O()) { 
 	IntVarArgs lts;
- 	for (operation o2 : input -> O) {
+ 	for (operation o2 : O()) {
       	  if (o1 != o2) {
       	    BoolVar ifb  = var(a(o2) && (c(o2) <= c(o1)));
       	    IntVar thenb = var( c(o2) );
@@ -222,7 +221,7 @@ void SecModel::post_m2_constraints(void) {
       	    lts <<  res;
       	  }
       	}
-	max(*this, lts, v_ok[o1]);
+	max(*this, lts, v_ok[instr(o1)]);
       }
     }
 }
@@ -230,60 +229,64 @@ void SecModel::post_m2_constraints(void) {
 
 
 
-void SecModel::post_random_register_constraints(void) {
+void SecLocalModel::post_random_register_constraints(void) {
   // These pairs should not be in the same register or should not be consequent
   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
     temporary t1 = tp.first;
     temporary t2 = tp.second;
-    constraint((l(t1) && l(t2)) >>
-	      ((r(t1) != r(t2)) || (!subseq(t1,t2) && !subseq(t2,t1))) );
+    if (temp(t1) < T().size() && temp(t2) < T().size() && temp(t1) >= 0 && temp(t2) >= 0 ) 
+      constraint((l(t1) && l(t2)) >>
+		 ((r(t1) != r(t2)) || (!subseq(t1,t2) && !subseq(t2,t1))) );
   }
 }
 
 
 
-void SecModel::post_secret_register_constraints(void) {
+void SecLocalModel::post_secret_register_constraints(void) {
   // Temporaries that are secret should be preceeded by a random
   for (std::pair<const temporary, const vector<temporary>> tp : input -> secpairs) {
     BoolVarArgs b;
     BoolVarArgs b1;
-    BoolVarArgs b2;
     temporary tsec = tp.first;
-    // std::cout << tsec << std::endl;
-    for (const temporary trand: tp.second) {
-      b << var ( (l(tsec) == 1) >> ((l(trand)==1) && subseq(trand,tsec)));
-      b1 << var(l(trand) ==1);
-      b2 << var(subseq(trand,tsec) ==1);
-      // std::cout << trand << ", ";
+    // std::cout << tsec << "| ";
+    if (temp(tsec) < T().size() && temp(tsec) >= 0) {
+      for (const temporary trand: tp.second) {
+	if (temp(trand) < T().size() && temp(trand) >= 0) {
+	  b << var ( (l(tsec) == 1) >> ((l(trand)==1) && subseq(trand,tsec)));
+	  b1 << var(l(tsec) ==1);
+	  // std::cout << trand << ", ";
+	}
+      }
+      // std::cout << std::endl << b << std::endl;
+      // std::cout << b1 << std::endl;
+      if (b.size() > 0)
+	constraint(sum(b) > 0);
     }
-    // std::cout << std::endl << b << std::endl;
-    // std::cout << b1 << std::endl;
-    // std::cout << b2 << std::endl;
-    // std::cout << v_lk << std::endl;
-    if (b.size() > 0)
-      constraint(sum(b) > 0);
   }
 }
 
 
 
-void SecModel::post_secret_mem_constraints(void) {
+void SecLocalModel::post_secret_mem_constraints(void) {
   // Memory operations that are secret should be preceeded by a random
   for (std::pair<const vector<operation>, const vector<operation>> tp : input -> mempairs) {
     for (const operation o1: tp.first) {
       BoolVarArgs b;
-      for (const operation o2: tp.second) {
-	b << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
+      if (instr(o1) < O().size() && instr(o1) >= 0) {
+	for (const operation o2: tp.second) {
+	  if (instr(o2) < O().size() && instr(o2) >= 0) {
+	    b << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
+	  }
+	}
+	if (b.size() > 0)
+	  constraint(sum(b) >0);
       }
-      if (b.size() > 0)
-	constraint(sum(b) >0);
     }
   }
 }
 
 
-
-void SecModel::post_security_constraints(void) {
+void SecLocalModel::post_security_constraints(void) {
   if (!options-> disable_sec_regreg_constraints())
     post_random_register_constraints();
   if (!options-> disable_sec_secret_constraints())

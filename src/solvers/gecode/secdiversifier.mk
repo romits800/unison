@@ -42,10 +42,10 @@ SECDIVERSIFIERMAIN = $(SECDIVERSIFIERDIR)/secdiversifier
 
 SECDIVERSIFIERCOMMON := definitions util jsonutil
 SECDIVERSIFIERMODELS := parameters solver-parameters options model localmodel completemodel globalmodel	\
-simplemodel relaxedmodel secmodel seclocaldivmodel secdivmodel secdecompdivmodel
+simplemodel relaxedmodel seclocalmodel secmodel seclocaldivmodel secdivmodel secdecompdivmodel
 SECDIVERSIFIERBRANCHERS := filters merit value printers pressureschedulingbrancher	\
 routingbrancher
-SECDIVERSIFIERPROCEDURES := commonprocedures secdivprocedures localdivprocedures
+SECDIVERSIFIERPROCEDURES := commonprocedures secprocedures seclocalprocedures secdivprocedures seclocaldivprocedures
 SECDIVERSIFIERINSPECTORS := consoleinspector modelgraphicsview modelinspector dot	\
 registerarrayinspector issuecycleinspector liverangeinspector			\
 assignmentinspector allocationinspector livedurationinspector			\

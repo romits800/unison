@@ -58,7 +58,7 @@ SecLocalDivModel::SecLocalDivModel(Parameters * p_input, ModelOptions * p_option
 				   const SecDecompDivModel * gs,
 				   block p_b,
 				   int seed_correction) :
-  LocalModel(p_input, p_options, p_ipl, gs, p_b)
+  SecLocalModel(p_input, p_options, p_ipl, gs, p_b)
 {
   div_r.seed(p_options->seed() + seed_correction);
   div_p = p_options->relax();
@@ -87,7 +87,7 @@ SecLocalDivModel::SecLocalDivModel(Parameters * p_input, ModelOptions * p_option
 }
 
 SecLocalDivModel::SecLocalDivModel(SecLocalDivModel& cg) :
-  LocalModel(cg),
+  SecLocalModel(cg),
   div_p(cg.div_p),
   div_r(cg.div_r),
   branch_op(cg.branch_op),
@@ -439,7 +439,7 @@ void SecLocalDivModel::post_div_branchers(void) {
   // for (operation o : input->ops[b])
   //   c << v_c[o];
 
-  branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
+  branch(*this, &SecLocalModel::post_before_scheduling_constraints_in_space);
   
   branch(*this, v_c, INT_VAR_RND(rnd), INT_VAL_RND(rnd));
 

@@ -40,6 +40,7 @@ HEADERS += common/definitions.hpp \
            models/localmodel.hpp \
            models/completemodel.hpp \
            models/globalmodel.hpp \
+           models/seclocalmodel.hpp \
            models/secmodel.hpp \
            models/simplemodel.hpp \
            models/relaxedmodel.hpp \
@@ -51,7 +52,7 @@ HEADERS += common/definitions.hpp \
            branchers/routingbrancher.hpp \
            procedures/commonprocedures.hpp \
            procedures/secprocedures.hpp \
-           procedures/localprocedures.hpp
+           procedures/seclocalprocedures.hpp
 
 
 SOURCES += third-party/jsoncpp/json_reader.cpp \
@@ -66,6 +67,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            models/localmodel.cpp \
            models/completemodel.cpp \
            models/globalmodel.cpp \
+           models/seclocalmodel.cpp \
            models/secmodel.cpp \
            models/simplemodel.cpp \
            models/relaxedmodel.cpp \
@@ -77,7 +79,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/routingbrancher.cpp \
            procedures/commonprocedures.cpp \
            procedures/secprocedures.cpp \
-           procedures/localprocedures.cpp \
+           procedures/seclocalprocedures.cpp \
            secsolver.cpp
 
 ENV_CXX = $$(CXX)

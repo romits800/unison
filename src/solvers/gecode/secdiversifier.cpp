@@ -63,10 +63,11 @@
 #include "models/secdecompdivmodel.hpp"
 #include "models/seclocaldivmodel.hpp"
 #include "models/localmodel.hpp"
+#include "models/seclocalmodel.hpp"
 #include "procedures/secdivprocedures.hpp"
-#include "procedures/globalprocedures.hpp"
+#include "procedures/secprocedures.hpp"
 #include "procedures/seclocaldivprocedures.hpp"
-#include "procedures/localprocedures.hpp"
+#include "procedures/seclocalprocedures.hpp"
 
 #ifndef GRAPHICS
 #include "third-party/jsoncpp/json/value.h"
@@ -665,11 +666,11 @@ int main(int argc, char* argv[]) {
   lo->inspect.click(lassi);
   LocalAllocationInspector * lalloi = new LocalAllocationInspector();
   lo->inspect.click(lalloi);
-  Gist::Print<LocalModel> * lprp =
-    new Gist::Print<LocalModel>("Problem variables");
+  Gist::Print<SecLocalModel> * lprp =
+    new Gist::Print<SecLocalModel>("Problem variables");
   lo->inspect.click(lprp);
-  Gist::VarComparator<LocalModel> * lprc =
-    new Gist::VarComparator<LocalModel>("Compare problem and secondary variables");
+  Gist::VarComparator<SecLocalModel> * lprc =
+    new Gist::VarComparator<SecLocalModel>("Compare problem and secondary variables");
   lo->inspect.compare(lprc);
   LocalSelectionInspector * lsi = new LocalSelectionInspector();
   lo->inspect.click(lsi);
@@ -1221,9 +1222,9 @@ int main(int argc, char* argv[]) {
       map<block, RBS<SecLocalDivModel,BAB> *> local_engines;
 
 
-      vector<vector<LocalModel *> > local_solutions;
+      vector<vector<SecLocalModel *> > local_solutions;
       for (unsigned int b = 0; b < input.B.size(); b++)
-	local_solutions.push_back(vector<LocalModel *>());
+	local_solutions.push_back(vector<SecLocalModel *>());
 
 
       bool found_local_problem = true;

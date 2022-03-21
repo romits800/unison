@@ -64,7 +64,8 @@ module Unison.Target.API (
   constraints,
   spillOverhead,
   isXor,
-  hardwareRegisters
+  hardwareRegisters,
+  addSecurityCopy
   ) where
 
 import Data.List
@@ -229,6 +230,7 @@ spillOverhead (ti, to) = tSpillOverhead ti to
 -- ROMY (add new function)
 isXor (ti, to) = tIsXor ti to
 hardwareRegisters (ti, to) = tHardwareRegs ti to
+addSecurityCopy (ti, to) = tAddSecurityCopy ti to
 
 -- | Container with information about a 'Function' along with the
 -- function itself.
@@ -408,7 +410,10 @@ data TargetDescription i r rc s = TargetDescription {
       tIsXor            :: TargetOptions -> Instruction i ->
                            Bool,
       -- | Hardware Registers for SecDivCon
-      tHardwareRegs     :: TargetOptions -> [r]
+      tHardwareRegs     :: TargetOptions -> [r],
+      -- | Expand with copies of random input values
+      tAddSecurityCopy  :: TargetOptions -> Function i r -> Integer ->
+                           Function i r
 }
 
 -- | Any 'TargetDescription'. Used to support multiple targets without

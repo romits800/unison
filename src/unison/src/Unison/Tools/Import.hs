@@ -22,6 +22,8 @@ import Unison.Driver
 import Unison.Tools.UniArgs
 import Unison.Tools.Lint (invokeLint)
 
+import Common.Util
+
 import qualified MachineIR as MachineIR
 
 import Unison.Construction.AddDelimiters
@@ -79,12 +81,21 @@ import Unison.Tools.Import.SplitBlocks
 import Unison.Tools.Import.RepairCSSA
 import Unison.Tools.Import.AdvancePhis
 import Unison.Tools.Import.TagRemats
+import Unison.Tools.Import.ReorderXorOperations
+
+import qualified Unison.ParseSecurityPolicies as PSP
 
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
-     explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile)
+     explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile,
+     policy)
     mir target =
-    let mfs = MachineIR.parse mirVersion mir
+  do
+    secPolicy <- maybeStrictReadFile policy
+    let policies =  case secPolicy of
+                      (Just pfile) -> PSP.parse pfile
+                      Nothing -> []
+        mfs = MachineIR.parse mirVersion mir
         mf  = selectFunction function mfs
         (mf', partialMfs) =
             applyTransformations
@@ -96,10 +107,10 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
             applyTransformations
             (uniTransformations (goal, noCC, noReserved, maxBlockSize,
                                  estimateFreq, implementFrames, rematType,
-                                 lintPragma, explicitCallRegs))
+                                 lintPragma, explicitCallRegs, policies))
             target ff
         baseName = takeBaseName mirFile
-    in case selected function mfs of
+      in case selected function mfs of
         False -> do return (Left NotSelected)
         True  -> case overThreshold sizeThreshold mf of
             True  -> do return (Left OverSizeThreshold)
@@ -133,7 +144,8 @@ mirTransformations (estimateFreq, simplifyControlFlow, explicitCallRegs) =
      (runPreProcess, "runPreProcess", True)]
 
 uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
-                    implementFrames, rematType, lintPragma, explicitCallRegs) =
+                    implementFrames, rematType, lintPragma, explicitCallRegs,
+                    policy) =
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
      (connectCalls, "connectClass", explicitCallRegs),
@@ -165,6 +177,7 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (advancePhis, "advancePhis", True),
      (postponeBranches, "postponeBranches", True),
      (renameTemps, "renameTemps", True),
+     (reorderXorOperations policy, "reorderXorOperations", True),
      (sortGlobalTemps, "sortGlobalTemps", True),
      (renameOperations, "renameOperations", True),
      (estimateFrequency, "estimateFrequency", estimateFreq),

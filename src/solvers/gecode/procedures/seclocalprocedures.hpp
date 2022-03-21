@@ -1,10 +1,10 @@
 /*
  *  Main authors:
- *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
+ *    Roberto Castaneda Lozano <rcas@acm.org>
  *
- *  This file is part of DivCon
+ *  This file is part of Unison, see http://unison-code.github.io
  *
- *  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
+ *  Copyright (c) 2016, RISE SICS AB
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,77 +32,35 @@
  */
 
 
-#ifndef __SEC_MODEL__
-#define __SEC_MODEL__
+#ifndef __SEC_LOCAL_PROCEDURES__
+#define __SEC_LOCAL_PROCEDURES__
 
-#include "completemodel.hpp"
-#include "globalmodel.hpp"
+#include "models/seclocalmodel.hpp"
+#include "procedures/commonprocedures.hpp"
 
-using namespace Gecode;
 using namespace std;
+using namespace Gecode;
 
-class SecModel : public GlobalModel {
+// Creates a local problem for block b out of the global solution g1
+Solution<SecLocalModel> local_problem(SecModel * g1, block b);
 
-public:
+// Gives a local solution by running the local solver portfolio
+Solution<SecLocalModel>
+solve_local_portfolio(SecLocalModel * base, GIST_OPTIONS * lo, int iteration);
 
-  // Implementation 1
-  
-  // Register Array
-  IntVarArray v_rtle;
+// Gives a local solution by running the generic local solver portfolio
+Solution<SecLocalModel>
+solve_generic_portfolio(SecLocalModel * base, GIST_OPTIONS * lo, int iteration);
 
-  // Register Array Sorted Mapping
-  IntVarArray v_rtlemap;
+// Gives a local solution by running the custom local solver portfolio
+Solution<SecLocalModel>
+solve_custom_portfolio(SecLocalModel * base, GIST_OPTIONS * lo, int iteration);
 
-  // Operation Array
-  IntVarArray v_opcy;
+// Gives a local solution applying a certain search strategy
+Solution<SecLocalModel>
+solve_local(SecLocalModel * base, char search, GIST_OPTIONS * lo, int iteration);
 
-  // Operation Cycle Array Sorted Map
-  IntVarArray v_opcymap;
-
-  
-  // Implementation 2
-  
-  // temp size array with max (le(t'))
-  IntVarArray v_lk;
-
-  // operation size array with max (le(t'))
-  IntVarArray v_ok;
-
-  // Gecode space methods
-  SecModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
-
-  SecModel(SecModel& cg);
-
-  SecModel* copy(void);
-
-  // Branchers
-  
-  // Security Constraints
-  void post_random_register_constraints(void);
-  void post_secret_register_constraints(void);
-  void post_secret_mem_constraints(void);
-  void post_security_constraints(void);
-
-  void post_m1_constraints(void);
-  void post_m2_constraints(void);
-  void post_r1_constraints(void);
-  void post_r2_constraints(void);
-
-  
-  BoolVar subseq(temporary t1, temporary t2);
-  BoolVar msubseq(operation o1, operation o2);
-  
-  BoolVar subseq1(temporary t1, temporary t2);
-  BoolVar msubseq1(operation o1, operation o2);
-
-
-  BoolVar subseq2(temporary t1, temporary t2);
-  BoolVar msubseq2(operation o1, operation o2);
-
-
- 
-  // void next(const SecModel& l);
-
-};
+// Prefix for debug output
+string local(block b);
 
 #endif

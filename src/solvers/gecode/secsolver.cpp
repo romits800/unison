@@ -60,8 +60,9 @@
 #include "models/globalmodel.hpp"
 #include "models/secmodel.hpp"
 #include "models/localmodel.hpp"
+#include "models/seclocalmodel.hpp"
 #include "procedures/secprocedures.hpp"
-#include "procedures/localprocedures.hpp"
+#include "procedures/seclocalprocedures.hpp"
 
 #include "third-party/jsoncpp/json/value.h"
 #include "third-party/jsoncpp/json/reader.h"
@@ -90,25 +91,25 @@
 using namespace Gecode;
 using namespace std;
 
-class LocalJob : public Support::Job<Solution<LocalModel> > {
+class LocalJob : public Support::Job<Solution<SecLocalModel> > {
 protected:
   // Base local space to accumulate bounds while the portfolio is applied
-  Solution<LocalModel> ls;
+  Solution<SecLocalModel> ls;
   // visualization options (if any)
   GIST_OPTIONS * lo;
   // current iteration
   int iteration;
   // local solutions in earlier iterations
-  vector<vector<LocalModel *> > * local_solutions;
+  vector<vector<SecLocalModel *> > * local_solutions;
 public:
-  LocalJob(Solution<LocalModel> ls0, GIST_OPTIONS * lo0, int iteration0,
-           vector<vector<LocalModel *> > * local_solutions0) :
+  LocalJob(Solution<SecLocalModel> ls0, GIST_OPTIONS * lo0, int iteration0,
+           vector<vector<SecLocalModel *> > * local_solutions0) :
     ls(ls0), lo(lo0), iteration(iteration0),
     local_solutions(local_solutions0) {}
-  virtual Solution<LocalModel> run(int) {
+  virtual Solution<SecLocalModel> run(int) {
     block b = ls.solution->b;
     if (ls.result != UNSATISFIABLE) {
-      LocalModel * base_local = ls.solution;
+      SecLocalModel * base_local = ls.solution;
       Gecode::SpaceStatus lss = base_local->status();
       assert(lss != SS_FAILED);
       bool single_block = base_local->input->B.size() == 1;
@@ -129,7 +130,7 @@ public:
       }
     }
     if (ls.result == LIMIT || ls.result == UNSATISFIABLE) {
-      throw Support::JobStop<Solution<LocalModel> >(ls);
+      throw Support::JobStop<Solution<SecLocalModel> >(ls);
     }
     return ls;
   }
@@ -144,14 +145,14 @@ protected:
   // current iteration
   int iteration;
   // local solutions in earlier iterations
-  vector<vector<LocalModel *> > * local_solutions;
+  vector<vector<SecLocalModel *> > * local_solutions;
   // blocks sorted in descending priority
   vector<block> blocks;
   // current block index
   unsigned int k;
 public:
   LocalJobs(Solution<SecModel> gs0, GIST_OPTIONS * lo0, int iteration0,
-            vector<vector<LocalModel *> > * local_solutions0,
+            vector<vector<SecLocalModel *> > * local_solutions0,
             vector<block> blocks0) :
     gs(gs0), lo(lo0), iteration(iteration0), local_solutions(local_solutions0),
     blocks(blocks0), k(0) {}
@@ -162,7 +163,7 @@ public:
     // FIXME: fork jobs in the order of blocks[b], use blocks[k] instead of k
     block b = k;
     // Base local space to accumulate bounds while the portfolio is applied
-    Solution<LocalModel> ls = local_problem(gs.solution, b);
+    Solution<SecLocalModel> ls = local_problem(gs.solution, b);
     k++;
     return new LocalJob(ls, lo, iteration, local_solutions);
   }
@@ -265,7 +266,7 @@ string produce_json(const ResultData& rd,
     return json;
 }
 
-void emit_local(LocalModel * local, unsigned long int iteration, string prefix) {
+void emit_local(SecLocalModel * local, unsigned long int iteration, string prefix) {
   block b = local->b;
   ofstream fout;
   fout.open(
@@ -522,11 +523,11 @@ int main(int argc, char* argv[]) {
   lo->inspect.click(lassi);
   LocalAllocationInspector * lalloi = new LocalAllocationInspector();
   lo->inspect.click(lalloi);
-  Gist::Print<LocalModel> * lprp =
-    new Gist::Print<LocalModel>("Problem variables");
+  Gist::Print<SecLocalModel> * lprp =
+    new Gist::Print<SecLocalModel>("Problem variables");
   lo->inspect.click(lprp);
-  Gist::VarComparator<LocalModel> * lprc =
-    new Gist::VarComparator<LocalModel>("Compare problem and secondary variables");
+  Gist::VarComparator<SecLocalModel> * lprc =
+    new Gist::VarComparator<SecLocalModel>("Compare problem and secondary variables");
   lo->inspect.compare(lprc);
   LocalSelectionInspector * lsi = new LocalSelectionInspector();
   lo->inspect.click(lsi);
@@ -556,9 +557,9 @@ int main(int argc, char* argv[]) {
 #endif
 
   vector<ResultData> results;
-  vector<vector<LocalModel *> > local_solutions;
+  vector<vector<SecLocalModel *> > local_solutions;
   for (unsigned int b = 0; b < input.B.size(); b++)
-    local_solutions.push_back(vector<LocalModel *>());
+    local_solutions.push_back(vector<SecLocalModel *>());
 
   // Best global cost so far
   vector<int> best_cost;
@@ -600,6 +601,26 @@ int main(int argc, char* argv[]) {
   }
 
   Gecode::SpaceStatus ss = status_lb(base);
+  // std::cout << base -> v_lk << std::endl;
+  // std::cout << base -> v_a << std::endl;
+  // std::cout << base -> v_r << std::endl;
+  // std::cout << "v_l[0]:" << base -> l(0) << std::endl;
+  // std::cout << "v_l[1]:" << base -> l(1) << std::endl;
+  // std::cout << "v_l[12]:" << base -> l(12) << std::endl;
+  // std::cout << "v_l[15]:" << base -> l(15) << std::endl;
+  // std::cout << "v_l[17]:" << base -> l(17) << std::endl;
+  // std::cout << "v_ls[12]:" << base -> ls(12) << std::endl;
+  // std::cout << "v_ls[15]:" << base -> ls(15) << std::endl;
+  // std::cout << "v_ls[17]:" << base -> ls(17) << std::endl;
+  // std::cout << "v_le[12]:" << base -> le(12) << std::endl;
+  // std::cout << "v_le[15]:" << base -> le(15) << std::endl;
+  // std::cout << "v_le[17]:" << base -> le(17) << std::endl;
+  // std::cout << "v_r[12]:" << base -> r(12) << std::endl;
+  // std::cout << "v_r[15]:" << base -> r(15) << std::endl;
+  // std::cout << "v_r[17]:" << base -> r(17) << std::endl;
+  // std::cout << "subseq(12,15):" << base -> subseq(12,15) << std::endl;
+  // std::cout << "subseq(12,17):" << base -> subseq(12,17) << std::endl;
+  // std::cout << "After second base->v_lk" << std::endl;
   assert(ss != SS_FAILED); // At this point the problem should be solvable
 
   if (options.verbose())
@@ -881,7 +902,7 @@ int main(int argc, char* argv[]) {
         // hardest problems first.
         vector<block> blocks = sorted_blocks(base->input, latest_result);
 
-        map<block, Solution<LocalModel> > latest_local_solutions;
+        map<block, Solution<SecLocalModel> > latest_local_solutions;
         set<block> solved_blocks;
         LocalJobs ljs(gs, lo, iteration, &local_solutions, blocks);
         bool found_all_local = true, unsat = false;
@@ -889,11 +910,11 @@ int main(int argc, char* argv[]) {
           options.total_threads() / options.portfolio_threads();
 
         // Solve the local problems
-        Support::RunJobs<LocalJobs, Solution<LocalModel> > p(ljs, top_threads);
-        Solution<LocalModel> ls;
+        Support::RunJobs<LocalJobs, Solution<SecLocalModel> > p(ljs, top_threads);
+        Solution<SecLocalModel> ls;
         while (p.run(ls)) {
           int i;
-          Solution<LocalModel> fls;
+          Solution<SecLocalModel> fls;
           if (p.stopped(i, fls)) { // job stopped
             block b = fls.solution->b;
             latest_local_solutions[b] = fls;
@@ -911,7 +932,7 @@ int main(int argc, char* argv[]) {
 
         // Process the local solutions
         for (block b : solved_blocks) {
-          Solution<LocalModel> ls = latest_local_solutions[b];
+          Solution<SecLocalModel> ls = latest_local_solutions[b];
           iteration_failed += ls.failures;
           iteration_nodes += ls.nodes;
           // Store the result of solving the local problem
