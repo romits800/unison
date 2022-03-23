@@ -691,8 +691,6 @@ void DivModel::constrain(const Space & _b) {
 	  // int weight_b = cycleorder[o];
           int orderi = cycleorder[br] - cycleorder[o];
 	  int weight_b = (orderi >= 0 && orderi <= (int)options->cyc_gadget_size()) ? 1 : 0; 
-	  // cerr << "br" << br << ":" << cycleorder[br] << " o:" << o << ":" << cycleorder[o] << " weight_b: " << weight_b << endl;
-
 	  //weight_b = weight_b == 0 ? 1 : weight_b;
 	  if (weight_b == 0) continue;
 	  if (b.gadget(i).assigned()) {

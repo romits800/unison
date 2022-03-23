@@ -357,32 +357,23 @@ void CompleteModel::print(ostream & pOs) const {
 string CompleteModel::solution_to_json() const {
 
   std::stringstream pOs;
-
-  // std::cerr << "Solution to json" << endl;
-  //std::cerr << v_l << endl;
-  // std::cerr << v_r << endl;
   vector<int> rs;
   for (temporary t1 : input->T) {
     rs.push_back(l(t1).val() ? r(t1).val() : -1);
   }
 
-  // std::cerr << endl;
-  // std::cerr << "After temp" << endl;
-
   vector<instruction> is;
   for (operation o : input->O)
     is.push_back(input->instructions[o][i(o).val()]);
 
-  // std::cerr << "After instr" << endl;
   vector<int> cs;
   for (operation o : input->O)
     cs.push_back(a(o).val() ? c(o).val() : -1);
 
-  // std::cerr << "After cycles" << endl;
   vector<temporary> ys;
   for (operand p : input->P)
     ys.push_back(input->temps[p][y(p).val()]);
-  // std::cerr << "After temp" << endl;
+
   pOs << "{";
   pOs << "\"registers\":" << to_json(rs) << ",";
   pOs << "\"instructions\":" << to_json(is) << ",";

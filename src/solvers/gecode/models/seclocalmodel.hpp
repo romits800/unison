@@ -87,7 +87,6 @@ public:
   void post_m2_constraints(void);
   void post_r1_constraints(void);
   void post_r2_constraints(void);
-
   
   BoolVar subseq(temporary t1, temporary t2);
   BoolVar msubseq(operation o1, operation o2);
@@ -99,7 +98,14 @@ public:
   BoolVar subseq2(temporary t1, temporary t2);
   BoolVar msubseq2(operation o1, operation o2);
 
-  
+  // Branchers
+  void post_sec_brancher(void);
+  void post_branchers(char search);
+
+  // Master and Slave Configuration
+  virtual bool master(const MetaInfo& mi);
+  virtual bool slave(const MetaInfo& mi);
+
 };
 
 #endif

@@ -163,7 +163,6 @@ inferTypesOperation target _ types SingleOperation
                       -- TODO(fix): trying to avoid the control register 
                       oDs = d:_ }}} =
   let
-    -- exception for control register???
     (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t) = types
     supp' = updateSupps supp (ts1 ++ ts2) [d]
     unq' = updateBUnqs (unq, supp) ts1 ts2 [d]
@@ -577,11 +576,6 @@ updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _) ts1 ts2 dt
       typs2  = map (\tid -> Map.lookup tid pmap) ts2
       typ1   = mergeTypes typs1
       typ2   = mergeTypes typs2
-      -- xor1   = Map.findWithDefault False ts1 xor
-      -- xor2   = Map.findWithDefault False ts2 xor
-      -- xor12  = if xor1 && xor2 && isJustRandom typ1 && isJustRandom typ2
-      --          then not $ isEmpty $ Map.intersection dom1 dom2
-      --          else Nothing
   in case (typ1, typ2, is1s2, eqs1s2, eqd1d2, diffd1s2, diffd2s1, suppxor) of
     (Just (Public _), Just (Public _), True, _, _, _, _, _) ->
       Map.insert dt (Public dt) pmap

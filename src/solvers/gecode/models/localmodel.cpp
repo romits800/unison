@@ -285,7 +285,6 @@ void LocalModel::post_branchers(char search) {
 }
 
 void LocalModel::post_aggressive_branchers(void) {
-
   post_routing_branchers(true);
 
   branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
@@ -298,7 +297,6 @@ void LocalModel::post_aggressive_branchers(void) {
 }
 
 void LocalModel::post_trivial_branchers(void) {
-
   branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
          NULL, &print_inactive_decision);
 
@@ -321,7 +319,6 @@ void LocalModel::post_trivial_branchers(void) {
 }
 
 void LocalModel::post_minimum_cost_branchers(void) {
-
   branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
          NULL, &print_cost_decision);
 
@@ -347,7 +344,6 @@ void LocalModel::post_minimum_cost_branchers(void) {
 }
 
 void LocalModel::post_fail_first_branchers(void) {
-
   branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
          NULL, &print_inactive_decision);
 
@@ -370,7 +366,6 @@ void LocalModel::post_fail_first_branchers(void) {
 }
 
 void LocalModel::post_conservative_branchers(void) {
-
   post_routing_branchers(false);
 
   branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
@@ -381,6 +376,7 @@ void LocalModel::post_conservative_branchers(void) {
          &print_register_decision);
 
 }
+
 
 void LocalModel::post_routing_branchers(bool aggressive) {
 

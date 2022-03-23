@@ -1,13 +1,8 @@
 /*
  *  Main authors:
- *    Roberto Castaneda Lozano <rcas@acm.org>
+ *    Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
  *
- *  Contributing authors:
- *    Mats Carlsson <mats.carlsson@ri.se>
- *
- *  This file is part of Unison, see http://unison-code.github.io
- *
- *  Copyright (c) 2016, RISE SICS AB
+ *  Copyright (c) 2022, Rodothea Myrsini Tsoupidi
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -82,6 +77,43 @@ SecLocalModel::SecLocalModel(SecLocalModel& cg) :
   v_lk.update(*this, cg.v_lk);
   v_ok.update(*this, cg.v_ok);  
 }
+
+
+bool SecLocalModel::master(const MetaInfo& mi) {
+  assert(mi.type() == MetaInfo::PORTFOLIO);
+  return true;
+}
+
+bool SecLocalModel::slave(const MetaInfo& mi) {
+  assert(mi.type() == MetaInfo::PORTFOLIO);
+  string portfolio = options->local_portfolio();
+  assert(mi.asset() < portfolio.size());
+  char search = portfolio[mi.asset()];
+  post_branchers(search);
+  return true;
+}
+
+
+void SecLocalModel::post_sec_brancher(void) {
+  BoolVarArgs ts;
+
+  for (std::pair<const temporary, const vector<temporary>> tp : input -> secpairs) {
+    temporary tsec = tp.first;
+    int size = T().size();
+    if (temp(tsec) < size && temp(tsec) >= 0) {
+      ts << l(tsec);
+    }
+  }
+  branch(*this, ts, BOOL_VAR_NONE(), BOOL_VAL_MIN(),
+         NULL, NULL);
+}
+
+
+void SecLocalModel::post_branchers(char search) {
+  post_sec_brancher();
+  LocalModel::post_branchers(search);
+}
+
 
 SecLocalModel* SecLocalModel::copy(void) {
   return new SecLocalModel(*this);
@@ -234,7 +266,9 @@ void SecLocalModel::post_random_register_constraints(void) {
   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
     temporary t1 = tp.first;
     temporary t2 = tp.second;
-    if (temp(t1) < T().size() && temp(t2) < T().size() && temp(t1) >= 0 && temp(t2) >= 0 ) 
+    int temp_size = T().size();
+    if (temp(t1) < temp_size && temp(t2) < temp_size &&
+	temp(t1) >= 0 && temp(t2) >= 0 ) 
       constraint((l(t1) && l(t2)) >>
 		 ((r(t1) != r(t2)) || (!subseq(t1,t2) && !subseq(t2,t1))) );
   }
@@ -246,14 +280,15 @@ void SecLocalModel::post_secret_register_constraints(void) {
   // Temporaries that are secret should be preceeded by a random
   for (std::pair<const temporary, const vector<temporary>> tp : input -> secpairs) {
     BoolVarArgs b;
-    BoolVarArgs b1;
+    // BoolVarArgs b1;
     temporary tsec = tp.first;
+    int temp_size = T().size();
     // std::cout << tsec << "| ";
-    if (temp(tsec) < T().size() && temp(tsec) >= 0) {
+    if (temp(tsec) < temp_size && temp(tsec) >= 0) {
       for (const temporary trand: tp.second) {
-	if (temp(trand) < T().size() && temp(trand) >= 0) {
-	  b << var ( (l(tsec) == 1) >> ((l(trand)==1) && subseq(trand,tsec)));
-	  b1 << var(l(tsec) ==1);
+	if (temp(trand) < temp_size && temp(trand) >= 0) {
+	  b << var ( l(tsec) >> (l(trand) && subseq(trand,tsec)));
+	  //b1 << var(l(tsec) ==1);
 	  // std::cout << trand << ", ";
 	}
       }
@@ -272,9 +307,10 @@ void SecLocalModel::post_secret_mem_constraints(void) {
   for (std::pair<const vector<operation>, const vector<operation>> tp : input -> mempairs) {
     for (const operation o1: tp.first) {
       BoolVarArgs b;
-      if (instr(o1) < O().size() && instr(o1) >= 0) {
+      int op_size = O().size();
+      if (instr(o1) < op_size && instr(o1) >= 0) {
 	for (const operation o2: tp.second) {
-	  if (instr(o2) < O().size() && instr(o2) >= 0) {
+	  if (instr(o2) < op_size && instr(o2) >= 0) {
 	    b << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
 	  }
 	}

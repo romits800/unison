@@ -251,9 +251,9 @@ void SecModel::post_secret_register_constraints(void) {
     temporary tsec = tp.first;
     // std::cout << tsec << std::endl;
     for (const temporary trand: tp.second) {
-      b << var ( (l(tsec) == 1) >> ((l(trand)==1) && subseq(trand,tsec)));
-      b1 << var(l(trand) ==1);
-      b2 << var(subseq(trand,tsec) ==1);
+      b << var ( l(tsec)  >> (l(trand) && subseq(trand,tsec)));
+      // b1 << var(l(trand) ==1);
+      // b2 << var(subseq(trand,tsec) ==1);
       // std::cout << trand << ", ";
     }
     // std::cout << std::endl << b << std::endl;
