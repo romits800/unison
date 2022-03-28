@@ -45,6 +45,21 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   int op_size = O().size();
   int maxval = sum_of(input->maxc);
 
+
+  vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi"}; 
+  for (operation o : O()) { 
+    if (input -> type[o] == COPY)
+      memops.push_back(o);
+    else {
+      for(instruction i : input-> instructions[o]) {
+	if (contains(memstrings, input -> insname[i])) {
+	  memops.push_back(o);
+	  break;
+	}
+      }
+    }
+  }
+  
   v_lk = int_var_array(temp_size, -1, maxval);
   v_ok = int_var_array(op_size, -1, maxval);
   //}
@@ -64,11 +79,24 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   post_m1_constraints();
 
   post_security_constraints();
+
+  // constraint(a(33) ^ a(34));
+  // constraint(a(21) ^ a(22));
+
+  // constraint(a(33) == 1);
+  // constraint(a(21) == 1);
+  
+  // constraint(a(34) == 0);
+  // constraint(a(22) == 0);
+  // constraint(l(15) >> (!l(15)));
+  // constraint(l(16) >> (l(15)));
+  // constraint(l(34) >> (l(15)));
 }
 
 
 SecModel::SecModel(SecModel& cg) :
-  GlobalModel(cg)
+  GlobalModel(cg),
+  memops(cg.memops)
 {
   // Implementation 1
   v_rtle.update(*this, cg.v_rtle);
@@ -86,6 +114,85 @@ SecModel* SecModel::copy(void) {
 }
 
 
+void SecModel::post_branchers(void) {
+  // std::cout << "SecModel post branchers" << std::endl;
+  // if (!options-> disable_sec_regreg_constraints()) {
+  //   BoolVarArgs ts;
+  //   BoolVarArgs as;
+  //   IntVarArgs rs;
+  //   IntVarArgs ys;
+  //   IntVarArgs lss;
+  //   int size = T().size();
+  //   bool arr[size];
+  //   for (int i = 0; i< size; i++)
+  //     arr[i] = false;
+
+  //   int sizeo = O().size();
+  //   bool arro[sizeo];
+  //   for (int i = 0; i< sizeo; i++)
+  //     arro[i] = false;
+
+  //   int sizep = P().size();
+  //   bool arrp[sizep];
+  //   for (int i = 0; i< sizep; i++)
+  //     arrp[i] = false;
+
+  //   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+  //     temporary t1 = tp.first;
+  //     temporary t2 = tp.second;
+  //     operand p1 = input -> definer[t1];
+  //     operand p2 = input -> definer[t2];
+  //     operation o1 = input -> oper[p1];
+  //     operation o2 = input -> oper[p2];
+  //     block b1 = input -> oblock[o1];
+  //     block b2 = input -> oblock[o2];
+  //     if (b1 != b2) {
+  // 	// std::cout << t1 << ", " << t2 << std::endl;
+  // 	if (!arro[o1]) {
+  // 	  as << a(o1); arro[o1] = true;
+  // 	  // ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+  // 	}
+  // 	if (!arro[o2]) {
+  // 	  as << a(o2); arro[o2] = true;
+  // 	  // ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+  // 	}
+  // 	if (!arrp[p1]) {
+  // 	  ys << y(p1); arrp[p1] = true;
+  // 	  // ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+  // 	}
+  // 	if (!arrp[p2]) {
+  // 	  ys << y(p2); arrp[p2] = true;
+  // 	  // ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+  // 	}
+  // 	if (!arr[t1]) {
+  // 	  rs << r(t1); arr[t1] = true;
+  // 	  // ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+  // 	}
+  // 	if (!arr[t2]) {
+  // 	  rs << r(t2); arr[t2] = true;
+  // 	  // ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+  // 	}
+  //     }
+  //   }
+  //   // std::cout << as << std::endl;
+  //   // std::cout << rs << std::endl;
+  //   // std::cout << ys << std::endl;
+  //   Rnd r;
+  //   r.seed(42);
+
+  //   // if (as.size() > 0) 
+  //   //   branch(*this, as, BOOL_VAR_NONE(), BOOL_VAL_MIN(),
+  //   //   	     NULL, NULL);
+  //   if (ys.size() > 0) 
+  //     branch(*this, ys, INT_VAR_NONE(), INT_VAL_MIN(),
+  //     	     NULL, NULL);
+  //   // if (rs.size() > 0) 
+  //   //   branch(*this, rs, INT_VAR_NONE(), INT_VAL_RND(r),
+  //   //   	     NULL, NULL);   
+  // }
+  GlobalModel::post_branchers();
+}
+
 
 BoolVar SecModel::subseq1(temporary t1, temporary t2) {
   int temp_size = T().size();
@@ -100,7 +207,7 @@ BoolVar SecModel::subseq1(temporary t1, temporary t2) {
 
 
 BoolVar SecModel::msubseq1(operation o1, operation o2) {
-
+  assert( contains(memops, o1) && contains(memops, o2));
   return var ( (v_opcy[o1] != -1) && (v_opcymap[o1] + 1 == v_opcymap[o2]) );
 }
 
@@ -145,8 +252,10 @@ void SecModel::post_m1_constraints(void) {
       // IntVarArgs lts;
       IntVarArray sorted_lts = int_var_array(op_size, -1, maxval);
       // IntVarArray os_map = int_var_array(op_size, -1, maxval);
-      for (operation o: input -> O) { // Hardware registers
-	BoolVar ifb  = var(a(o) == 1); 
+      for (operation o: memops) { // Hardware registers
+	int mem = input -> instructions[o][input -> instructions[o].size() - 1];
+	BoolVar if1 = (input -> type[o] == COPY) ? var(i(o) == mem) : var(i(o) == i(o));
+	BoolVar ifb  = var((a(o) == 1) && if1); 
 	IntVar thenb = var(c(o));
 	IntVar elseb = var(-1); 
 	ite(*this, ifb,  thenb, elseb, v_opcy[o], IPL_BND);
@@ -210,11 +319,13 @@ void SecModel::post_m2_constraints(void) {
   if (options -> sec_implementation() == SEC_R2_M2 ||
       options -> sec_implementation() == SEC_R1_M2)
     {
-      for (operation o1 : input -> O) { 
+      for (operation o1 : memops) { 
 	IntVarArgs lts;
- 	for (operation o2 : input -> O) {
+ 	for (operation o2 : memops) {
       	  if (o1 != o2) {
-      	    BoolVar ifb  = var(a(o2) && (c(o2) <= c(o1)));
+	    int mem = input -> instructions[o2][input -> instructions[o2].size() - 1];
+	    BoolVar if1 = (input -> type[o2] == COPY) ? var(i(o2) == mem) : var(i(o2) == i(o2));
+	    BoolVar ifb  = var(a(o2) && if1 && (c(o2) <= c(o1)));
       	    IntVar thenb = var( c(o2) );
       	    IntVar elseb = var( -1 ); 
       	    IntVar res = IntVar(*this, -1, maxval);
@@ -235,8 +346,8 @@ void SecModel::post_random_register_constraints(void) {
   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
     temporary t1 = tp.first;
     temporary t2 = tp.second;
-    constraint((l(t1) && l(t2)) >>
-	      ((r(t1) != r(t2)) || (!subseq(t1,t2) && !subseq(t2,t1))) );
+    constraint((l(t1) && l(t2) && (r(t1) == r(t2))) >>
+	       (!subseq(t1,t2) && !subseq(t2,t1)));
   }
 }
 
@@ -283,9 +394,55 @@ void SecModel::post_secret_mem_constraints(void) {
 
 
 
+void SecModel::post_implied_constraints(void) {
+  BoolVarArgs ts;
+  IntVarArgs rs;
+  IntVarArgs lss;
+  // int size = T().size();
+  // bool arr[size];
+  
+  for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+    temporary t1 = tp.first;
+    temporary t2 = tp.second;
+    operand p1 = input -> definer[t1];
+    operand p2 = input -> definer[t2];
+    vector<operand> us1 = input -> users[t1];
+    vector<operand> us2 = input -> users[t2];
+    operation o1 = input -> oper[p1];
+    operation o2 = input -> oper[p2];
+    for (operand pi: us2) {
+      operation oi = input -> oper[pi];
+      if (o1 == oi) {
+	// std::cout << o1 << ": " << p1 << ", " << pi << std::endl;
+	constraint( a(o1) == 0 || (ry(p1) != ry(pi)));
+      }
+    }
+    for (operand pi: us1) {
+      operation oi = input -> oper[pi];
+      if (o2 == oi) {
+	// std::cout << o1 << ": " << p2 << ", " << pi << std::endl;
+	constraint( a(o2) == 0 || (ry(p2) != ry(pi)));
+      }
+    }
+
+    // if (b1 != b2) {
+    //   // std::cout << t1 << ", " << t2 << std::endl;
+    //   if (!arr[t1]) {
+    // 	ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+    //   }
+    //   if (!arr[t2]) {
+    // 	ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+    //   }
+    // }
+  }
+}
+
+
 void SecModel::post_security_constraints(void) {
-  if (!options-> disable_sec_regreg_constraints())
+  if (!options-> disable_sec_regreg_constraints()) {
     post_random_register_constraints();
+    post_implied_constraints();
+  }
   if (!options-> disable_sec_secret_constraints())
     post_secret_register_constraints();
   if (!options-> disable_sec_mem_constraints())

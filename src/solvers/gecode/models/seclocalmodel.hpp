@@ -69,6 +69,8 @@ public:
   // operation size array with max (le(t'))
   IntVarArray v_ok;
 
+
+  vector<operation> memops;
   
   SecLocalModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
 		const SecModel * gs, block b);
@@ -83,6 +85,9 @@ public:
   void post_secret_mem_constraints(void);
   void post_security_constraints(void);
 
+  void post_implied_constraints(void);
+  // void post_implied_subseq(void);
+    
   void post_m1_constraints(void);
   void post_m2_constraints(void);
   void post_r1_constraints(void);

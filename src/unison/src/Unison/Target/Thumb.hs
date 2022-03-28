@@ -1002,7 +1002,8 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
 
 constraints f =
   foldMatch altRetConstraints [] f ++
-  foldMatch altLoadStoreConstraints [] f
+  foldMatch altLoadStoreConstraints [] f ++
+  foldMatch altNonSymmetricConstraints [] f
 
 altRetConstraints (
   op @ SingleOperation {oOpr = Copy {
@@ -1018,6 +1019,45 @@ altRetConstraints (
   in (code, constraints ++ [alt])
 
 altRetConstraints (_ : code) constraints = (code, constraints)
+
+--- TODO
+altNonSymmetricConstraints (
+  op1 @ SingleOperation {oOpr = Natural {
+       oNatural = Linear{
+           oIs = [ General NullInstruction, TargetInstruction i ],
+           oUs = (MOperand {altTemps = ts1}):(MOperand {altTemps = ts2}):ous
+           }
+       }}
+  :
+  op2 @ SingleOperation {oOpr = Natural {
+       oNatural = Linear{
+           oIs = [ General NullInstruction, TargetInstruction i' ],
+           oUs = (MOperand {altTemps = ts1'}):(MOperand {altTemps = ts2'}):ous'
+           }
+       }}
+  :
+  code) constraints | isNonSymmetric i' && isNonSymmetric i' && equalTemps (ff ts1) (ff ts2') && equalTemps (ff ts1') (ff ts2) =
+  let alt = XorExpr (ActiveExpr (oId op1)) (ActiveExpr (oId op2))
+  in (code, constraints ++ [alt])
+  where ff ts1 = sort $ getTemporaries [] ts1
+altNonSymmetricConstraints (_ : code) constraints = (code, constraints)
+
+
+getTemporaries :: [Integer] -> [Operand r] -> [Integer] 
+getTemporaries acc []  = acc
+getTemporaries acc ((Temporary {tId = ts}):tss) = getTemporaries (ts:acc) tss
+getTemporaries acc (_:tss) = getTemporaries acc tss
+
+
+equalTemps [] [] = True
+equalTemps [] _ = False
+equalTemps _ [] = False
+equalTemps (t1:ts1) (t2:ts2) | t1 == t2 = equalTemps ts1 ts2
+equalTemps (t1:ts1) (t2:ts2) = False
+
+-- equalTemps ((Temporary {tId = ts1}):tss1) ((Temporary {tId = ts2}):tss2) | ts1 == ts2 = equalTemps tss1 tss2
+-- equalTemps ((Temporary {tId = ts1}):tss1) ((Temporary {tId = ts2}):tss2) = False
+
 
 altLoadStoreConstraints (
   s1 @ SingleOperation {oOpr = Natural Linear {

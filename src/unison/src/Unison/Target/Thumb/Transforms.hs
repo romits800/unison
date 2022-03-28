@@ -21,7 +21,8 @@ module Unison.Target.Thumb.Transforms
      combineLoadStores,
      reorderCalleeSavedSpills,
      enforceStackFrame,
-     extendNonSymmetricOperands) where
+     extendNonSymmetricOperands,
+     isNonSymmetric) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S

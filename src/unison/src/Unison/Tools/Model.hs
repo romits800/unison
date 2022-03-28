@@ -71,7 +71,6 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
 
 modeler (scaleFreq, noCC) aux target f =
   toJSON (M.fromList (is ++ ra))
---                      RA.parameters noCC aux f target))
     where is = IS.parameters scaleFreq aux f target
           ra = is `seq` RA.parameters noCC aux f target
 

@@ -68,6 +68,8 @@ public:
   // operation size array with max (le(t'))
   IntVarArray v_ok;
 
+  vector<operation> memops;
+  
   // Gecode space methods
   SecModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
@@ -76,13 +78,16 @@ public:
   SecModel* copy(void);
 
   // Branchers
-  
+  void post_branchers(void);
+
   // Security Constraints
   void post_random_register_constraints(void);
   void post_secret_register_constraints(void);
   void post_secret_mem_constraints(void);
   void post_security_constraints(void);
 
+  void post_implied_constraints(void);
+  
   void post_m1_constraints(void);
   void post_m2_constraints(void);
   void post_r1_constraints(void);
