@@ -411,7 +411,7 @@ void SecLocalModel::post_secret_register_constraints(void) {
     if (temp(tsec) < temp_size && temp(tsec) >= 0) {
       for (const temporary trand: tp.second) {
 	if (temp(trand) < temp_size && temp(trand) >= 0) {
-	  b << var ( l(tsec) >> (l(trand) && subseq(trand,tsec)));
+	  b << var (l(trand) && subseq(trand,tsec));
 	  //b1 << var(l(tsec) ==1);
 	  // std::cout << trand << ", ";
 	}
@@ -419,7 +419,7 @@ void SecLocalModel::post_secret_register_constraints(void) {
       // std::cout << std::endl << b << std::endl;
       // std::cout << b1 << std::endl;
       if (b.size() > 0)
-	constraint(sum(b) > 0);
+	constraint( l(tsec) >> (sum(b) > 0));
     }
   }
 }
@@ -435,11 +435,11 @@ void SecLocalModel::post_secret_mem_constraints(void) {
       if (instr(o1) < op_size && instr(o1) >= 0) {
 	for (const operation o2: tp.second) {
 	  if (instr(o2) < op_size && instr(o2) >= 0) {
-	    b << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
+	    b << var (a(o2) && msubseq(o1,o2));
 	  }
 	}
 	if (b.size() > 0)
-	  constraint(sum(b) >0);
+	  constraint(a(o1) >> (sum(b) >0));
       }
     }
   }

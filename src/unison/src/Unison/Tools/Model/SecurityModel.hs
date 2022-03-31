@@ -31,12 +31,13 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
     nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _) = inferSecurityTypes target f policies
     (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
     ran'            = filter (\x -> head x == 't') ran
+    pub'            = filter (\x -> head x == 't') pub
     sec'            = filter (\x -> head x == 't' && (isNothing $ Map.lookup x inmap)) sec
     sec''           = filter (\x -> head x == 'F') sec  -- memory secrets
     ran''           = filter (\x -> head x == 'F' || head x == 't') ran  -- memory randoms
 
     -- Parameters
-    pairs           = findPairs ran' nt []
+    pairs           = findPairs ran' pub' nt []
     secdom          = findRandSec sec' ran' nt []
     p2o             = Map.union c2o' m2o'
     secdommem       = findRandSecMC sec'' ran'' nt p2o [] 
@@ -89,8 +90,8 @@ toInt1 t       = error $ "SecTypeInf: toInt cannot convert to integer: " ++ t
 
 
 -- TODO (Check if this is correct)
-findPairs [] _ res = res
-findPairs (p:ps) types res = 
+findPairs [] _ _ res = res
+findPairs (p:ps) pubs types res = 
   let
     f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t) res p2 =
       let
@@ -117,8 +118,8 @@ findPairs (p:ps) types res =
          then (p,p2):res
          else res
       -- in (p,p2):res
-    res' = foldl (f types) res ps
-  in findPairs ps types res'
+    res' = foldl (f types) res (ps ++ pubs)
+  in findPairs ps pubs types res'
 
 
 

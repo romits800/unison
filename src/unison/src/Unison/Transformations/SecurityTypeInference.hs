@@ -519,8 +519,8 @@ updateBDoms (dom, unq) sts1 sts2 dts =
 
 -- if each operand consists of xors
 updateBDomsSth (dom, xor) sts1 sts2 dts =
-  let stids1  = getTids sts1 [] -- sources
-      stids2  = getTids sts2 [] -- sources
+  let stids1 = getTids sts1 [] -- sources
+      stids2 = getTids sts2 [] -- sources
       val1   = foldl (&&) True $ map (\tid -> Map.findWithDefault True tid xor) stids1
       val2   = foldl (&&) True $ map (\tid -> Map.findWithDefault True tid xor) stids2
   in if val1 && val2 then
