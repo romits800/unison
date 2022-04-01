@@ -890,7 +890,14 @@ int main(int argc, char* argv[]) {
         if (options.verbose()) {
           cerr << global() << "found solution (failures: " << gs.failures
                << ", nodes: " << gs.nodes << ")" << endl;
-        }
+	  // std::cout << "a: " << gs.solution -> v_a << std::endl;
+	  // std::cout << "r: " << gs.solution -> v_r << std::endl;
+	  // std::cout << "c: " << gs.solution -> v_c << std::endl;
+	  // std::cout << "y: " << gs.solution -> v_y << std::endl;
+	  // std::cout << "i: " << gs.solution -> v_i << std::endl;
+	  // std::cout << "v_le: " << gs.solution -> v_le << std::endl;
+	  // std::cout << "cost: " << gs.solution -> cost() << std::endl;
+	}
 
         if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
 
@@ -947,20 +954,52 @@ int main(int argc, char* argv[]) {
             break;
           } else { // a solution is found
             // Extend the global solution with the newly found local solution
-            GECODE_NOT_NULL(ls.solution);
+	    GECODE_NOT_NULL(ls.solution);
             gs.solution->apply_solution(ls.solution);
             if (ls.result == OPTIMAL_SOLUTION) {
               local_solutions[b].push_back(ls.solution);
               base->post_local_solution_cost(ls.solution);
             }
+	    // std::cout << "local solutions" << std::endl;
+	    // std::cout << "block: " << b << std::endl;
+	    // std::cout << "a: " << ls.solution -> v_a << std::endl;
+	    // std::cout << "r: " << ls.solution -> v_r << std::endl;
+	    // std::cout << "c: " << ls.solution -> v_c << std::endl;
+	    // std::cout << "y: " << ls.solution -> v_y << std::endl;
+	    // std::cout << "i: " << ls.solution -> v_i << std::endl;
+	    // std::cout << "v_ls: " << ls.solution -> v_ls << std::endl;
+	    // std::cout << "v_le: " << ls.solution -> v_le << std::endl;
+	    // std::cout << "cost: " << ls.solution -> cost() << std::endl;
+
             // Propagate the cost of the found local solution in the global problem
             SpaceStatus status = gs.solution->status();
             if (status == Gecode::SS_FAILED) {
               found_all_local = false;
               unsat = true;
-              if (options.verbose())
+              if (options.verbose()) {
+		// std::cout << "global solution" << std::endl;
+		// std::cout << "block: " << b << std::endl;
+		// std::cout << "a: " << gs.solution -> v_a << std::endl;
+		// std::cout << "r: " << gs.solution -> v_r << std::endl;
+		// std::cout << "c: " << gs.solution -> v_c << std::endl;
+		// std::cout << "y: " << gs.solution -> v_y << std::endl;
+		// std::cout << "i: " << gs.solution -> v_i << std::endl;
+		// std::cout << "v_ls: " << gs.solution -> v_ls << std::endl;
+		// std::cout << "v_le: " << gs.solution -> v_le << std::endl;
+		// std::cout << "cost: " << gs.solution -> cost() << std::endl;
+		// std::cout << "v_gb: " << gs.solution -> v_gb << std::endl;
+		// std::cout << "lgs[64]: " << gs.solution -> lgs(64) << std::endl;
+		// std::cout << "lge[64]: " << gs.solution -> lge(64) << std::endl;
+
+		// std::cout << "ls[64]: " << gs.solution -> ls(64) << std::endl;
+		// std::cout << "le[64]: " << gs.solution -> le(64) << std::endl;
+		// std::cout << "bot[64]: " << gs.solution -> bot(64) << std::endl;
+		// std::cout << "gb[0]: " << gs.solution -> gb(0) << std::endl;
+		// std::cout << "gb[1]: " << gs.solution -> gb(1) << std::endl;
+
                 cerr << local(b)
                      << "could not extend global solution: too costly" << endl;
+	      }
               break;
             }
           }

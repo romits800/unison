@@ -44,8 +44,13 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   int temp_size = T().size();
   int op_size = O().size();
   int maxval = sum_of(input->maxc);
+  int block_number = input -> B.size();
 
-
+  v_gb = int_var_array(block_number, 0, maxval);
+  v_lgs = int_var_array(temp_size, 0, maxval);
+  v_lge = int_var_array(temp_size, 0, maxval);
+  post_global_cycle_offset();
+  
   vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi"}; 
   for (operation o : O()) { 
     if (input -> type[o] == COPY)
@@ -79,18 +84,6 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   post_m1_constraints();
 
   post_security_constraints();
-
-  // constraint(a(33) ^ a(34));
-  // constraint(a(21) ^ a(22));
-
-  // constraint(a(33) == 1);
-  // constraint(a(21) == 1);
-  
-  // constraint(a(34) == 0);
-  // constraint(a(22) == 0);
-  // constraint(l(15) >> (!l(15)));
-  // constraint(l(16) >> (l(15)));
-  // constraint(l(34) >> (l(15)));
 }
 
 
@@ -98,6 +91,10 @@ SecModel::SecModel(SecModel& cg) :
   GlobalModel(cg),
   memops(cg.memops)
 {
+  v_gb.update(*this, cg.v_gb);
+  v_lgs.update(*this, cg.v_lgs);
+  v_lge.update(*this, cg.v_lge);
+
   // Implementation 1
   v_rtle.update(*this, cg.v_rtle);
   v_rtlemap.update(*this, cg.v_rtlemap);
@@ -113,6 +110,21 @@ SecModel* SecModel::copy(void) {
   return new SecModel(*this);
 }
 
+void SecModel::post_global_cycle_offset(void) {
+  // VarInt offset;
+  for (block b: input->B) {
+    if (b == 0)
+      constraint(gb(b) == 0);
+    else
+      constraint(gb(b) == gb(b-1) + c(input->out[b-1]));
+  }
+
+  for (temporary t: T()) {
+    constraint(lge(t) == le(t) + gb(bot(t)));
+    constraint(lgs(t) == ls(t) + gb(bot(t)));
+  }
+}
+
 
 void SecModel::post_branchers(void) {
   // std::cout << "SecModel post branchers" << std::endl;
@@ -122,6 +134,9 @@ void SecModel::post_branchers(void) {
   //   IntVarArgs rs;
   //   IntVarArgs ys;
   //   IntVarArgs lss;
+  //   IntVarArgs vlks;
+  //   BoolVarArgs ands;
+  //   BoolVarArgs ls;
   //   int size = T().size();
   //   bool arr[size];
   //   for (int i = 0; i< size; i++)
@@ -147,30 +162,37 @@ void SecModel::post_branchers(void) {
   //     block b1 = input -> oblock[o1];
   //     block b2 = input -> oblock[o2];
   //     if (b1 != b2) {
+  // 	ands << var(l(t1) && l(t2));
   // 	// std::cout << t1 << ", " << t2 << std::endl;
   // 	if (!arro[o1]) {
+  // 	  // std::cout << o1 << std::endl;
   // 	  as << a(o1); arro[o1] = true;
-  // 	  // ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+  // 	  // ts << l(t1); rs << r(t1); lss << lgs(t1); arr[t1] = true;
   // 	}
   // 	if (!arro[o2]) {
+  // 	  // std::cout << o2 << std::endl;
   // 	  as << a(o2); arro[o2] = true;
-  // 	  // ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+  // 	  // ts << l(t2); rs << r(t2); lss << lgs(t1); arr[t2] = true;
   // 	}
   // 	if (!arrp[p1]) {
   // 	  ys << y(p1); arrp[p1] = true;
-  // 	  // ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+  // 	  // ts << l(t1); rs << r(t1); lss << lgs(t1); arr[t1] = true;
   // 	}
   // 	if (!arrp[p2]) {
   // 	  ys << y(p2); arrp[p2] = true;
-  // 	  // ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+  // 	  // ts << l(t2); rs << r(t2); lss << lgs(t1); arr[t2] = true;
   // 	}
   // 	if (!arr[t1]) {
   // 	  rs << r(t1); arr[t1] = true;
-  // 	  // ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+  // 	  ls << l(t1);
+  // 	  vlks << v_lk[t1];
+  // 	  // ts << l(t1); rs << r(t1); lss << lgs(t1); arr[t1] = true;
   // 	}
   // 	if (!arr[t2]) {
   // 	  rs << r(t2); arr[t2] = true;
-  // 	  // ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+  // 	  ls << l(t2);
+  // 	  vlks << v_lk[t2];
+  // 	  // ts << l(t2); rs << r(t2); lss << lgs(t1); arr[t2] = true;
   // 	}
   //     }
   //   }
@@ -179,16 +201,36 @@ void SecModel::post_branchers(void) {
   //   // std::cout << ys << std::endl;
   //   Rnd r;
   //   r.seed(42);
+  //   if (ands.size() > 0) {
+  //     std::cout << "we have some a branches: " << ands.size() << "randpairs: " << (input->randpairs.size()) << std::endl;
+  //     branch(*this, ands, BOOL_VAR_NONE(), BOOL_VAL_MIN(),
+  //     	     NULL, NULL);
+  //   }
 
-  //   // if (as.size() > 0) 
+  //   // if (as.size() > 0) {
+  //   //   std::cout << "we have some a branches: " << as.size() << std::endl;
   //   //   branch(*this, as, BOOL_VAR_NONE(), BOOL_VAL_MIN(),
   //   //   	     NULL, NULL);
-  //   if (ys.size() > 0) 
-  //     branch(*this, ys, INT_VAR_NONE(), INT_VAL_MIN(),
-  //     	     NULL, NULL);
+  //   // }
+  //   // if (ys.size() > 0) {
+  //   //   std::cout << "we have some y branches: " << ys.size() << std::endl;
+  //   //   branch(*this, ys, INT_VAR_NONE(), INT_VAL_MIN(),
+  //   //   	     NULL, NULL);
+  //   // }
+  //   // if (ls.size() > 0) {
+  //   //   std::cout << "we have some live branches: " << ls.size() << std::endl;
+  //   //   branch(*this, ls, BOOL_VAR_NONE(), BOOL_VAL_MIN(),
+  //   //   	     NULL, NULL);
+  //   // }
   //   // if (rs.size() > 0) 
   //   //   branch(*this, rs, INT_VAR_NONE(), INT_VAL_RND(r),
   //   //   	     NULL, NULL);   
+  //   // if (vlks.size() > 0) {
+  //   //   std::cout << "found vlks: " << vlks.size() << std::endl;
+  //   //   branch(*this, vlks, INT_VAR_NONE(), INT_VAL_RND(r),
+  //   //   	     NULL, NULL);
+  //   // }
+
   // }
   GlobalModel::post_branchers();
 }
@@ -215,7 +257,7 @@ BoolVar SecModel::msubseq1(operation o1, operation o2) {
 
 
 BoolVar SecModel::subseq2(temporary t1, temporary t2) {
-  return var (l(t1) && l(t2) && v_lk[t2] == le(t1));
+  return var (l(t1) && l(t2) && v_lk[t2] == lge(t1));
 }
 
 
@@ -277,7 +319,7 @@ void SecModel::post_r1_constraints(void) {
 	IntVarArray rs_map = int_var_array(temp_size, -1, maxval);
 	for (temporary t: input -> T) {
 	  BoolVar ifb  = var(l(t) && (r(t) == ra)); 
-	  IntVar thenb = var( ls(t) );
+	  IntVar thenb = var( lgs(t) );
 	  IntVar elseb = var( -1 ); 
 	  IntVar res = IntVar(*this, -1, maxval);
 	  ite(*this, ifb,  thenb, elseb, res, IPL_BND);
@@ -301,8 +343,8 @@ void SecModel::post_r2_constraints(void) {
  	for (temporary t2 : input -> T) {
       	  if (t1 != t2) {
       	    BoolVar ifb  = var(l(t2) && (r(t1) == r(t2)) &&
-      			       (le(t2) <= ls(t1)));
-      	    IntVar thenb = var( le(t2) );
+      			       (lge(t2) <= lgs(t1)));
+      	    IntVar thenb = var( lge(t2) );
       	    IntVar elseb = var( -1); 
       	    IntVar res = IntVar(*this, -1, maxval);
       	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
@@ -424,17 +466,22 @@ void SecModel::post_implied_constraints(void) {
 	constraint( a(o2) == 0 || (ry(p2) != ry(pi)));
       }
     }
-
+    
     // if (b1 != b2) {
     //   // std::cout << t1 << ", " << t2 << std::endl;
     //   if (!arr[t1]) {
-    // 	ts << l(t1); rs << r(t1); lss << ls(t1); arr[t1] = true;
+    // 	ts << l(t1); rs << r(t1); lss << lgs(t1); arr[t1] = true;
     //   }
     //   if (!arr[t2]) {
-    // 	ts << l(t2); rs << r(t2); lss << ls(t1); arr[t2] = true;
+    // 	ts << l(t2); rs << r(t2); lss << lgs(t1); arr[t2] = true;
     //   }
     // }
   }
+  
+  for (temporary t1 : input -> T) 
+    for (temporary t2 : input -> T)
+      constraint( (lgs(t1) == 0) >> (subseq(t2,t1) == 0));
+
 }
 
 

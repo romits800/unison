@@ -486,6 +486,11 @@ void SecLocalModel::post_implied_constraints(void) {
       }
     }
   }
+  
+  for (temporary t1 : T())
+    for (temporary t2 : T())
+      constraint( (ls(t1) == 0) >> (subseq(t2,t1) == 0));
+
 }
 
 

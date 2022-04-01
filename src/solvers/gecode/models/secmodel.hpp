@@ -45,6 +45,11 @@ class SecModel : public GlobalModel {
 
 public:
 
+  // global block offset
+  IntVarArray v_gb;
+  IntVarArray v_lgs;
+  IntVarArray v_lge;
+
   // Implementation 1
   
   // Register Array
@@ -104,6 +109,16 @@ public:
   BoolVar subseq2(temporary t1, temporary t2);
   BoolVar msubseq2(operation o1, operation o2);
 
+  // Global constraints
+  void post_global_cycle_offset(void);
+  IntVar gb(block b) const {return v_gb[b]; }
+  IntVar lgs(block b) const {return v_lgs[b]; }
+  IntVar lge(block b) const {return v_lge[b]; }
+  block bot (temporary t) {
+    operand p = input -> definer[t];
+    operation o = input -> oper[p];
+    return (input -> oblock[o]);
+  }
 
  
   // void next(const SecModel& l);
