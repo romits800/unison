@@ -96,7 +96,9 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 
   v_opcy = int_var_array(op_size, -1, maxval);
   v_opcymap = int_var_array(op_size, -1, maxval);
-  
+
+  apply_sec_solution(gs);
+
   post_r1_constraints();
   post_m1_constraints();
 
@@ -302,9 +304,9 @@ void SecLocalModel::post_m1_constraints(void) {
 	BoolVar ifb  = var((a(o) == 1) && if1); 
 	IntVar thenb = var(c(o));
 	IntVar elseb = var(-1); 
-	ite(*this, ifb,  thenb, elseb, v_opcy[instr(o)], IPL_BND);
+	ite(*this, ifb,  thenb, elseb, v_opcy[instr(o)], IPL_DOM);
       }
-      sorted(*this, v_opcy, sorted_lts, v_opcymap);
+      sorted(*this, v_opcy, sorted_lts, v_opcymap, IPL_DOM);
     }
 }
 
@@ -324,12 +326,12 @@ void SecLocalModel::post_r1_constraints(void) {
 	  IntVar thenb = var( ls(t) );
 	  IntVar elseb = var( -1 ); 
 	  IntVar res = IntVar(*this, -1, maxval);
-	  ite(*this, ifb,  thenb, elseb, res, IPL_BND);
+	  ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
 	  constraint(v_rtle[ra*temp_size + temp(t)] == res);
 	  constraint(v_rtlemap[ra*temp_size + temp(t)] == rs_map[temp(t)]);
 	  lts <<  res;
 	}
-	sorted(*this, lts, sorted_lts, rs_map);      
+	sorted(*this, lts, sorted_lts, rs_map, IPL_DOM);
       }
     }
 }
@@ -349,11 +351,11 @@ void SecLocalModel::post_r2_constraints(void) {
       	    IntVar thenb = var(le(t2));
       	    IntVar elseb = var(-1); 
       	    IntVar res = IntVar(*this, -1, maxval);
-      	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
+      	    ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
       	    lts << res;
       	  }
 	}
-	max(*this, lts, v_lk[temp(t1)]);
+	max(*this, lts, v_lk[temp(t1)], IPL_DOM);
       }
     }
 }
@@ -373,11 +375,11 @@ void SecLocalModel::post_m2_constraints(void) {
 	    IntVar thenb = var( c(o2) );
 	    IntVar elseb = var( -1 ); 
 	    IntVar res = IntVar(*this, -1, maxval);
-	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
+	    ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
 	    lts <<  res;
 	  }
 	}
-	max(*this, lts, v_ok[instr(o1)]);
+	max(*this, lts, v_ok[instr(o1)], IPL_DOM);
       }
     }
 }
@@ -397,6 +399,87 @@ void SecLocalModel::post_random_register_constraints(void) {
 		 (!subseq(t1,t2) && !subseq(t2,t1)));
   }
 }
+
+
+void SecLocalModel::apply_sec_solution(const SecModel * gs) {
+  for (operation o : input->ops[b]) {
+    copy_domain(*this, gs->v_ok[o], v_ok[instr(o)]);
+  }
+
+  for (temporary t : input->tmp[b]) {
+    copy_domain(*this, gs->v_lk[t], v_lk[temp(t)]);
+  }
+
+}
+
+
+
+// void SecLocalModel::post_random_register_constraints(void) {
+//   // These pairs should not be in the same register or should not be consequent
+//   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+//     temporary t1 = tp.first;
+//     temporary t2 = tp.second;
+//     // int temp_size = T().size();
+//     if (is_in(t1) && is_in(t2)) 
+//       constraint((l(t1) && l(t2) && (r(t1) == r(t2))) >>
+// 		 (!subseq(t1,t2) && !subseq(t2,t1)));
+//     else if (is_in(t1) && !is_in(t2)) {
+//       // std::cout << t2 << std::endl;
+//       operand p2 = input -> definer[t2];
+//       operation o2 = input -> oper[p2];
+//       block b2 = input -> oblock[o2];
+//       if (b2 > b) {
+//     	if (input->out[b] <= input->oper[input->definer[t1]] + 2)
+//     	  continue;
+//     	BoolVarArgs bs;
+//     	for (const temporary t: T()) {
+//     	  bs << var (l(t) && subseq(t1,t));
+//     	}
+//     	if (bs.size() > 0)
+//     	  constraint( l(t1) >> (sum(bs) > 0));
+
+//       }
+//       else {
+//       	if (input->in[b] >= input->oper[input->definer[t1]] - 2)
+//       	  continue;
+//       	BoolVarArgs bs;
+//       	for (const temporary t: T()) {
+//       	  bs << var (l(t) && subseq(t,t1));
+//       	}
+//       	if (bs.size() > 0)
+//       	  constraint( l(t1) >> (sum(bs) > 0));
+//       }
+
+//     }
+//     else if (is_in(t2) && !is_in(t1)) {
+//       // std::cout << t1 << std::endl;
+//       operand p1 = input -> definer[t1];
+//       operation o1 = input -> oper[p1];
+//       block b1 = input -> oblock[o1];
+//       if (b1 > b) {
+//     	if (input->out[b] <= input->oper[input->definer[t2]] + 2)
+//     	  continue;
+//     	BoolVarArgs bs;
+//     	for (const temporary t: T()) {
+//     	  bs << var (l(t) && subseq(t2,t));
+//     	}
+//     	if (bs.size() > 0)
+//     	  constraint( l(t2) >> (sum(bs) > 0));
+
+//       }
+//       else {
+//     	if (input->in[b] >= input->oper[input->definer[t2]] - 2)
+//     	  continue;
+//     	BoolVarArgs bs;
+//     	for (const temporary t: T()) {
+//     	  bs << var (l(t) && subseq(t,t2));
+//     	}
+//     	if (bs.size() > 0)
+//     	  constraint( l(t2) >> (sum(bs) > 0));
+//       }
+//     }
+//   }
+// }
 
 
 
@@ -488,9 +571,10 @@ void SecLocalModel::post_implied_constraints(void) {
   }
   
   for (temporary t1 : T())
-    for (temporary t2 : T())
+    for (temporary t2 : T()) {
       constraint( (ls(t1) == 0) >> (subseq(t2,t1) == 0));
-
+      // constraint( subseq(t2,t1) >> !subseq(t2,t1));
+    }
 }
 
 
@@ -519,3 +603,33 @@ void SecLocalModel::post_security_constraints(void) {
   if (!options-> disable_sec_mem_constraints())
     post_secret_mem_constraints();
 }
+
+
+
+// void SecLocalModel::post_tt_constraints(void) {
+//   int maxval = sum_of(input->maxc);
+//   int temp_size = T().size();
+//   for (temporary t1: T()) {
+//     IntVarArgs ta1s;
+//     IntVarArgs tb1s;
+//     for (temporary t2: T()) {
+//       BoolVar ifb  = subseq(t1,t2);
+//       IntVar thenb = var( t2 );
+//       IntVar elseb = var( -1 ); 
+//       IntVar res = IntVar(*this, -1, temp_size);
+//       ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
+//       ta1s <<  res;
+
+//       BoolVar ifb2  = subseq(t1,t2);
+//       IntVar thenb2 = var( t2 );
+//       IntVar elseb2 = var( -1 ); 
+//       IntVar res2 = IntVar(*this, -1, temp_size);
+//       ite(*this, ifb2,  thenb2, elseb2, res2, IPL_DOM);
+//       tb1s <<  res2;;
+//     }
+       // max(*this, ta1s, v_tat[temp(t1)]);
+       // max(*this, tb1s, v_tbt[temp(t1)]);
+//     constraint(v_tat[t1] == max(ta1s));
+//     constraint(v_tbt[t1] == max(tb1s));
+//   }
+// }

@@ -46,6 +46,7 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   int maxval = sum_of(input->maxc);
   int block_number = input -> B.size();
 
+  // Glboal variables
   v_gb = int_var_array(block_number, 0, maxval);
   v_lgs = int_var_array(temp_size, 0, maxval);
   v_lge = int_var_array(temp_size, 0, maxval);
@@ -477,11 +478,33 @@ void SecModel::post_implied_constraints(void) {
     //   }
     // }
   }
-  
-  for (temporary t1 : input -> T) 
-    for (temporary t2 : input -> T)
-      constraint( (lgs(t1) == 0) >> (subseq(t2,t1) == 0));
 
+  for (temporary t1 : T())
+    for (temporary t2 : T()) {
+      constraint( (ls(t1) == 0) >> (subseq(t2,t1) == 0));
+      // constraint( subseq(t2,t1) >> !subseq(t2,t1));
+    }
+}
+
+// Strict constraints for decomposition
+void SecModel::post_strict_constraints(void) {
+  // std::cout << "SecModel post branchers" << std::endl;
+  if (!options-> disable_sec_regreg_constraints()) {
+
+    for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+      temporary t1 = tp.first;
+      temporary t2 = tp.second;
+      operand p1 = input -> definer[t1];
+      operand p2 = input -> definer[t2];
+      operation o1 = input -> oper[p1];
+      operation o2 = input -> oper[p2];
+      block b1 = input -> oblock[o1];
+      block b2 = input -> oblock[o2];
+      if (b1 != b2) {
+	constraint((l(t1) && l(t2) && r(t1) != r(t2)) >> ((lgs(t1) > lge(t2) + 2) || (lgs(t2) > lge(t1) + 2 )));
+      }
+    }
+  }
 }
 
 
@@ -489,6 +512,7 @@ void SecModel::post_security_constraints(void) {
   if (!options-> disable_sec_regreg_constraints()) {
     post_random_register_constraints();
     post_implied_constraints();
+    // post_strict_constraints();
   }
   if (!options-> disable_sec_secret_constraints())
     post_secret_register_constraints();

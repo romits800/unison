@@ -62,7 +62,9 @@ public:
 
   
   // Implementation 2
-  
+
+  // help variable array
+  // IntVarArray v_tt;
   // temp size array with max (le(t'))
   IntVarArray v_lk;
 
@@ -110,6 +112,13 @@ public:
   // Master and Slave Configuration
   virtual bool master(const MetaInfo& mi);
   virtual bool slave(const MetaInfo& mi);
+
+  void apply_sec_solution(const SecModel * gs);
+
+  bool is_in(temporary t) const {
+    int temp_size = T().size();
+    return temp(t) < temp_size && temp(t) >= 0;
+  }
 
 };
 

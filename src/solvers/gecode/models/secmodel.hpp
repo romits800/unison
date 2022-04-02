@@ -92,7 +92,8 @@ public:
   void post_security_constraints(void);
 
   void post_implied_constraints(void);
-  
+  void post_strict_constraints(void);
+    
   void post_m1_constraints(void);
   void post_m2_constraints(void);
   void post_r1_constraints(void);
