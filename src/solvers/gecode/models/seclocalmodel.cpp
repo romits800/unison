@@ -659,7 +659,7 @@ void SecLocalModel::post_implied_constraints(void) {
 	  if ((input->pb[p1] != b) || (input->pb[p2] != b))
 	    continue;
 	  bool f1 = false, f2 = false;
-	  for (spi: sp) {
+	  for (temporary spi: sp) {
 	    if (spi == t1) f1 = true;
 	    if (spi == t2) f2 = true;
 	  }

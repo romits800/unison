@@ -478,12 +478,12 @@ void SecModel::post_implied_constraints(void) {
 	temporary t1 = tp.first;
 	temporary t2 = tp.second;
 	bool f1 = false, f2 = false;
-	for (spi: sp) {
+	for (temporary spi: sp) {
 	  if (spi == t1) f1 = true;
 	  if (spi == t2) f2 = true;
 	}
 	if (f1 && f2) {
-	  std::cout << "temps: " << t1 << " " << t2 << std::endl;
+	  //std::cout << "temps: " << t1 << " " << t2 << std::endl;
 	  // todo
 	  constraint( subseq(t1,t2) == 0 && subseq(t2,t1) == 0);
 	  constraint( v_tat[temp(t1)] != t2 && v_tbt[temp(t1)] != t2 &&

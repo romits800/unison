@@ -889,27 +889,27 @@ int main(int argc, char* argv[]) {
         if (options.verbose()) {
           cerr << global() << "found solution (failures: " << gs.failures
                << ", nodes: " << gs.nodes << ")" << endl;
-	  std::cout << "a: " << gs.solution -> v_a << std::endl;
-	  std::cout << "r: " << gs.solution -> v_r << std::endl;
-	  std::cout << "ry: " << gs.solution -> v_ry << std::endl;
-	  std::cout << "c: " << gs.solution -> v_c << std::endl;
-	  std::cout << "y: " << gs.solution -> v_y << std::endl;
-	  std::cout << "i: " << gs.solution -> v_i << std::endl;
-	  std::cout << "v_le: " << gs.solution -> v_le << std::endl;
-	  std::cout << "v_lk: " << gs.solution -> v_lk << std::endl;
-	  std::cout << "v_ok: " << gs.solution -> v_ok << std::endl;
-	  std::cout << "cost: " << gs.solution -> cost() << std::endl;
-	  // std::cout << "v_rtle: " << gs.solution -> v_rtle << std::endl;
-	  // std::cout << "v_rtlemap: " << gs.solution -> v_rtlemap << std::endl;
-	  std::cout << "v_tbt: " << gs.solution -> v_tbt << std::endl;
-	  std::cout << "v_tat: " << gs.solution -> v_tat << std::endl;
-	  // std::cout << "ry(0): " << gs.solution -> v_ry[0] << std::endl;
-	  // std::cout << "ry(143): " << gs.solution -> v_ry[143] << std::endl;
-	  // std::cout << "v_tat(0): " << gs.solution -> v_tat[0] << std::endl;
-	  // std::cout << "v_tbt(64): " << gs.solution -> v_tbt[64] << std::endl;
-	  // std::cout << "v_tbt(66): " << gs.solution -> v_tbt[66] << std::endl;
-	  // std::cout << "v_tbt(67): " << gs.solution -> v_tbt[67] << std::endl;
-
+// 	  std::cout << "a: " << gs.solution -> v_a << std::endl;
+// 	  std::cout << "r: " << gs.solution -> v_r << std::endl;
+// 	  std::cout << "ry: " << gs.solution -> v_ry << std::endl;
+// 	  std::cout << "c: " << gs.solution -> v_c << std::endl;
+// 	  std::cout << "y: " << gs.solution -> v_y << std::endl;
+// 	  std::cout << "i: " << gs.solution -> v_i << std::endl;
+// 	  std::cout << "v_le: " << gs.solution -> v_le << std::endl;
+// 	  std::cout << "v_lk: " << gs.solution -> v_lk << std::endl;
+// 	  std::cout << "v_ok: " << gs.solution -> v_ok << std::endl;
+// 	  std::cout << "cost: " << gs.solution -> cost() << std::endl;
+// 	  // std::cout << "v_rtle: " << gs.solution -> v_rtle << std::endl;
+// 	  // std::cout << "v_rtlemap: " << gs.solution -> v_rtlemap << std::endl;
+// 	  std::cout << "v_tbt: " << gs.solution -> v_tbt << std::endl;
+// 	  std::cout << "v_tat: " << gs.solution -> v_tat << std::endl;
+// 	  // std::cout << "ry(0): " << gs.solution -> v_ry[0] << std::endl;
+// 	  // std::cout << "ry(143): " << gs.solution -> v_ry[143] << std::endl;
+// 	  // std::cout << "v_tat(0): " << gs.solution -> v_tat[0] << std::endl;
+// 	  // std::cout << "v_tbt(64): " << gs.solution -> v_tbt[64] << std::endl;
+// 	  // std::cout << "v_tbt(66): " << gs.solution -> v_tbt[66] << std::endl;
+// 	  // std::cout << "v_tbt(67): " << gs.solution -> v_tbt[67] << std::endl;
+// 
 	}
 
         if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
@@ -928,7 +928,7 @@ int main(int argc, char* argv[]) {
 	// maybe shuffle the blocks?
 	bool found_all_local = true, unsat = false;
 	for (block b: input.B) {
-	  std::cout << "Block " << b << std::endl;
+	  //std::cout << "Block " << b << std::endl;
 	  Solution<SecLocalModel> ls = local_problem(gs.solution, b);
 	  if (ls.result != UNSATISFIABLE) {
 	    SecLocalModel * base_local = ls.solution;
@@ -1011,35 +1011,35 @@ int main(int argc, char* argv[]) {
               local_solutions[b].push_back(ls.solution);
               base->post_local_solution_cost(ls.solution);
             }
-	    std::cout << "local solutions" << std::endl;
-	    std::cout << "block: " << b << std::endl;
-	    std::cout << "a: " << ls.solution -> v_a << std::endl;
-	    std::cout << "r: " << ls.solution -> v_r << std::endl;
-	    std::cout << "c: " << ls.solution -> v_c << std::endl;
-	    std::cout << "y: " << ls.solution -> v_y << std::endl;
-	    std::cout << "i: " << ls.solution -> v_i << std::endl;
-	    std::cout << "v_ls: " << ls.solution -> v_ls << std::endl;
-	    std::cout << "v_le: " << ls.solution -> v_le << std::endl;
-	    std::cout << "v_lk: " << ls.solution -> v_lk << std::endl;
-	    std::cout << "v_tat: " << ls.solution -> v_tat << std::endl;
-	    std::cout << "v_tbt: " << ls.solution -> v_tbt << std::endl;
-	    std::cout << "cost: " << ls.solution -> cost() << std::endl;
+// 	    std::cout << "local solutions" << std::endl;
+// 	    std::cout << "block: " << b << std::endl;
+// 	    std::cout << "a: " << ls.solution -> v_a << std::endl;
+// 	    std::cout << "r: " << ls.solution -> v_r << std::endl;
+// 	    std::cout << "c: " << ls.solution -> v_c << std::endl;
+// 	    std::cout << "y: " << ls.solution -> v_y << std::endl;
+// 	    std::cout << "i: " << ls.solution -> v_i << std::endl;
+// 	    std::cout << "v_ls: " << ls.solution -> v_ls << std::endl;
+// 	    std::cout << "v_le: " << ls.solution -> v_le << std::endl;
+// 	    std::cout << "v_lk: " << ls.solution -> v_lk << std::endl;
+// 	    std::cout << "v_tat: " << ls.solution -> v_tat << std::endl;
+// 	    std::cout << "v_tbt: " << ls.solution -> v_tbt << std::endl;
+// 	    std::cout << "cost: " << ls.solution -> cost() << std::endl;
             SpaceStatus status = gs.solution->status();
 	    if (options.verbose()) {
-		std::cout << "global solution" << std::endl;
-		std::cout << "block: " << b << std::endl;
-		std::cout << "a: " << gs.solution -> v_a << std::endl;
-		std::cout << "r: " << gs.solution -> v_r << std::endl;
-		std::cout << "ry: " << gs.solution -> v_ry << std::endl;
-		std::cout << "c: " << gs.solution -> v_c << std::endl;
-		std::cout << "y: " << gs.solution -> v_y << std::endl;
-		std::cout << "i: " << gs.solution -> v_i << std::endl;
-		std::cout << "v_ls: " << gs.solution -> v_ls << std::endl;
-		std::cout << "v_le: " << gs.solution -> v_le << std::endl;
-		std::cout << "cost: " << gs.solution -> cost() << std::endl;
-		std::cout << "v_gb: " << gs.solution -> v_gb << std::endl;
-		std::cout << "v_tat: " << gs.solution -> v_tat << std::endl;
-		std::cout << "v_tbt: " << gs.solution -> v_tbt << std::endl;
+// 		std::cout << "global solution" << std::endl;
+// 		std::cout << "block: " << b << std::endl;
+// 		std::cout << "a: " << gs.solution -> v_a << std::endl;
+// 		std::cout << "r: " << gs.solution -> v_r << std::endl;
+// 		std::cout << "ry: " << gs.solution -> v_ry << std::endl;
+// 		std::cout << "c: " << gs.solution -> v_c << std::endl;
+// 		std::cout << "y: " << gs.solution -> v_y << std::endl;
+// 		std::cout << "i: " << gs.solution -> v_i << std::endl;
+// 		std::cout << "v_ls: " << gs.solution -> v_ls << std::endl;
+// 		std::cout << "v_le: " << gs.solution -> v_le << std::endl;
+// 		std::cout << "cost: " << gs.solution -> cost() << std::endl;
+// 		std::cout << "v_gb: " << gs.solution -> v_gb << std::endl;
+// 		std::cout << "v_tat: " << gs.solution -> v_tat << std::endl;
+// 		std::cout << "v_tbt: " << gs.solution -> v_tbt << std::endl;
 	    }
             // Propagate the cost of the found local solution in the global problem
 
