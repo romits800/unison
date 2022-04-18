@@ -923,28 +923,28 @@ void Parameters::compute_derived() {
 
   N = maxf.size();
 
+  if (randpairs.size() == 0)
+    for (unsigned int i = 0; i < rpairs.size(); i++)
+      randpairs.push_back(make_pair(rpairs[i][0], rpairs[i][1]));
 
-  for (unsigned int i = 0; i < rpairs.size(); i++)
-    randpairs.push_back(make_pair(rpairs[i][0], rpairs[i][1]));
+  if (secpairs.size() == 0)
+    for (unsigned int i = 0; i < spairs.size(); i++) {
+      vector<int> tmp;
+      for (unsigned int j = 0; j < spairs[i][1].size(); j++)
+	tmp.push_back(spairs[i][1][j]);
+      secpairs.push_back(make_pair(spairs[i][0][0], tmp));
+    }
 
+  if (mempairs.size() == 0)
+    for (unsigned int i = 0; i < mpairs.size(); i++) {
+      vector<int> tmp1, tmp2;
+      for (unsigned int j = 0; j < mpairs[i][0].size(); j++)
+	tmp1.push_back(mpairs[i][0][j]);
+      for (unsigned int j = 0; j < mpairs[i][1].size(); j++)
+	tmp2.push_back(mpairs[i][1][j]);
 
-  for (unsigned int i = 0; i < spairs.size(); i++) {
-    vector<int> tmp;
-    for (unsigned int j = 0; j < spairs[i][1].size(); j++)
-      tmp.push_back(spairs[i][1][j]);
-    secpairs.push_back(make_pair(spairs[i][0][0], tmp));
-  }
-
-
-  for (unsigned int i = 0; i < mpairs.size(); i++) {
-    vector<int> tmp1, tmp2;
-    for (unsigned int j = 0; j < mpairs[i][0].size(); j++)
-      tmp1.push_back(mpairs[i][0][j]);
-    for (unsigned int j = 0; j < mpairs[i][1].size(); j++)
-      tmp2.push_back(mpairs[i][1][j]);
-
-    mempairs.push_back(make_pair(tmp1, tmp2));
-  }
+      mempairs.push_back(make_pair(tmp1, tmp2));
+    }
 
   // for (unsigned int i = 0; i < cpairs.size(); i++) {
   //   vector<int> tmp1, tmp2;

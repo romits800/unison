@@ -79,6 +79,7 @@ target =
       API.tConstraints      = const constraints,  -- TODO(Romy): Check
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
+      API.tIsGMul           = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
     }
@@ -922,6 +923,9 @@ expandCopy _ _ o = [o]
 
 isXor (TargetInstruction i) | i `elem` [TEOR] = True
 isXor _ = False
+
+isGMul (TargetInstruction i) | i `elem` [TMUL] = True
+isGMul _ = False
 
 -- add copies of temporary t in each BB
 addSecurityCopy f @ Function {fCode = code} t =

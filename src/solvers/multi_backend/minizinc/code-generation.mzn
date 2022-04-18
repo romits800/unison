@@ -273,6 +273,21 @@ array[int] of int: ints;
 %% extra storage: each set is a set of temporaries
 array[int] of set of int: sets;
 
+%% Romy: pairs of random temps
+array[int,int] of int: pairs;
+
+set of int: HR;
+int: PSIZE;
+int: SSIZE;
+int: SWIDTH;
+% Sum of MAXC
+int: SUMC;
+array[int] of int: spairs_secrets;
+array[int,int] of int: spairs_rands;
+
+array[int,int] of int: mpairs_secrets;
+array[int,int] of int: mpairs_rands;
+
 %% problem variables
 
 var 0..MAXF: obj;
@@ -288,6 +303,15 @@ array[-1..MAXT] of var -1..MAXC: ls;
 array[-1..MAXT] of var 0..MAXC: ld;
 array[-1..MAXT] of var -1..MAXC: le;
 array[1..MAXB] of var 0..MAXC: copysum;
+
+
+%% ROMY: for subseq make it to sum(MAXC)
+array[-1..MAXT] of var -1..SUMC: lk;
+array[0..MAXO] of var  -1..SUMC: ok;
+array[0..MAXO] of var  -1..SUMC: gc;
+array[-1..MAXT] of var -1..SUMC: gls;
+array[-1..MAXT] of var -1..SUMC: gle;
+array[1..MAXB] of var -1..SUMC: gb;
 
 %% PREDICATES AND TESTS
 
@@ -463,6 +487,21 @@ predicate insn_is_real_reif(int: o, var bool: re) =
 predicate temp_member_reif(set of int: P, int: t, var bool: re) =
   (re <-> exists(p in P)(temp_eq(p,t)));
 
+%% Romy additions
+predicate live(int: t) = (ls[t] != -1);
+
+predicate samereg(int: t1, int: t2) = (live(t1) /\ live(t2) /\ (r[t1] = r[t2]));
+
+predicate subseq(int: t1, int: t2) = (samereg(t1,t2) /\ (lk[t2] = gle[t1]));
+
+predicate is_before(int: t1, int: t2) = (samereg(t1,t2) /\ (gle[t1] <= gls[t2]));
+
+%% TODO: add condition for copies
+predicate is_before_oper(int: o1, int: o2) = (a[o2]  /\ (gc[o2] <= gc[o1]));
+
+predicate msubseq(int: o1, int: o2) = (a[o2]  /\ (ok[o2] = gc[o1]));
+
+
 var int: t(int: p) =
   if card(operand_temps[p])=1 then min(operand_temps[p])
   else if card(operand_temps[p])=2 then
@@ -534,27 +573,27 @@ constraint
     forall(v in 0..MAXT) (ls[v]+ld[v] = le[v]) /\
     forall(v in 0..MAXT where not opt_in_temporary(v)) % rematerialization
           (ls[v] = c[temp_definer[v]] /\
-	   (a[temp_definer[v]] <-> r[v] >= 0)) /\
+    	   (a[temp_definer[v]] <-> r[v] >= 0)) /\
     forall(v in 0..MAXT where opt_in_temporary(v)) % rematerialization
           (ls[v] in -1 .. 0 /\
 	   (r[v] >= 0 <-> ls[v]=0) /\
 	   (r[v] >= 0 <-> temp_eq(temp_def[v],v))) /\
     forall(v in 0..MAXT) (
-	let {bool: unsafe = temp_is_unsafe(v),
-	     set of int: pset = temp_uses[v],
-	     set of int: prange = 1..card(pset),
-	     array[prange] of int: parr = [p | p in pset],
-	     array[prange] of var -1..MAXC: carr} in (
-	    forall(p in prange) (carr[p] = ite(temp_eq(parr[p],v), c[operand_definer[parr[p]]], -1)) /\
-	    if card(pset)=1 /\ not unsafe then
-	      le[v] = carr[1]
-	    else if not unsafe then
-	      maximum(le[v], carr)
-	    else
-	      maximum(le[v], carr++[ls[v]+ % 20130930: live range can extend past last use
-				    temp_minlive[v]*bool2int(a[temp_definer[v]])])
-	    endif endif
-	)
+    	let {bool: unsafe = temp_is_unsafe(v),
+    	     set of int: pset = temp_uses[v],
+    	     set of int: prange = 1..card(pset),
+    	     array[prange] of int: parr = [p | p in pset],
+    	     array[prange] of var -1..MAXC: carr} in (
+    	    forall(p in prange) (carr[p] = ite(temp_eq(parr[p],v), c[operand_definer[parr[p]]], -1)) /\
+    	    if card(pset)=1 /\ not unsafe then
+    	      le[v] = carr[1]
+    	    % else if not unsafe then
+    	    %   maximum(le[v], carr)
+    	    else
+    	      maximum(le[v], carr++[ls[v]+ % 20130930: live range can extend past last use
+    				    temp_minlive[v]*bool2int(a[temp_definer[v]])])
+    	    endif %endif
+    	)
     );
 
 %% objective, bounds on (out) cycle
@@ -915,56 +954,56 @@ constraint
       smart_alldiff([y[p] | p in T])
     );
 
-%% nogoods
-constraint
-    forall(N in nogood) (
-        not eval_expr(N)
-    );
+% %% nogoods
+% constraint
+%     forall(N in nogood) (
+%         not eval_expr(N)
+%     );
 
-%% live temporary
-bool: hairy_live_temporary = false;
-
-%% Model::post_connected_users_constraints
-constraint
-  if hairy_live_temporary then
-    forall(T in related_temps) (
-        let {set of int: tset = T, % set of copy-related temps
-	     set of int: irange = 1..card(tset),
-	     array[irange] of var 0..card(tset): count,
-	     array[irange] of int: tarr = [x | x in tset]} in (
-	    forall(j in irange)(count[j] >= bool2int(a[temp_definer[tarr[j]]])) /\
-	    global_cardinality(temp_uses[tarr[1]], tarr, count)
- 	)
-    )
-  else
-    forall(p in 0..MAXP where not operand_use[p])(
-        let {int: v = single_temp(p)} in (
-	    if temp_must_be_real(p) then
-	      temp_member_reif(temp_uses[v], v, true)
-	    else if opt_in_temporary(v) then
-	      let {var bool: rp}
-              in  (temp_is_real_reif(p,rp)) /\
-                  (temp_member_reif(temp_uses[v], v, rp))
-	    else
-                  temp_member_reif(temp_uses[v], v, a[operand_definer[p]])
-	    endif endif
-        )
-    )
-  endif;
+% %% live temporary
+% bool: hairy_live_temporary = false;
 
 %% Model::post_connected_users_constraints
-constraint
-  if good_member then
-    forall(p in 0..MAXP where not operand_use[p])(
-	let {int: v = single_temp(p)} in (
-	    if temp_must_be_real(p) then
-	      member([rt[p] | p in temp_uses[v]], r[v])
-	    else
-	      member([rt[p] | p in temp_uses[v]]++[-1], r[v])
-	    endif
-	)
-    )
-  else true endif;
+% constraint
+%   if hairy_live_temporary then
+%     forall(T in related_temps) (
+%         let {set of int: tset = T, % set of copy-related temps
+% 	     set of int: irange = 1..card(tset),
+% 	     array[irange] of var 0..card(tset): count,
+% 	     array[irange] of int: tarr = [x | x in tset]} in (
+% 	    forall(j in irange)(count[j] >= bool2int(a[temp_definer[tarr[j]]])) /\
+% 	    global_cardinality(temp_uses[tarr[1]], tarr, count)
+%  	)
+%     )
+%   else
+%     forall(p in 0..MAXP where not operand_use[p])(
+%         let {int: v = single_temp(p)} in (
+% 	    if temp_must_be_real(p) then
+% 	      temp_member_reif(temp_uses[v], v, true)
+% 	    else if opt_in_temporary(v) then
+% 	      let {var bool: rp}
+%               in  (temp_is_real_reif(p,rp)) /\
+%                   (temp_member_reif(temp_uses[v], v, rp))
+% 	    else
+%                   temp_member_reif(temp_uses[v], v, a[operand_definer[p]])
+% 	    endif endif
+%         )
+%     )
+%   endif;
+
+% %% Model::post_connected_users_constraints
+% constraint
+%   if good_member then
+%     forall(p in 0..MAXP where not operand_use[p])(
+% 	let {int: v = single_temp(p)} in (
+% 	    if temp_must_be_real(p) then
+% 	      member([rt[p] | p in temp_uses[v]], r[v])
+% 	    else
+% 	      member([rt[p] | p in temp_uses[v]]++[-1], r[v])
+% 	    endif
+% 	)
+%     )
+%   else true endif;
   
 %% disjoint live ranges projected on callee-saved regs
 constraint
@@ -978,10 +1017,10 @@ constraint
     else true endif;
 
 %% temp symmetry breaking among interchangeable temporaries in their potential use operands
-constraint
-    forall(j in index_set(domop_operands)) (
-        value_precede_chain(domop_temps[j], [t(o) | o in domop_operands[j]])
-    );
+% constraint
+%     forall(j in index_set(domop_operands)) (
+%         value_precede_chain(domop_temps[j], [t(o) | o in domop_operands[j]])
+%     );
 
 %% mandatory temporary reuse (hairy, and most likely useless)
 % constraint
@@ -1037,9 +1076,9 @@ constraint
 	    int: nt = relation_ntuples[j],
 	    set of int: range = relation_range[j],
 	    set of int: irange = 1..(card(ops)+card(temps)),
-	    array[irange] of var int: vars = [bool2int(a[j]) | j in ops]++
-	                                     [t(j) | j in temps]} in (
-	   table(vars, array2d(1..nt,irange,[ints[j] | j in range]))
+	    array[irange] of var int: vars = [bool2int(a[k]) | k in ops]++
+	                                     [t(k) | k in temps]} in (
+	   table(vars, array2d(1..nt,irange,[ints[k] | k in range]))
 	)
     );
 
@@ -1157,48 +1196,48 @@ constraint
 	)
     else true endif;
 
-%% break symmetries among which callee-saved to spill
-constraint
-    if card(index_set(calleesaved_spill))>0 then
-	forall(j in index_set(calleesaved_spill)) (
-	    let {set of int: cgr = calleesaved_spill[j],
-		 int: cur = min(cgr)} in (
-		forall(x in cgr where x>cur) (a[cur] <-> a[x])
-	    )
-	) /\
-	let {int: nrows = card(index_set_1of2(cs_spill_transpose)),
-	     int: ncols = card(index_set_2of2(cs_spill_transpose)),
-	     set of int: spill = if nrows>=1 then {cs_spill_transpose[1,j] | j in 1..ncols}
-				 else {} endif,
-	     set of int: unspill = if nrows>=2 then {cs_spill_transpose[2,j] | j in 1..ncols}
-				   else {} endif} in (
-	    decreasing([a[cs_spill_transpose[1,k]] | k in 1..ncols]) /\
-	    forall(k in 2..ncols)(
-		a[cs_spill_transpose[1,k]] -> c[cs_spill_transpose[1,k-1]] <= c[cs_spill_transpose[1,k]]
-	    ) /\
-	    if spill subset bb_ops[1] /\ unspill subset bb_ops[1] then
-		forall(k in 1..ncols)(
-		    let {int: u = cs_spill_transpose[2,k],
-			 int: v = cs_spill_transpose[1,k]} in (
-			a[u] -> c[v] < c[u]
-		    )
-		)
-	    else true endif
-	)
-    else true endif;
+% %% break symmetries among which callee-saved to spill
+% constraint
+%     if card(index_set(calleesaved_spill))>0 then
+% 	forall(j in index_set(calleesaved_spill)) (
+% 	    let {set of int: cgr = calleesaved_spill[j],
+% 		 int: cur = min(cgr)} in (
+% 		forall(x in cgr where x>cur) (a[cur] <-> a[x])
+% 	    )
+% 	) /\
+% 	let {int: nrows = card(index_set_1of2(cs_spill_transpose)),
+% 	     int: ncols = card(index_set_2of2(cs_spill_transpose)),
+% 	     set of int: spill = if nrows>=1 then {cs_spill_transpose[1,j] | j in 1..ncols}
+% 				 else {} endif,
+% 	     set of int: unspill = if nrows>=2 then {cs_spill_transpose[2,j] | j in 1..ncols}
+% 				   else {} endif} in (
+% 	    decreasing([a[cs_spill_transpose[1,k]] | k in 1..ncols]) /\
+% 	    forall(k in 2..ncols)(
+% 		a[cs_spill_transpose[1,k]] -> c[cs_spill_transpose[1,k-1]] <= c[cs_spill_transpose[1,k]]
+% 	    ) /\
+% 	    if spill subset bb_ops[1] /\ unspill subset bb_ops[1] then
+% 		forall(k in 1..ncols)(
+% 		    let {int: u = cs_spill_transpose[2,k],
+% 			 int: v = cs_spill_transpose[1,k]} in (
+% 			a[u] -> c[v] < c[u]
+% 		    )
+% 		)
+% 	    else true endif
+% 	)
+%     else true endif;
 
 %% symmetry breaking from JSON info
 %% DISABLED, cannot be trusted
-% constraint
-%   forall(x in index_set(value_precede_min))(
-%     let {set of int: js = value_precede_min[x]..value_precede_max[x],
-%          int: nt = sum(j in js)(temp_width[value_precede_temps[j]]),
-%          array[1..nt] of var int: chain = [r[v]+d | j in js, v in {value_precede_temps[j]}, d in 0..temp_width[v]-1]} in
-% 	value_precede_chain([v | v in value_precede_regs[x]], chain)
-%   );
+constraint
+  forall(x in index_set(value_precede_min))(
+    let {set of int: js = value_precede_min[x]..value_precede_max[x],
+         int: nt = sum(j in js)(temp_width[value_precede_temps[j]]),
+         array[1..nt] of var int: chain = [r[v]+d | j in js, v in {value_precede_temps[j]}, d in 0..temp_width[v]-1]} in
+	value_precede_chain([v | v in value_precede_regs[x]], chain)
+  );
 
 %% IMPORTED FROM Model::
-
+% Romy : check might be problematic
 %% Model::post_minimum_temporary_duration_constraints
 constraint
   forall(o in 0..MAXO, dp in op_operands[o] where not operand_use[dp])(
@@ -1207,7 +1246,7 @@ constraint
 	forall(up in temp_uses[v])(temp_eq(up,v) -> ld[v] >= lat(up,v))
   );
         
-%% Model::post_define_issue_cycle_constraints
+% model::post_define_issue_cycle_constraints
 constraint
   forall(o in 0..MAXO where op_type[o]=TYPE_DEFINE)(
     let {set of int: js = {operand_definer[q] | p in op_operands[o],
@@ -1221,39 +1260,39 @@ constraint
       else true endif
   );
         
-%% DOMINATION: live range of temp occurring in (kill)
-predicate kill_live_range(int: v) =
-  (ld[v] = lt[temp_def[v]]);
+% %% DOMINATION: live range of temp occurring in (kill)
+% predicate kill_live_range(int: v) =
+%   (ld[v] = lt[temp_def[v]]);
 
-%% Model::post_kill_issue_cycle_constraints
-constraint
-  forall(o2 in 0..MAXO where op_type[o2] = TYPE_KILL)(
-    if op_mand[o2] then % e.g. after function call, multiple operands
-      let {array[int] of var int: lats = [lat(q,v) | q in op_operands[o2],
-						     v in {single_temp(q)}],
-	   array[int] of int: ts = [v | q in op_operands[o2],
-					v in {single_temp(q)}],
-	   set of int: o1s = {temp_definer[v] | q in op_operands[o2],
-						v in {single_temp(q)}},
-      } in
-        forall(v in ts)(kill_live_range(v)) /\
-	c[o2] = c[min(o1s)] + max(lats)
-    else % e.g. after move subject to pack, one operand, multiple temps
-      let {int: q1 = min(op_operands[o2]),
-           int: p1 = temp_def[single_temp(q1)],
-	   set of int: o1s = {temp_definer[v] | v in real_temps(q1)},
-	   array[int] of var int: issue = [-1] ++ [c[temp_definer[v]] + lat(q1,v) | v in real_temps(q1)],
-      } in
-        card(op_operands[o2]) = 1 /\ % sanity check
-        forall(v in real_temps(q1))(kill_live_range(v)) /\
-	c[o2] = issue[y[q1]] /\
-	if card(real_temps(q1))=1 then
-	  same_temp(p1,q1) /\ rt[p1] = rt[q1]
-	else
-	  sum(o in o1s)(a[o]) <= 1
-	endif
-    endif
-  );
+% %% Model::post_kill_issue_cycle_constraints
+% constraint
+%   forall(o2 in 0..MAXO where op_type[o2] = TYPE_KILL)(
+%     if op_mand[o2] then % e.g. after function call, multiple operands
+%       let {array[int] of var int: lats = [lat(q,v) | q in op_operands[o2],
+% 						     v in {single_temp(q)}],
+% 	   array[int] of int: ts = [v | q in op_operands[o2],
+% 					v in {single_temp(q)}],
+% 	   set of int: o1s = {temp_definer[v] | q in op_operands[o2],
+% 						v in {single_temp(q)}},
+%       } in
+%         forall(v in ts)(kill_live_range(v)) /\
+% 	c[o2] = c[min(o1s)] + max(lats)
+%     else % e.g. after move subject to pack, one operand, multiple temps
+%       let {int: q1 = min(op_operands[o2]),
+%            int: p1 = temp_def[single_temp(q1)],
+% 	   set of int: o1s = {temp_definer[v] | v in real_temps(q1)},
+% 	   array[int] of var int: issue = [-1] ++ [c[temp_definer[v]] + lat(q1,v) | v in real_temps(q1)],
+%       } in
+%         card(op_operands[o2]) = 1 /\ % sanity check
+%         forall(v in real_temps(q1))(kill_live_range(v)) /\
+% 	c[o2] = issue[y[q1]] /\
+% 	if card(real_temps(q1))=1 then
+% 	  same_temp(p1,q1) /\ rt[p1] = rt[q1]
+% 	else
+% 	  sum(o in o1s)(a[o]) <= 1
+% 	endif
+%     endif
+%   );
 
 %% [matsc] domination constraint for slack, in fact make it a functional dependency
 %% N.B. Subsumes post_slack_lower_bound_constraints
@@ -1305,8 +1344,169 @@ var 0..MAXC: o_wcet(0..MAXO: o) =
        wcs[ii[o]]
      endif endif;
 
-%% output
+% constraint (r[10] = 1);
+% constraint (r[13] = 0);  
+% constraint(a[9] = true);
+% constraint(a[5] = true);
 
+% constraint(a[15] = true);
+% constraint(a[2] = true);
+
+% constraint (r[16] = 2);
+% constraint (r[23] = 3);
+% constraint (r[30] = 0);
+
+% constraint(a[11] = true);
+
+%% Basic block of temporary t or operation o
+int: bb_of_t(int: t) = min({ti | ti in index_set(bb_temps) where t in bb_temps[ti]});
+int: bb_of_o(int: o) = min({oi | oi in index_set(bb_ops) where o in bb_ops[oi]});
+
+
+
+set of int: PTS = {pairs[pn,i] | pn in 1..PSIZE, i in 1..2} union {i | i in spairs_secrets};
+set of int: POS = {mpairs_rands[i,j] | i in index_set_1of2(mpairs_rands), j in index_set_2of2(mpairs_rands) where mpairs_rands[i,j]!=-1};
+%% Global variables
+constraint forall (b in 1..MAXB) (
+             if b = 1
+	     then gb[b] = 0
+	     else (let { int: outop = max(bb_ops[b-1])} in gb[b] = gb[b-1] + c[outop])
+             endif);
+constraint forall (t in 0..MAXT)
+                  (let {int: b = bb_of_t(t)} in
+                           gle[t] = le[t] + gb[b] /\
+		           gls[t] = ls[t] + gb[b]);
+
+constraint forall (o in 0..MAXO)
+                  (let {int: b = bb_of_o(o)} in
+		        gc[o] = c[o] + gb[b]);
+
+constraint if (MAXB = 1) then (forall(t in 0..MAXT) (gle[t] = le[t] /\ gls[t] = ls[t])) /\
+                              (forall(o in 0..MAXO) (gc[o] = c[o]))
+           endif;
+
+% constraint (forall(t in 0..MAXT) (gle[t] >= le[t] /\ gls[t] >= ls[t])) /\
+%            (forall(o in 0..MAXO) (gc[o] >= c[o]));
+
+constraint
+   lk[-1] = -1 /\
+   forall(t1 in PTS) (lk[t1] =
+   			  max([ite(is_before(t2,t1), gle[t2], -1)  | t2 in 0..MAXT]))  /\
+   forall(o1 in POS) (ok[o1] =
+   			  max([ite(is_before_oper(o1,o2), gc[o2], -1)  | o2 in 0..MAXO]));
+
+%% Random pairs that should not be assigned to the same register
+constraint
+  forall(pn in 1..PSIZE) (
+     let {int: t1 = pairs[pn,1],
+          int: t2 = pairs[pn,2]}
+    in samereg(t1,t2) -> (not subseq(t1,t2) /\ not subseq(t2,t1)));
+
+
+%% secret temporaries that should be preceded by a random temporary
+%% if live
+constraint
+  forall(pn in 1..SSIZE)(
+    let {int: ts = spairs_secrets[pn]}
+    in live(ts) -> exists (i in 1..SWIDTH where spairs_rands[pn,i] != -1)
+                          (let {int: tr = spairs_rands[pn,i]} in live(tr) /\ subseq(tr, ts)));
+
+
+% array[int,int] of int: mpairs_secrets;
+% array[int,int] of int: mpairs_rands;
+%% Memory instruction that load or store secrets in memory
+% constraint
+%   forall(i in 0..card(mpairs_secrets))(
+%     let {int: oss = mpairs_secrets[i],
+%          int: ors = mpairs_rands[i]}
+%     in forall(o1 in oss)( a[o1] ->  exists (o2 in ors) (a[o2] /\ msubseq(o2, o1))));
+
+
+%% IMPLIED Security constraints
+
+%% Two random temporaries in the same instruction cannot
+%% be subseq
+constraint
+  forall(pn in 1..PSIZE) (let {
+     int: t1 = pairs[pn,1],
+     int: t2 = pairs[pn,2],
+     int: p1 = temp_def[t1],
+     int: p2 = temp_def[t2],
+     set of int: us1 = temp_uses[t1],
+     set of int: us2 = temp_uses[t2],
+     int: o1 = operand_definer[p1],
+     int: o2 = operand_definer[p2]}
+     in forall(pi in us2) (let {int: oi = operand_definer[pi]} in
+			   if (o1 = oi)
+			   then ((a[o1] = false) \/ (rt[p1] != rt[pi]))
+			   endif ) /\
+        forall(pi in us1) (let {int: oi = operand_definer[pi]} in
+			   if (o2 = oi)
+			   then ((a[o2] = false) \/ (rt[p2] != rt[pi]))
+			   endif )
+  );
+
+%% A temporary cannot be subseq of itsself
+constraint forall (t in 0..MAXT) (subseq(t,t) = false);
+
+
+% %% The initial temporaries do not have a preceding temp - increases the number of bool vars
+% constraint forall (t in 0..MAXT) (gls[t] = 0 -> (forall (ti in 0..MAXT) (subseq(ti,t) = false)));
+
+% Romy did not help
+% %% If two forbidden registers are assigned to the same register
+% %% then, there should be another register that subsequent of each of them.
+% constraint
+%   forall(pn in 1..PSIZE) (
+%      let {int: t1 = pairs[pn,1],
+%           int: t2 = pairs[pn,2]}
+%      in samereg(t1,t2) -> intermediate_subseq(t1,t2));
+
+%% 
+%% Check this out if it is always true: If two operands are preassigned and
+%%                                      one of the operands has only one alternative temporary and
+%%                                      there is a forbidden pair among these
+%%                                      then, if they are assigned to the same register,
+%%                                            there must exist another temporary
+%%                                            that is assigned between them (subseq)
+predicate is_same_tr(int: i, int: ti, int: ri) =
+    let {int: r = preassign_reg[i],
+	 int: p = preassign_operand[i],
+	 set of int: ots =  operand_temps[p]}
+    in (exists (t in ots) ((t = ti) /\ (r = ri)));
+
+predicate is_same_tr_card1(int: i, int: ti, int: ri) =
+    let {int: r = preassign_reg[i],
+	 int: p = preassign_operand[i],
+	 set of int: ots =  operand_temps[p]}
+    in (exists (t in ots) ((t = ti) /\ (r = ri) /\ (card(ots) = 1)));
+
+%% There is an intermediate t that is between the two temporaries
+predicate intermediate_subseq(int: t1, int: t2) =
+                exists (t in 0..MAXT where t != t2) ((subseq(t1,t) \/ subseq(t,t1))) /\
+                exists (t in 0..MAXT where t != t1) ((subseq(t2,t) \/ subseq(t,t2)));
+
+constraint
+  forall(pn in 1..PSIZE) (let {
+     int: t1 = pairs[pn,1],
+     int: t2 = pairs[pn,2],
+     % int: p1 = temp_definer[t1],
+     % int: p2 = temp_definer[t2],
+     % int: o1 = operand_definer[p1],
+     % int: o2 = operand_definer[p2],
+     set of int: prs = index_set(preassign_reg)}
+  in if (exists (r in preassign_reg) (((exists (j in prs) (is_same_tr(j,t1,r))) /\
+				       (exists (j in prs) (is_same_tr_card1(j,t2,r)))
+				      ) \/
+				      ((exists (j in prs) (is_same_tr(j,t2,r))) /\
+				       (exists (j in prs) (is_same_tr_card1(j,t1,r)))
+				      )))
+     then ((not subseq(t1,t2) /\ not subseq(t2,t1)) /\
+	   (samereg(t1,t2) -> intermediate_subseq(t1,t2)))
+  endif);
+
+
+%% output
 output
     ["\"cost\": "]   ++ [show(obj)] ++ ["\n"] ++
     ["\"cycles\": "]      ++ [show(c)]   ++ ["\n"] ++
@@ -1317,8 +1517,13 @@ output
     ["\"live duration\": "]   ++ [show([ld[v] | v in 0..MAXT])] ++ ["\n"] ++
     ["\"live end\": "]   ++ [show([le[v] | v in 0..MAXT])] ++ ["\n"] ++
     % handy for debugging
-    % ["\"active\": "]      ++ [show(a)]   ++ ["\n"] ++
-    % ["\"regs of temporaries\": "] ++ [show(rt)]   ++ ["\n"] ++
+    ["\"active\": "]      ++ [show(a)]   ++ ["\n"] ++
+    ["\"regs of temporaries\": "] ++ [show(rt)]   ++ ["\n"] ++
+    ["\"lk\": "] ++ [show(lk)]   ++ ["\n"] ++
+    ["\"global live start\": "]   ++ [show([gls[v] | v in 0..MAXT])] ++ ["\n"] ++
+    ["\"global live end\": "]   ++ [show([gle[v] | v in 0..MAXT])] ++ ["\n"] ++
+    ["\"secrets alive\": "]     ++ [show([ls[i] | i in spairs_secrets])] ++ ["\n"] ++
+["\"pairs\": "]     ++ [show({pairs[pn,i] | pn in 1..PSIZE, i in 1..2} union {i | i in spairs_secrets})] ++ ["\n"] ++ 
     % ["\"lat\": "] ++ [show(lt)]   ++ ["\n"] ++
     % ["\"slack\": "] ++ [show(s)]   ++ ["\n"] ++
     % ["\"temp nb\": "] ++ [show(y)]   ++ ["\n"] ++

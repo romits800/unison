@@ -46,6 +46,7 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
   in
     [
       ("Types",     toJSON $ [sec,pub,ran]),
+      ("Rands",     toJSON $ ran'),
       -- Security parameters
       ("pairs",     toJSON $ map toInt pairs), -- pairs of random vars that should not reside in the same register
       -- todo(Romy): is it enough with random x random or should I check public x random

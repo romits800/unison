@@ -41,6 +41,7 @@
 #include "common/definitions.hpp"
 #include "models/globalmodel.hpp"
 
+
 using namespace std;
 using namespace Gecode;
 using namespace Set;

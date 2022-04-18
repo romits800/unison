@@ -37,6 +37,7 @@
 
 #include "completemodel.hpp"
 #include "globalmodel.hpp"
+#include "branchers/sec_value.hpp"
 
 using namespace Gecode;
 using namespace std;
@@ -70,11 +71,18 @@ public:
   // temp size array with max (le(t'))
   IntVarArray v_lk;
 
+  // help variable arrays
+  IntVarArray v_tat;
+  IntVarArray v_tbt;
+
   // operation size array with max (le(t'))
   IntVarArray v_ok;
 
   vector<operation> memops;
-  
+
+  vector<temporary> tats;
+  vector<temporary> tbts;
+
   // Gecode space methods
   SecModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
@@ -85,6 +93,9 @@ public:
   // Branchers
   void post_branchers(void);
 
+  // Different Solution
+  void post_different_solution(SecModel * g1, bool unsat);
+    
   // Security Constraints
   void post_random_register_constraints(void);
   void post_secret_register_constraints(void);
@@ -93,12 +104,16 @@ public:
 
   void post_implied_constraints(void);
   void post_strict_constraints(void);
-    
+  // constraints for the adjacent ops
+  void post_connecting_constraints(void);
+  void post_tt_constraints(void);
+  
   void post_m1_constraints(void);
   void post_m2_constraints(void);
   void post_r1_constraints(void);
   void post_r2_constraints(void);
 
+  void init_tts(void);
   
   BoolVar subseq(temporary t1, temporary t2);
   BoolVar msubseq(operation o1, operation o2);
@@ -115,13 +130,9 @@ public:
   IntVar gb(block b) const {return v_gb[b]; }
   IntVar lgs(block b) const {return v_lgs[b]; }
   IntVar lge(block b) const {return v_lge[b]; }
-  block bot (temporary t) {
-    operand p = input -> definer[t];
-    operation o = input -> oper[p];
-    return (input -> oblock[o]);
-  }
+  block bot (temporary t);
 
- 
+  // int select_value_tt(IntVar x, unsigned int i);
   // void next(const SecModel& l);
 
 };

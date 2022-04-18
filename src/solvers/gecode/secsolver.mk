@@ -42,7 +42,7 @@ SECSOLVERMAIN = $(SECSOLVERDIR)/secsolver
 SECSOLVERCOMMON := definitions util jsonutil
 SECSOLVERMODELS := parameters options model localmodel completemodel globalmodel	\
 simplemodel relaxedmodel seclocalmodel secmodel
-SECSOLVERBRANCHERS := filters merit value printers pressureschedulingbrancher	\
+SECSOLVERBRANCHERS := filters merit value sec_value printers pressureschedulingbrancher	\
 routingbrancher
 SECSOLVERPROCEDURES := commonprocedures secprocedures seclocalprocedures
 SECSOLVERINSPECTORS := consoleinspector modelgraphicsview modelinspector dot	\

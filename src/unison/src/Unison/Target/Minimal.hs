@@ -65,6 +65,7 @@ target =
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
+      API.tIsGMul            = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
     }
@@ -255,6 +256,8 @@ expandCopy _ _ o = [o]
 -- | Security processor constraints
 
 isXor i = error "isXor not implemented for this target."
+
+isGMul i = error "isXor not implemented for this target."
 
 -- | Add additional copies or random numbers
 addSecurityCopy f _ = f

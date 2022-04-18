@@ -47,6 +47,7 @@ HEADERS += common/definitions.hpp \
            branchers/filters.hpp \
            branchers/merit.hpp \
            branchers/value.hpp \
+           branchers/sec_value.hpp \
            branchers/printers.hpp \
            branchers/pressureschedulingbrancher.hpp \
            branchers/routingbrancher.hpp \
@@ -74,6 +75,7 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/filters.cpp \
            branchers/merit.cpp \
            branchers/value.cpp \
+           branchers/sec_value.cpp \
            branchers/printers.cpp \
            branchers/pressureschedulingbrancher.cpp \
            branchers/routingbrancher.cpp \

@@ -865,6 +865,30 @@ string produce_dzn(Parameters &input) {
     expr_children.push_back(FDSet(quad.children));
   }
 
+
+  vector<temporary> spairs_secrets;
+  vector<vector<temporary>> spairs_rands;
+  int swidth = 0;
+  for (std::pair<const temporary, const vector<temporary>> tp : input.secpairs) {
+    spairs_secrets.push_back(tp.first);
+    spairs_rands.push_back(tp.second);
+    if (tp.second.size() > swidth) swidth=tp.second.size();
+  }
+
+  for (int i=0; i< spairs_rands.size(); i++) {
+    int size = spairs_rands[i].size();
+    for (int j=size; j< swidth; j++)
+      spairs_rands[i].push_back(-1);
+  }
+
+
+  vector<vector<operation>> mpairs_secrets;
+  vector<vector<operation>> mpairs_rands;
+  for (std::pair<const vector<temporary>, const vector<temporary>> tp : input.mempairs) {
+    mpairs_secrets.push_back(tp.first);
+    mpairs_rands.push_back(tp.second);
+  }
+
   dzn  << emit_dzn_line("MAXF", input.maxf[0])
        << emit_dzn_line("MAXO", input.O.back())
        << emit_dzn_line("MAXP", input.P.back())
@@ -982,7 +1006,17 @@ string produce_dzn(Parameters &input) {
        << emit_dzn_line("expr_arg2", expr_arg2)
        << emit_dzn_line("expr_arg3", expr_arg3)
        << emit_dzn_line("expr_children", expr_children)
-       << emit_dzn_line("sets", setList);
+       << emit_dzn_line("sets", setList)
+       << emit_dzn_line("PSIZE", (int)input.rpairs.size())
+       << emit_dzn_line("pairs", input.rpairs)
+       << emit_dzn_line("SSIZE", (int)input.spairs.size())
+       << emit_dzn_line("SWIDTH", swidth)
+       << emit_dzn_line("spairs_secrets", spairs_secrets)
+       << emit_dzn_line("spairs_rands", spairs_rands)
+       << emit_dzn_line("mpairs_secrets", mpairs_secrets)
+       << emit_dzn_line("mpairs_rands", mpairs_rands)
+       << emit_dzn_line("SUMC", sum_of(input.maxc))
+       << emit_dzn_line("HR", FDSet(input.HR));
   
   return dzn.str();
 }

@@ -452,9 +452,7 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
   in p {altTemps = ats'}
 
 -- TODO(Romy): Add more instructions similar to tEOR
-isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBICs]
-
-
+isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBICs, TMUL]
 
 {-
  Transforms:

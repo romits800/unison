@@ -40,6 +40,7 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 {
 
   int temp_size = T().size(); // These come from LocalModel
+  int gltemp_size = input -> T.size(); // These come from LocalModel
   int op_size = O().size();
   int maxval = sum_of(input->maxc);
   int reg_size = input->HR.size();
@@ -59,6 +60,7 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
       }
     }
   }
+
   // for(instruction i1 : input-> instructions[o1]) {
   // 	  if ( contains(memstrings, (input -> insname[i1]))
 	    
@@ -86,6 +88,9 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
   // Implementation 2
   v_lk = int_var_array(temp_size, -1, maxval);
   v_ok = int_var_array(op_size, -1, maxval);
+
+  v_tat = int_var_array(temp_size, -1, gltemp_size);
+  v_tbt = int_var_array(temp_size, -1, gltemp_size);
   
   post_r2_constraints();
   post_m2_constraints();
@@ -119,6 +124,9 @@ SecLocalModel::SecLocalModel(SecLocalModel& cg) :
   // Implementation 2
   v_lk.update(*this, cg.v_lk);
   v_ok.update(*this, cg.v_ok);  
+  v_tat.update(*this, cg.v_tat);
+  v_tbt.update(*this, cg.v_tbt);  
+
 }
 
 
@@ -153,85 +161,123 @@ void SecLocalModel::post_sec_brancher(void) {
 	     NULL, NULL);
   }
   if (!options-> disable_sec_regreg_constraints()) {
-
-    // BoolVarArgs as;
-    // int size = O().size();
-    // bool arr[size];
-    // for (int i = 0; i< size; i++)
-    //   arr[i] = false;
-
-    // for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
-    //   temporary t1 = tp.first;
-    //   temporary t2 = tp.second;
-    //   operand p1 = input -> definer[t1];
-    //   operand p2 = input -> definer[t2];
-    //   vector<operand> us1 = input -> users[t1];
-    //   vector<operand> us2 = input -> users[t2];
-    //   operation o1 = input -> oper[p1];
-    //   operation o2 = input -> oper[p2];
-    //   block b1 = input -> oblock[o1];
-    //   block b2 = input -> oblock[o2];
-
-    //   if (b1 == b) {
-    // 	for (operand pi: us2) {
-    // 	  operation oi = input -> oper[pi];
-    // 	  if ((o1 == oi) && !arr[oi]) {
-    // 	    std::cout << oi << " " << arr[oi] << ",";
-    // 	    as << a(oi);
-    // 	    arr[oi] = true;
-    // 	  }
-    // 	}
-    //   }
-    //   if (b2 == b) {
-    // 	for (operand pi: us1) {
-    // 	  operation oi = input -> oper[pi];
-    // 	  if ((o2 == oi) && !arr[oi]) {
-    // 	    std::cout << oi << " " << arr[oi] << ",";
-    // 	    as << a(oi);
-    // 	    arr[oi] = true;
-    // 	  }
-    // 	}
-    //   }
-    // }
-    // std::cout << std::endl << as << std::endl;
-    // if (as.size() > 0)
-    //   branch(*this, as, BOOL_VAR_NONE(), BOOL_VAL_MIN(),
-    // 	     NULL, NULL);
-
-  //   {
-  //     BoolVarArgs ts;
-  //     int size = T().size();
-  //     bool arr[size];
-  //     for (int i = 0; i< size; i++)
-  // 	arr[i] = false;
-
-  //     for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
-  // 	temporary t1 = tp.first;
-  // 	temporary t2 = tp.second;
-  // 	if (temp(t1) < size && temp(t1) >= 0 && temp(t2) < size && temp(t2) >= 0) {
-  // 	  if (!arr[temp(t1)]) {
-  // 	    ts << l(t1);
-  // 	    arr[temp(t1)] = true;
-  // 	  }
-  // 	  if (!arr[temp(t2)]) {
-  // 	    ts << l(t2);
-  // 	    arr[temp(t2)] = true;
-  // 	  }
-  // 	}
-  //     }
-  //     if (ts.size() > 0) 
-  // 	branch(*this, ts, BOOL_VAR_NONE(), BOOL_VAL_MIN(),
-  // 	       NULL, NULL);
-  //   }
   }
   if (!options-> disable_sec_mem_constraints()) {
   }
 }
 
+void SecLocalModel::post_sec_branchers(void) {
+
+  set<operation> is0;
+  set<temporary> ts0;
+  set<register_atom> rs0;
+  BoolVarArgs rrs;
+  for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+    int temp_size = T().size();
+    temporary t1 = tp.first;
+    temporary t2 = tp.second;
+    operand p1 = input -> definer[t1];
+    operand p2 = input -> definer[t2];
+    vector<operand> us1 = input -> users[t1];
+    vector<operand> us2 = input -> users[t2];
+    operation o1 = input -> oper[p1];
+    operation o2 = input -> oper[p2];
+    block b1 = input -> oblock[o1];
+    block b2 = input -> oblock[o2];
+
+    if (b1 != b  || b2 != b) continue;
+
+    // Enable or not the instruction
+    if (is_optional(o1)) is0.insert(o1);
+    if (is_optional(o2)) is0.insert(o2);
+
+    // select temporary from uses of t1 and t2
+    ts0.insert(p1);
+    ts0.insert(p2);
+    for (operand p : us1) ts0.insert(p);
+    for (operand p : us2) ts0.insert(p);
+
+    rs0.insert(t1);
+    rs0.insert(t2);
+    // rrs << var(r(t1) == r(t2));
+
+  }
+  vector<operation> os(is0.begin(), is0.end());
+  BoolVarArgs as;
+  IntVarArgs is;
+  for (operation o : os) {
+    as << a(o);
+    is << i(o);
+  }
+
+  vector<operation> ts1(ts0.begin(), ts0.end());
+  IntVarArgs ts;
+  for (operand p : ts1) {
+    ts << y(p);
+  }
+
+  vector<operation> rs1(rs0.begin(), rs0.end());
+  IntVarArgs rs;
+  BoolVarArgs ls;
+  for (temporary t : rs1) {
+    rs << r(t);
+    ls << l(t);
+  }
+
+  // branch(*this, rrs, BOOL_VAR_DEGREE_MAX(), BOOL_VAL_MIN(),
+  //        NULL, NULL);
+  branch(*this, ls, BOOL_VAR_DEGREE_MAX(), BOOL_VAL_MIN(),
+         NULL, NULL);
+  branch(*this, rs, INT_VAR_DEGREE_MAX(), INT_VAL_MIN(),
+         NULL, NULL);
+  branch(*this, as, BOOL_VAR_DEGREE_MAX(), BOOL_VAL_MIN(),
+         NULL, NULL);
+  branch(*this, ts, INT_VAR_DEGREE_MAX(), INT_VAL_MIN(),
+         NULL, NULL);
+  branch(*this, is, INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, NULL);
+  
+  // branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
+  //        NULL, &print_instruction_decision);
+
+  // branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
+
+  // branch_on_pressure_scheduling(*this, v_c);
+
+  // branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
+  //        &print_register_decision);
+
+  // branch(*this, &LocalModel::post_before_scheduling_constraints_in_space);
+  
+  IntVarArgs ts2;
+  for (operand p : input->groupcopyrel[b]) ts2 << y(p);
+  branch(*this, ts2, INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_temporary_decision);
+
+  branch(*this, v_r, INT_VAR_SIZE_MIN(), INT_VAL_MIN(), &assignable,
+         &print_register_decision);
+  
+  branch(*this, v_a, BOOL_VAR_MERIT_MAX(actionmerit), BOOL_VAL_MIN(),
+         NULL, &print_inactive_decision);
+
+  branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_instruction_decision);
+
+  branch(*this, v_c, INT_VAR_MIN_MIN(), INT_VAL_MIN(),
+         &schedulable, &print_cycle_decision);
+
+
+}
 
 void SecLocalModel::post_branchers(char search) {
   post_sec_brancher();
-  LocalModel::post_branchers(search);
+  switch (search) {
+  case SECURE_SEARCH:
+    post_sec_branchers();
+    break;
+  default:
+    LocalModel::post_branchers(search);
+  }
 }
 
 
@@ -246,7 +292,8 @@ BoolVar SecLocalModel::subseq1(temporary t1, temporary t2) {
   BoolVarArgs b;
   for (register_atom ra: input -> HR) { // Hardware registers
     b << var( (v_rtle[(temp_size*ra) + temp(t1)] != -1)
-	      && (v_rtlemap[(temp_size*ra) + temp(t1)] + 1 == v_rtlemap[(temp_size*ra) + temp(t2)]));
+	      && (v_rtlemap[(temp_size*ra) + temp(t1)] + 1 ==
+		  v_rtlemap[(temp_size*ra) + temp(t2)]));
 
   }
   return var( sum(b) > 0 );
@@ -260,7 +307,8 @@ BoolVar SecLocalModel::msubseq1(operation o1, operation o2) {
 
 
 BoolVar SecLocalModel::subseq2(temporary t1, temporary t2) {
-  return var (l(t1) && l(t2) && v_lk[temp(t2)] == le(t1));
+  return var (l(t1) && l(t2) && (r(t1) == r(t2))
+	      && (v_lk[temp(t2)] == le(t1)));
 }
 
 
@@ -403,11 +451,13 @@ void SecLocalModel::post_random_register_constraints(void) {
 
 void SecLocalModel::apply_sec_solution(const SecModel * gs) {
   for (operation o : input->ops[b]) {
-    copy_domain(*this, gs->v_ok[o], v_ok[instr(o)]);
+    // copy_domain(*this, gs->v_ok[o], v_ok[instr(o)]);
   }
 
   for (temporary t : input->tmp[b]) {
-    copy_domain(*this, gs->v_lk[t], v_lk[temp(t)]);
+    // copy_domain(*this, gs->v_lk[t], v_lk[temp(t)]);
+    copy_domain(*this, gs->v_tat[t], v_tat[temp(t)]);
+    copy_domain(*this, gs->v_tbt[t], v_tbt[temp(t)]);
   }
 
 }
@@ -569,12 +619,124 @@ void SecLocalModel::post_implied_constraints(void) {
       }
     }
   }
-  
-  for (temporary t1 : T())
-    for (temporary t2 : T()) {
-      constraint( (ls(t1) == 0) >> (subseq(t2,t1) == 0));
-      // constraint( subseq(t2,t1) >> !subseq(t2,t1));
+
+  // If two operands are preassigned but are in randpairs group
+  // then there should be another operand that is assigned to
+  // the same register
+  int nregs = input -> atoms[0].size();	// safe over-estimation
+  vector<temporary> spo[nregs];
+  for (vector<int> pa : input -> preassign) {
+    operand p = pa[0];
+    register_atom r = pa[1];
+    for (temporary t: input -> temps[p])
+      spo[r].push_back(t);
+
+  }
+
+  int copyrelinv[input->ope[b].size()];
+  int copyrelgroup = 0;
+  for (vector<operand> ps : input->copyrel) {
+    if (input->pb[ps[0]] != b) {
+      copyrelgroup++;
+      continue;
     }
+    for (operand p: ps) {
+      copyrelinv[opr(p)] = copyrelgroup;
+    }
+    copyrelgroup++;
+  }
+
+
+  for (register_atom ind = 0; ind < nregs; ind++) {
+    vector<int>sp = spo[ind];
+    if (sp.size() > 1) {
+        for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+	  temporary t1 = tp.first;
+	  temporary t2 = tp.second;
+	  operand p1 = input -> definer[t1];
+	  operand p2 = input -> definer[t2];
+
+	  if ((input->pb[p1] != b) || (input->pb[p2] != b))
+	    continue;
+	  bool f1 = false, f2 = false;
+	  for (spi: sp) {
+	    if (spi == t1) f1 = true;
+	    if (spi == t2) f2 = true;
+	  }
+	  if (f1 && f2) {
+	    // todo
+	    constraint( subseq(t1,t2) == 0 && subseq(t2,t1) == 0);
+	    constraint( v_tat[temp(t1)] != t2 && v_tbt[temp(t1)] != t2 &&
+	    		v_tat[temp(t2)] != t1 && v_tbt[temp(t2)] != t1); 
+
+	    // None of the copyrels is subseq
+	    int g1 = copyrelinv[opr(p1)];
+	    int g2 = copyrelinv[opr(p2)];
+	    for (operand pi: input->copyrel[g1]) {
+	      for (temporary t: input->temps[pi]) {
+		if (t>=0) 
+		  constraint(subseq(t,t2) == 0 && subseq(t2,t) == 0);
+		
+	      }
+	    }
+	    for (operand pi: input->copyrel[g2]) {
+	      for (temporary t: input->temps[pi])
+		if (t>=0)
+		  constraint( subseq(t,t1) == 0 && subseq(t1,t) == 0);
+	    }
+
+	    // exists ti not in randpairs such that r(ti) = r
+	  }
+	    
+	}
+    }
+  }
+  for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+    temporary t1 = tp.first;
+    temporary t2 = tp.second;
+    operand p1 = input -> definer[t1];
+    operand p2 = input -> definer[t2];
+    vector<operand> us1 = input -> users[t1];
+    vector<operand> us2 = input -> users[t2];
+    operation o1 = input -> oper[p1];
+    operation o2 = input -> oper[p2];
+    block b1 = input -> oblock[o1];
+    block b2 = input -> oblock[o2];
+
+    // For each of the temps in the pair check if they uses of the other temp
+    // happen to be in the same operation.
+    // That is the case when using an accumulator.
+    if (b1 == b) {
+      for (operand pi: us2) {
+	operation oi = input -> oper[pi];
+	if (o1 == oi) {
+	  constraint( a(o1) == 0 || (ry(p1) != ry(pi)));
+	}
+      }
+    }
+    if (b2 == b) {
+      for (operand pi: us1) {
+	operation oi = input -> oper[pi];
+	if (o2 == oi) {
+	  constraint( a(o2) == 0 || (ry(p2) != ry(pi)));
+	}
+      }
+    }
+  }
+
+  // for (temporary t1 : T())
+  //   for (temporary t2 : T()) {
+  //     constraint( (ls(t1) == 0) >> (subseq(t2,t1) == 0));
+  //     // constraint( subseq(t2,t1) >> !subseq(t1,t2));
+  //   }
+
+  for (temporary t1 : T()) {
+    for (temporary t2 : T()) {
+      if (t1 == t2) continue;
+      constraint( (v_tat[temp(t1)] == t2) >> (v_tbt[temp(t2)] == t1));
+      constraint( (v_tat[temp(t1)] == t2) << (v_tbt[temp(t2)] == t1));
+    }
+  }
 }
 
 
@@ -597,6 +759,7 @@ void SecLocalModel::post_security_constraints(void) {
   if (!options-> disable_sec_regreg_constraints()) {
     post_random_register_constraints();
     post_implied_constraints();
+    post_tt_constraints();
   }
   if (!options-> disable_sec_secret_constraints())
     post_secret_register_constraints();
@@ -606,30 +769,31 @@ void SecLocalModel::post_security_constraints(void) {
 
 
 
-// void SecLocalModel::post_tt_constraints(void) {
-//   int maxval = sum_of(input->maxc);
-//   int temp_size = T().size();
-//   for (temporary t1: T()) {
-//     IntVarArgs ta1s;
-//     IntVarArgs tb1s;
-//     for (temporary t2: T()) {
-//       BoolVar ifb  = subseq(t1,t2);
-//       IntVar thenb = var( t2 );
-//       IntVar elseb = var( -1 ); 
-//       IntVar res = IntVar(*this, -1, temp_size);
-//       ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
-//       ta1s <<  res;
+void SecLocalModel::post_tt_constraints(void) {
+  // if (input -> B.size() == 1) {
+    int temp_size = input->T.size();
+    for (temporary t1: T()) {
+      IntVarArgs ta1s;
+      IntVarArgs tb1s;
+      for (temporary t2: T()) {
+	BoolVar ifb  = subseq(t1,t2);
+	IntVar thenb = var( t2 );
+	IntVar elseb = var( -1 ); 
+	IntVar res = IntVar(*this, -1, temp_size);
+	ite(*this, ifb,  thenb, elseb, res, IPL_DOM);
+	ta1s <<  res;
 
-//       BoolVar ifb2  = subseq(t1,t2);
-//       IntVar thenb2 = var( t2 );
-//       IntVar elseb2 = var( -1 ); 
-//       IntVar res2 = IntVar(*this, -1, temp_size);
-//       ite(*this, ifb2,  thenb2, elseb2, res2, IPL_DOM);
-//       tb1s <<  res2;;
-//     }
-       // max(*this, ta1s, v_tat[temp(t1)]);
-       // max(*this, tb1s, v_tbt[temp(t1)]);
-//     constraint(v_tat[t1] == max(ta1s));
-//     constraint(v_tbt[t1] == max(tb1s));
-//   }
-// }
+	BoolVar ifb2  = subseq(t2,t1);
+	IntVar thenb2 = var( t2 );
+	IntVar elseb2 = var( -1 ); 
+	IntVar res2 = IntVar(*this, -1, temp_size);
+	ite(*this, ifb2,  thenb2, elseb2, res2, IPL_DOM);
+	tb1s <<  res2;;
+      }
+      if (!v_tat[temp(t1)].assigned())
+	max(*this, ta1s, v_tat[temp(t1)]);
+      if (!v_tbt[temp(t1)].assigned())
+	max(*this, tb1s, v_tbt[temp(t1)]);
+    }
+  // }
+}

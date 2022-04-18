@@ -87,6 +87,7 @@ const char TRIVIAL_SEARCH = 't';
 const char MINIMUM_COST_SEARCH = 'm';
 const char FAIL_FIRST_SEARCH = 'f';
 const char CONSERVATIVE_SEARCH = 'c';
+const char SECURE_SEARCH = 's';
 
 // Numeric ID of a Unison constraint expresion
 

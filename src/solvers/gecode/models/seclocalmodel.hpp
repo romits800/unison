@@ -64,7 +64,9 @@ public:
   // Implementation 2
 
   // help variable array
-  // IntVarArray v_tt;
+  IntVarArray v_tat;
+  IntVarArray v_tbt;
+  
   // temp size array with max (le(t'))
   IntVarArray v_lk;
 
@@ -88,6 +90,7 @@ public:
   void post_security_constraints(void);
 
   void post_implied_constraints(void);
+  void post_tt_constraints(void);
   // void post_implied_subseq(void);
     
   void post_m1_constraints(void);
@@ -108,7 +111,8 @@ public:
   // Branchers
   void post_sec_brancher(void);
   void post_branchers(char search);
-
+  void post_sec_branchers(void);
+    
   // Master and Slave Configuration
   virtual bool master(const MetaInfo& mi);
   virtual bool slave(const MetaInfo& mi);

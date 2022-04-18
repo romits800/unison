@@ -573,7 +573,6 @@ int main(int argc, char* argv[]) {
 
   Support::Timer t;
   t.start();
-
   // Base global space to accumulate bounds and nogoods: not to search
   SecModel * base = new SecModel(&input, &options, IPL_DOM);
   GlobalData gd(base->n_int_vars, base->n_bool_vars, base->n_set_vars);
@@ -890,13 +889,27 @@ int main(int argc, char* argv[]) {
         if (options.verbose()) {
           cerr << global() << "found solution (failures: " << gs.failures
                << ", nodes: " << gs.nodes << ")" << endl;
-	  // std::cout << "a: " << gs.solution -> v_a << std::endl;
-	  // std::cout << "r: " << gs.solution -> v_r << std::endl;
-	  // std::cout << "c: " << gs.solution -> v_c << std::endl;
-	  // std::cout << "y: " << gs.solution -> v_y << std::endl;
-	  // std::cout << "i: " << gs.solution -> v_i << std::endl;
-	  // std::cout << "v_le: " << gs.solution -> v_le << std::endl;
-	  // std::cout << "cost: " << gs.solution -> cost() << std::endl;
+	  std::cout << "a: " << gs.solution -> v_a << std::endl;
+	  std::cout << "r: " << gs.solution -> v_r << std::endl;
+	  std::cout << "ry: " << gs.solution -> v_ry << std::endl;
+	  std::cout << "c: " << gs.solution -> v_c << std::endl;
+	  std::cout << "y: " << gs.solution -> v_y << std::endl;
+	  std::cout << "i: " << gs.solution -> v_i << std::endl;
+	  std::cout << "v_le: " << gs.solution -> v_le << std::endl;
+	  std::cout << "v_lk: " << gs.solution -> v_lk << std::endl;
+	  std::cout << "v_ok: " << gs.solution -> v_ok << std::endl;
+	  std::cout << "cost: " << gs.solution -> cost() << std::endl;
+	  // std::cout << "v_rtle: " << gs.solution -> v_rtle << std::endl;
+	  // std::cout << "v_rtlemap: " << gs.solution -> v_rtlemap << std::endl;
+	  std::cout << "v_tbt: " << gs.solution -> v_tbt << std::endl;
+	  std::cout << "v_tat: " << gs.solution -> v_tat << std::endl;
+	  // std::cout << "ry(0): " << gs.solution -> v_ry[0] << std::endl;
+	  // std::cout << "ry(143): " << gs.solution -> v_ry[143] << std::endl;
+	  // std::cout << "v_tat(0): " << gs.solution -> v_tat[0] << std::endl;
+	  // std::cout << "v_tbt(64): " << gs.solution -> v_tbt[64] << std::endl;
+	  // std::cout << "v_tbt(66): " << gs.solution -> v_tbt[66] << std::endl;
+	  // std::cout << "v_tbt(67): " << gs.solution -> v_tbt[67] << std::endl;
+
 	}
 
         if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
@@ -909,37 +922,75 @@ int main(int argc, char* argv[]) {
         // hardest problems first.
         vector<block> blocks = sorted_blocks(base->input, latest_result);
 
-        map<block, Solution<SecLocalModel> > latest_local_solutions;
-        set<block> solved_blocks;
-        LocalJobs ljs(gs, lo, iteration, &local_solutions, blocks);
-        bool found_all_local = true, unsat = false;
-        unsigned int top_threads =
-          options.total_threads() / options.portfolio_threads();
+	map<block, Solution<SecLocalModel> > latest_local_solutions;
+	set<block> solved_blocks;
 
-        // Solve the local problems
-        Support::RunJobs<LocalJobs, Solution<SecLocalModel> > p(ljs, top_threads);
-        Solution<SecLocalModel> ls;
-        while (p.run(ls)) {
-          int i;
-          Solution<SecLocalModel> fls;
-          if (p.stopped(i, fls)) { // job stopped
-            block b = fls.solution->b;
-            latest_local_solutions[b] = fls;
-            solved_blocks.insert(b);
-            break;
-          } else { // job finished
-            block b = ls.solution->b;
-            latest_local_solutions[b] = ls;
-            solved_blocks.insert(b);
-          }
-        }
+	// maybe shuffle the blocks?
+	bool found_all_local = true, unsat = false;
+	for (block b: input.B) {
+	  std::cout << "Block " << b << std::endl;
+	  Solution<SecLocalModel> ls = local_problem(gs.solution, b);
+	  if (ls.result != UNSATISFIABLE) {
+	    SecLocalModel * base_local = ls.solution;
+	    Gecode::SpaceStatus lss = base_local->status();
+	    assert(lss != SS_FAILED);
+	    bool single_block = base_local->input->B.size() == 1;
+	    ls = solved(base_local, local_solutions[b]) && !single_block ?
+	      // if the local problem is already solved, fetch the cached solution
+	      fetch_solution(base_local, local_solutions[b]) :
+	      // otherwise solve
+	      solve_local_portfolio(base_local, lo, iteration);
+	    delete base_local;
+	  }
+	  if (ls.solution->options->verbose()) {
+	    if (ls.result == LIMIT) {
+	      cerr << local(b) << "could not find solution" << endl;
+	    } else if (ls.result == UNSATISFIABLE) {
+	      cerr << local(b) << "could not find solution (unsatisfiable)" << endl;
+	    } else if (ls.result == CACHED_SOLUTION) {
+	      cerr << local(b) << "repeated solution" << endl;
+	    }
+	  }
+	  if (ls.result == LIMIT || ls.result == UNSATISFIABLE) {
+	    cerr << local(b) << "!!!!check this out!!!" << endl;
+	    // throw Support::JobStop<Solution<SecLocalModel> >(ls);
+	  }
 
-        if (t.stop() > options.timeout())
-          timeout_exit(base, results, gd, go, t.stop());
+	  latest_local_solutions[b] = ls;
+	  solved_blocks.insert(b);
+	// }
+	  
+        // map<block, Solution<SecLocalModel> > latest_local_solutions;
+        // set<block> solved_blocks;
+        // LocalJobs ljs(gs, lo, iteration, &local_solutions, blocks);
+        // bool found_all_local = true, unsat = false;
+        // unsigned int top_threads =
+        //   options.total_threads() / options.portfolio_threads();
+
+        // // Solve the local problems
+        // Support::RunJobs<LocalJobs, Solution<SecLocalModel> > p(ljs, top_threads);
+        // Solution<SecLocalModel> ls;
+        // while (p.run(ls)) {
+        //   int i;
+        //   Solution<SecLocalModel> fls;
+        //   if (p.stopped(i, fls)) { // job stopped
+        //     block b = fls.solution->b;
+        //     latest_local_solutions[b] = fls;
+        //     solved_blocks.insert(b);
+        //     break;
+        //   } else { // job finished
+        //     block b = ls.solution->b;
+        //     latest_local_solutions[b] = ls;
+        //     solved_blocks.insert(b);
+        //   }
+        // }
+
+        // if (t.stop() > options.timeout())
+        //   timeout_exit(base, results, gd, go, t.stop());
 
         // Process the local solutions
-        for (block b : solved_blocks) {
-          Solution<SecLocalModel> ls = latest_local_solutions[b];
+        // for (block b : solved_blocks) {
+        //   Solution<SecLocalModel> ls = latest_local_solutions[b];
           iteration_failed += ls.failures;
           iteration_nodes += ls.nodes;
           // Store the result of solving the local problem
@@ -960,43 +1011,42 @@ int main(int argc, char* argv[]) {
               local_solutions[b].push_back(ls.solution);
               base->post_local_solution_cost(ls.solution);
             }
-	    // std::cout << "local solutions" << std::endl;
-	    // std::cout << "block: " << b << std::endl;
-	    // std::cout << "a: " << ls.solution -> v_a << std::endl;
-	    // std::cout << "r: " << ls.solution -> v_r << std::endl;
-	    // std::cout << "c: " << ls.solution -> v_c << std::endl;
-	    // std::cout << "y: " << ls.solution -> v_y << std::endl;
-	    // std::cout << "i: " << ls.solution -> v_i << std::endl;
-	    // std::cout << "v_ls: " << ls.solution -> v_ls << std::endl;
-	    // std::cout << "v_le: " << ls.solution -> v_le << std::endl;
-	    // std::cout << "cost: " << ls.solution -> cost() << std::endl;
-
-            // Propagate the cost of the found local solution in the global problem
+	    std::cout << "local solutions" << std::endl;
+	    std::cout << "block: " << b << std::endl;
+	    std::cout << "a: " << ls.solution -> v_a << std::endl;
+	    std::cout << "r: " << ls.solution -> v_r << std::endl;
+	    std::cout << "c: " << ls.solution -> v_c << std::endl;
+	    std::cout << "y: " << ls.solution -> v_y << std::endl;
+	    std::cout << "i: " << ls.solution -> v_i << std::endl;
+	    std::cout << "v_ls: " << ls.solution -> v_ls << std::endl;
+	    std::cout << "v_le: " << ls.solution -> v_le << std::endl;
+	    std::cout << "v_lk: " << ls.solution -> v_lk << std::endl;
+	    std::cout << "v_tat: " << ls.solution -> v_tat << std::endl;
+	    std::cout << "v_tbt: " << ls.solution -> v_tbt << std::endl;
+	    std::cout << "cost: " << ls.solution -> cost() << std::endl;
             SpaceStatus status = gs.solution->status();
+	    if (options.verbose()) {
+		std::cout << "global solution" << std::endl;
+		std::cout << "block: " << b << std::endl;
+		std::cout << "a: " << gs.solution -> v_a << std::endl;
+		std::cout << "r: " << gs.solution -> v_r << std::endl;
+		std::cout << "ry: " << gs.solution -> v_ry << std::endl;
+		std::cout << "c: " << gs.solution -> v_c << std::endl;
+		std::cout << "y: " << gs.solution -> v_y << std::endl;
+		std::cout << "i: " << gs.solution -> v_i << std::endl;
+		std::cout << "v_ls: " << gs.solution -> v_ls << std::endl;
+		std::cout << "v_le: " << gs.solution -> v_le << std::endl;
+		std::cout << "cost: " << gs.solution -> cost() << std::endl;
+		std::cout << "v_gb: " << gs.solution -> v_gb << std::endl;
+		std::cout << "v_tat: " << gs.solution -> v_tat << std::endl;
+		std::cout << "v_tbt: " << gs.solution -> v_tbt << std::endl;
+	    }
+            // Propagate the cost of the found local solution in the global problem
+
             if (status == Gecode::SS_FAILED) {
               found_all_local = false;
               unsat = true;
               if (options.verbose()) {
-		// std::cout << "global solution" << std::endl;
-		// std::cout << "block: " << b << std::endl;
-		// std::cout << "a: " << gs.solution -> v_a << std::endl;
-		// std::cout << "r: " << gs.solution -> v_r << std::endl;
-		// std::cout << "c: " << gs.solution -> v_c << std::endl;
-		// std::cout << "y: " << gs.solution -> v_y << std::endl;
-		// std::cout << "i: " << gs.solution -> v_i << std::endl;
-		// std::cout << "v_ls: " << gs.solution -> v_ls << std::endl;
-		// std::cout << "v_le: " << gs.solution -> v_le << std::endl;
-		// std::cout << "cost: " << gs.solution -> cost() << std::endl;
-		// std::cout << "v_gb: " << gs.solution -> v_gb << std::endl;
-		// std::cout << "lgs[64]: " << gs.solution -> lgs(64) << std::endl;
-		// std::cout << "lge[64]: " << gs.solution -> lge(64) << std::endl;
-
-		// std::cout << "ls[64]: " << gs.solution -> ls(64) << std::endl;
-		// std::cout << "le[64]: " << gs.solution -> le(64) << std::endl;
-		// std::cout << "bot[64]: " << gs.solution -> bot(64) << std::endl;
-		// std::cout << "gb[0]: " << gs.solution -> gb(0) << std::endl;
-		// std::cout << "gb[1]: " << gs.solution -> gb(1) << std::endl;
-
                 cerr << local(b)
                      << "could not extend global solution: too costly" << endl;
 	      }
@@ -1005,6 +1055,9 @@ int main(int argc, char* argv[]) {
           }
 
         }
+
+	if (t.stop() > options.timeout())
+          timeout_exit(base, results, gd, go, t.stop());
 
         // Forbid the current global solution
         base->post_different_solution(gs.solution, unsat);

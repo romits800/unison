@@ -64,6 +64,7 @@ module Unison.Target.API (
   constraints,
   spillOverhead,
   isXor,
+  isGMul,
   hardwareRegisters,
   addSecurityCopy
   ) where
@@ -229,6 +230,7 @@ spillOverhead (ti, to) = tSpillOverhead ti to
 
 -- ROMY (add new function)
 isXor (ti, to) = tIsXor ti to
+isGMul (ti, to) = tIsGMul ti to
 hardwareRegisters (ti, to) = tHardwareRegs ti to
 addSecurityCopy (ti, to) = tAddSecurityCopy ti to
 
@@ -408,6 +410,9 @@ data TargetDescription i r rc s = TargetDescription {
                            Maybe (Bool, Latency),
       -- | Return true if instruction is a xor operation
       tIsXor            :: TargetOptions -> Instruction i ->
+                           Bool,
+      -- | Return true if instruction is a mul operation - needs to be gmul
+      tIsGMul           :: TargetOptions -> Instruction i ->
                            Bool,
       -- | Hardware Registers for SecDivCon
       tHardwareRegs     :: TargetOptions -> [r],

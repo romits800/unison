@@ -75,6 +75,7 @@ target =
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
+      API.tIsGMul           = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
     }
@@ -512,8 +513,13 @@ expandCopy _ _ o = [o]
 
 -- | Is xor
 
-isXor (TargetInstruction i) | i `elem` [XOR] = True
+isXor (TargetInstruction i) | i `elem` [XOR, XORi] = True
 isXor _ = False
+
+-- | Is gmul - essentially we replace it with MUL
+
+isGMul (TargetInstruction i) | i `elem` [MUL, MULT, MULU] = True
+isGMul _ = False
 
 addSecurityCopy f _ = f
 
