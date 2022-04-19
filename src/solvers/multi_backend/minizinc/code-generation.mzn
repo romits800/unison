@@ -1326,23 +1326,23 @@ constraint
 
 %% domination constraint: sequential schedule as a makespan UB
 %% Model::post_sequential_upper_bound_constraints
-constraint
-  forall(bb in index_set(bb_ops))(
-    let {set of int: os = bb_ops[bb],
-         array[os] of var 0..MAXC: wc = array1d(os, [o_wcet(o) | o in os])}
-    in c[max(os)] <= sum(o in os)(wc[o])
-  );
+% constraint
+%   forall(bb in index_set(bb_ops))(
+%     let {set of int: os = bb_ops[bb],
+%          array[os] of var 0..MAXC: wc = array1d(os, [o_wcet(o) | o in os])}
+%     in c[max(os)] <= sum(o in os)(wc[o])
+%   );
 
-var 0..MAXC: o_wcet(0..MAXO: o) =
-  let {array[int] of var int: wcs = [wcet[jj,3] | jj in index_set_1of2(wcet) where wcet[jj,1] = o],
-       int: nwcs = length(wcs)}
-  in if forall(jj in 1..nwcs)(wcs[jj] = 1)
-       then a[o]
-     else if not op_mand[o] /\ forall(jj in 2..nwcs)(wcs[jj] = 1)
-       then a[o]
-     else
-       wcs[ii[o]]
-     endif endif;
+% var 0..MAXC: o_wcet(0..MAXO: o) =
+%   let {array[int] of var int: wcs = [wcet[jj,3] | jj in index_set_1of2(wcet) where wcet[jj,1] = o],
+%        int: nwcs = length(wcs)}
+%   in if forall(jj in 1..nwcs)(wcs[jj] = 1)
+%        then a[o]
+%      else if not op_mand[o] /\ forall(jj in 2..nwcs)(wcs[jj] = 1)
+%        then a[o]
+%      else
+%        wcs[ii[o]]
+%      endif endif;
 
 % constraint (r[10] = 1);
 % constraint (r[13] = 0);  
