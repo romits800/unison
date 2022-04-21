@@ -23,7 +23,7 @@ import Unison.Target.API
 
 addRegisterCopies policies f @ Function {fCode = code} target =
   let
-    (pmap, _, _, _, _, _, _, _, _, _) = inferSecurityTypes target f policies
+    (pmap, _, _, _, _, _, _, _, _, _, _) = inferSecurityTypes target f policies
     escf = addSecurityCopy target
     rands = map getT $ filter isRandomT $ map snd $ Map.toList pmap
     f' = foldl escf f rands

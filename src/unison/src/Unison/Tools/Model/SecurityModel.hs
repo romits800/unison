@@ -28,7 +28,7 @@ import Unison.Transformations.SecurityTypeInference
 
 parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
   let
-    nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _) = inferSecurityTypes target f policies
+    nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _,_) = inferSecurityTypes target f policies
     (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
     ran'            = filter (\x -> head x == 't') ran
     pub'            = filter (\x -> head x == 't') pub
@@ -94,7 +94,7 @@ toInt1 t       = error $ "SecTypeInf: toInt cannot convert to integer: " ++ t
 findPairs [] _ _ res = res
 findPairs (p:ps) pubs types res = 
   let
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t) res p2 =
+    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res p2 =
       let
         s1   = Map.findWithDefault Map.empty p supp
         s2   = Map.findWithDefault Map.empty p2 supp
@@ -113,7 +113,7 @@ findPairs (p:ps) pubs types res =
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t) [p] [p2] "tmp"
+        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [p] [p2] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if isMaybeSecret typ
          then (p,p2):res
@@ -126,13 +126,13 @@ findPairs (p:ps) pubs types res =
 
 
 findRandSec [] _ _ res = res
-findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _) res = 
+findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _, _) res = 
   let
     s1   = Map.findWithDefault Map.empty s supp
     u1   = Map.findWithDefault Map.empty s unq
     d1   = Map.findWithDefault Map.empty s dom
     x1   = Map.findWithDefault False s xor
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t) res r = 
+    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res r = 
       let
         s2   = Map.findWithDefault Map.empty r supp
         u2   = Map.findWithDefault Map.empty r unq
@@ -147,7 +147,7 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _) res =
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t) [s] [r] "tmp"
+        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [s] [r] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if not $ isMaybeSecret typ
          then r:res
@@ -157,14 +157,14 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _) res =
 
 
 findRandSecMC [] _ _ _ res = res
-findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _) t2o res = 
+findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o res = 
   let
     s1   = Map.findWithDefault Map.empty s supp
     u1   = Map.findWithDefault Map.empty s unq
     d1   = Map.findWithDefault Map.empty s dom
     x1   = Map.findWithDefault False s xor
     ops1 = map fst $ Map.toList $ Map.findWithDefault Map.empty s m2o
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t) res r = 
+    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res r = 
       let
         s2   = Map.findWithDefault Map.empty r supp
         u2   = Map.findWithDefault Map.empty r unq
@@ -180,7 +180,7 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _) t2o re
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
         ops2 = Map.findWithDefault Map.empty r t2o
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t) [s] [r] "tmp"
+        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [s] [r] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if not $ isMaybeSecret typ
          then Map.union ops2 res
