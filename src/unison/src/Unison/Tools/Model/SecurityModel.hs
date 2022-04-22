@@ -104,20 +104,29 @@ findPairs (p:ps) pubs types res =
         d2   = Map.findWithDefault Map.empty p2 dom
         x1   = Map.findWithDefault False p xor
         x2   = Map.findWithDefault False p2 xor
+        x12  = x1 && x2
+
+        -- supp'= updateBSupps (supp, xor) [p] [p2] ["tmp"]
+        -- unq' = updateBUnqs (unq, supp) [p] [p2] ["tmp"]
+        -- dom' = updateBDoms (dom, unq') [p] [p2] ["tmp"]
+
         s12  = Map.union s1 s2
         is12 = Map.intersection s1 s2
         u12  = Map.difference (Map.union u1 u2) is12
         d12  = Map.intersection (Map.union d1 d2) u12
-        x12  = x1 && x2
         supp' = Map.insert "tmp" s12 supp
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
         pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [p] [p2] "tmp"
         typ  = Map.lookup "tmp" pmap'
-      in if isMaybeSecret typ
-         then (p,p2):res
-         else res
+      in
+        -- if (p == "t26" && p2 == "t12") || (p == "t12" && p2 == "t26") then
+        --   error (show typ)
+        -- else 
+          if isMaybeSecret typ
+          then (p,p2):res
+          else res
       -- in (p,p2):res
     res' = foldl (f types) res (ps ++ pubs)
   in findPairs ps pubs types res'
@@ -138,14 +147,20 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _, _) res =
         u2   = Map.findWithDefault Map.empty r unq
         d2   = Map.findWithDefault Map.empty r dom
         x2   = Map.findWithDefault False r xor
+        x12  = x1 && x2
+        
         s12  = Map.union s1 s2
         is12 = Map.intersection s1 s2
         u12  = Map.difference (Map.union u1 u2) is12
-        d12  = Map.intersection (Map.union d1 d2) u12
-        x12  = x1 && x2
+        d12  = Map.intersection (Map.union d1 d2) u12 
         supp' = Map.insert "tmp" s12 supp
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
+
+        -- supp'= updateBSupps (supp, xor) [r] s ["tmp"]
+        -- unq' = updateBUnqs (unq, supp) [r] s ["tmp"]
+        -- dom' = updateBDoms (dom, unq') [r] s ["tmp"]
+
         xor' = Map.insert "tmp" x12 xor
         pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [s] [r] "tmp"
         typ  = Map.lookup "tmp" pmap'
@@ -170,14 +185,21 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o
         u2   = Map.findWithDefault Map.empty r unq
         d2   = Map.findWithDefault Map.empty r dom
         x2   = Map.findWithDefault False r xor
+        x12  = x1 && x2
+
         s12  = Map.union s1 s2
         is12 = Map.intersection s1 s2
         u12  = Map.difference (Map.union u1 u2) is12
         d12  = Map.intersection (Map.union d1 d2) u12
-        x12  = x1 && x2
+
         supp'= Map.insert "tmp" s12 supp
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
+
+        -- supp'= updateBSupps (supp, xor) [r] s ["tmp"]
+        -- unq' = updateBUnqs (unq, supp) [r] s ["tmp"]
+        -- dom' = updateBDoms (dom, unq') [r] s ["tmp"]
+
         xor' = Map.insert "tmp" x12 xor
         ops2 = Map.findWithDefault Map.empty r t2o
         pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [s] [r] "tmp"

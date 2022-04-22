@@ -11,6 +11,9 @@ Main authors:
 module Unison.Transformations.SecurityTypeInference (StateTuple,
                                                      inferSecurityTypes,
                                                      isMaybeSecret,
+                                                     updateBSupps,
+                                                     updateBUnqs,
+                                                     updateBDoms,
                                                      updatePmapID)
        where
 
@@ -29,6 +32,7 @@ import qualified Unison.Graphs.SG as SG
 import qualified Unison.Graphs.BCFG as BCFG
 
 data KnownOperations = KOAnd | KOOr | KOXor | KOGmul | KOOther
+  deriving Show
 
 type StateTuple r = (Map String (Policy String),
                      Map String (Policy String),
@@ -760,19 +764,41 @@ updatePmapsID _ _ (pmap, _, _, _, _, _, _, _, _, _, _) _ _ [] = pmap
 updatePmapsID isxor isgmul types @ (_, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) ts1 ts2 (dt:dts) =
   let pmap' = updatePmapID isxor isgmul types ts1 ts2 dt
   in updatePmapsID isxor isgmul (pmap', init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) ts1 ts2 dts
-  
+
+-- updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, args) ts1 ts2 dt
+--   | isxor && (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) && (("t26" `elem` ts1 && "t12" `elem` ts2) || ("t26" `elem` ts2 && "t12" `elem` ts1)) =
+--     case getSameOperand args ts1 ts2 of
+--       Nothing -> error "Nothing"
+--       Just (KOOther, _, _) -> error "Other"
+--       -- Just (KOXor, _, _) -> updatePmapID False False types ts1 ts2 dt
+--       Just (KOXor, _, ts2') ->
+--         let pmap' = updatePmapID False False types ts2' [] dt in
+--           error ("Xor" ++ show isxor ++ show ts2' ++ "dom " ++ show (Map.lookup dt pmap') ++
+--                                       show (Map.lookup dt dom) ++ "first and sec" ++
+--                                        -- show (isSameOperand args ts1 ts2) ++
+--                                        -- show (isSameOperand args ts2 ts1) ++
+--                                        -- show ts1 ++
+--                                        -- show ts2 ++
+--                                        -- show (Map.lookup "t26" args) ++
+--                                        -- show (getSameOperand args ts1 ts2) ++
+--                                      "supp: " ++ show (Map.lookup dt supp) ++ show dt
+--                                      ++ (show $ not $ intersectSec supp init dt))
+--       Just (KOOr, ts1', ts2') -> error "Or"
+--       Just (KOAnd, ts1', ts2') -> error "And"
+--       Just (KOGmul, ts1, ts2) -> error "Gmul"    
 updatePmapID _ _ (pmap, _, _, _, dom, _, _, _, _, _, _) _ _ dt
   | not $ isEmpty dt dom =
     Map.insert dt (Random dt) pmap
 updatePmapID _ _ (pmap, init, supp, _, dom, _, _, _, _, _, _) _ _ dt
-  | (isEmpty dt dom) && (not $ intersectSec supp init $ dt)  =
-    Map.insert dt (Public dt) pmap   
+  | (isEmpty dt dom) && (not $ intersectSec supp init dt)  =
+    Map.insert dt (Public dt) pmap
 updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, args) ts1 ts2 dt
-  | isxor && (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts2) =
+  | isxor && (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
     case getSameOperand args ts1 ts2 of
       Nothing -> updatePmapID isxor isgmul types ts1 ts2 dt
       Just (KOOther, _, _) -> updatePmapID isxor isgmul types ts1 ts2 dt
-      Just (KOXor, _, ts2') -> updatePmapID False False types [] ts2' dt
+      -- Just (KOXor, _, _) -> updatePmapID False False types ts1 ts2 dt
+      Just (KOXor, _, ts2') -> updatePmapID False False types ts2' [] dt
       Just (KOOr, ts1', ts2') -> updatePmapID False False types ts1' ts2' dt
       Just (KOAnd, ts1', ts2') -> updatePmapID False False types ts1' ts2' dt
       Just (KOGmul, ts1, ts2) ->
@@ -784,8 +810,7 @@ updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, ar
           case (typ1,typ2) of
             (Just (Secret _), _) -> Map.insert dt (Secret dt) pmap
             (_,Just (Secret _)) -> Map.insert dt (Secret dt) pmap
-            _ -> Map.insert dt (Public dt) pmap
-    
+            _ -> Map.insert dt (Public dt) pmap    
 updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _, _) ts1 ts2 dt =
   let supp1   = unionMaps supp ts1
       supp2   = unionMaps supp ts2
