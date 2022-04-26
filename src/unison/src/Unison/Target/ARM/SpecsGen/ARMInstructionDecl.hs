@@ -2923,7 +2923,6 @@ data ARMInstruction = ABS
                     | TSTRi
                     | TSTRr
                     | TSTRspi
-                    | TSTRspi_fi
                     | TSUBi3
                     | TSUBi8
                     | TSUBrr

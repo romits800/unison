@@ -1551,3 +1551,82 @@ instruction-set:
           defines:            [dst, cpsr]
 
 
+
+        - id:                 tEOR_r
+          type:               linear
+          operands:
+           - Rm:              [register, usedef, tGPR]
+           - s:               [register, def, CCR]
+           - Rn:              [register, use, tGPR]
+           - p1:              bound
+           - p2:              bound
+          uses:               [Rn, Rm, p1, p2]
+          defines:            [Rm, s]
+          size:               2
+          affects:
+          affected-by:
+          itinerary:          IIC_iBITr
+
+
+        - id:                 tAND_r
+          type:               linear
+          operands:
+           - Rm:              [register, usedef, tGPR]
+           - s:               [register, def, CCR]
+           - Rn:              [register, use, tGPR]
+           - p1:              bound
+           - p2:              bound
+          uses:               [Rn, Rm, p1, p2]
+          defines:            [Rm, s]
+          size:               2
+          affects:
+          affected-by:
+          itinerary:          IIC_iBITr
+
+
+        - id:                 tORR_r
+          type:               linear
+          operands:
+           - Rm:              [register, usedef, tGPR]
+           - s:               [register, def, CCR]
+           - Rn:              [register, use, tGPR]
+           - p1:              bound
+           - p2:              bound
+          uses:               [Rn, Rm, p1, p2]
+          defines:            [Rm, s]
+          size:               2
+          affects:
+          affected-by:
+          itinerary:          IIC_iBITr
+
+
+        - id:                 tBIC_r
+          type:               linear
+          operands:
+           - Rm:              [register, usedef, tGPR]
+           - s:               [register, def, CCR]
+           - Rn:              [register, use, tGPR]
+           - p1:              bound
+           - p2:              bound
+          uses:               [Rn, Rm, p1, p2]
+          defines:            [Rm, s]
+          size:               2
+          affects:
+          affected-by:
+          itinerary:          IIC_iBITr
+
+
+        - id:                 tMUL_r
+          type:               linear
+          operands:
+           - Rn:              [register, usedef, tGPR]
+           - s:               [register, def, CCR]
+           - Rm:              [register, use, tGPR]
+           - p1:              bound
+           - p2:              bound
+          uses:               [Rn, Rm, p1, p2]
+          defines:            [Rn, s]
+          size:               2
+          affects:
+          affected-by:
+          itinerary:          IIC_iMUL32
