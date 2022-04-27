@@ -1025,7 +1025,7 @@ int main(int argc, char* argv[]) {
 // 	    std::cout << "v_tbt: " << ls.solution -> v_tbt << std::endl;
 // 	    std::cout << "cost: " << ls.solution -> cost() << std::endl;
             SpaceStatus status = gs.solution->status();
-	    if (options.verbose()) {
+	    // if (options.verbose()) {
 // 		std::cout << "global solution" << std::endl;
 // 		std::cout << "block: " << b << std::endl;
 // 		std::cout << "a: " << gs.solution -> v_a << std::endl;
@@ -1040,7 +1040,7 @@ int main(int argc, char* argv[]) {
 // 		std::cout << "v_gb: " << gs.solution -> v_gb << std::endl;
 // 		std::cout << "v_tat: " << gs.solution -> v_tat << std::endl;
 // 		std::cout << "v_tbt: " << gs.solution -> v_tbt << std::endl;
-	    }
+	    // }
             // Propagate the cost of the found local solution in the global problem
 
             if (status == Gecode::SS_FAILED) {
