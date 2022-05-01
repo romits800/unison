@@ -619,6 +619,7 @@ isCSRegisterObject _ = False
 
 postProcess to = [expandPseudos to, if keepNops to then replaceNops to else removeAllNops,
                   removeFrameIndex,
+                  reverseInstruction,
                   cleanLoadMerges,
                   removeEmptyBundles, reorderImplicitOperands,
                   exposeCPSRRegister,
@@ -796,6 +797,18 @@ removeFrameIndexInstr mi @ MachineSingle {msOpcode = MachineTargetOpc i}
 
 removeFi i = read $ dropSuffix "_fi" (show i)
 removeCpi i = read $ dropSuffix "_cpi" (show i)
+
+reverseInstruction = mapToMachineInstruction reverseInstructionInstr
+
+reverseInstructionInstr
+  mi @ MachineSingle {msOpcode = MachineTargetOpc i,
+                      msOperands = [d1, d2, s1, s2, cc, p]}
+  | i `elem` [TEOR_r, TAND_r, TORR_r, TBIC_r, TMUL_r] =
+    let mos = [d1, d2, s2, s1, cc, p]
+    in mi {msOpcode = mkMachineTargetOpc $ removeR i, msOperands = mos}
+reverseInstructionInstr mi = mi
+
+removeR i = read $ dropSuffix "_r" (show i)
 
 cleanLoadMerges = filterMachineInstructions (not . isSingleLoadMerge)
 

@@ -156,12 +156,13 @@ alignedPairs i ([_, _, _, _], [_, _])
 alignedPairs i ([_, rm, _, _], [rm'])
   | i `elem` [TMULz] = [(rm, rm')]
 alignedPairs i ([_, rm, _, _], [rm', _])
-  | i `elem` [TMUL] = [(rm, rm')]
+  | i `elem` [TAND_r, TBIC_r, TEOR_r, TMUL, TORR_r] = [(rm, rm')]
 alignedPairs i ([rn, _, _, _], [rn'])
   | i `elem` [TADDhirr, TADDspr] = [(rn, rn')]
 alignedPairs i ([rn, _, _, _], [rn', _])
-  | i `elem` [TAND, TASRrr, TBIC, TEOR, TLSLrr, TLSRrr, TORR, TROR] =
-    [(rn, rn')]
+  | i `elem`
+      [TAND, TASRrr, TBIC, TEOR, TLSLrr, TLSRrr, TMUL_r, TORR, TROR]
+    = [(rn, rn')]
 alignedPairs i ([_, _, _, _], [_])
   | i `elem`
       [T2CMPrr_cpsr, T2TEQrr_cpsr, T2TSTrr_cpsr, TCMPhir_cpsr,
@@ -951,7 +952,7 @@ alignedPairs i ([_, _, _], [_])
 alignedPairs i ([_, _, _, _], [])
   | i `elem` [T2TBB_JT, T2TBH_JT] = []
 alignedPairs i ([_, _], [_, _]) | i `elem` [TADDframe] = []
-alignedPairs i ([_, _], [_, _]) | i `elem` [TADDframe_cpsr] = []
+alignedPairs i ([_, _], [_, _, _]) | i `elem` [TADDframe_cpsr] = []
 alignedPairs i ([_, _, _, _], []) | i `elem` [BCCZi64] = []
 alignedPairs i ([_, _, _, _, _, _], []) | i `elem` [BCCi64] = []
 alignedPairs i ([_, _], []) | i `elem` [ITasm, T2IT] = []
