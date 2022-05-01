@@ -1221,39 +1221,39 @@ constraint
       else true endif
   );
         
-%% DOMINATION: live range of temp occurring in (kill)
-predicate kill_live_range(int: v) =
-  (ld[v] = lt[temp_def[v]]);
-
-%% Model::post_kill_issue_cycle_constraints
-constraint
-  forall(o2 in 0..MAXO where op_type[o2] = TYPE_KILL)(
-    if op_mand[o2] then % e.g. after function call, multiple operands
-      let {array[int] of var int: lats = [lat(q,v) | q in op_operands[o2],
-						     v in {single_temp(q)}],
-	   array[int] of int: ts = [v | q in op_operands[o2],
-					v in {single_temp(q)}],
-	   set of int: o1s = {temp_definer[v] | q in op_operands[o2],
-						v in {single_temp(q)}},
-      } in
-        forall(v in ts)(kill_live_range(v)) /\
-	c[o2] = c[min(o1s)] + max(lats)
-    else % e.g. after move subject to pack, one operand, multiple temps
-      let {int: q1 = min(op_operands[o2]),
-           int: p1 = temp_def[single_temp(q1)],
-	   set of int: o1s = {temp_definer[v] | v in real_temps(q1)},
-	   array[int] of var int: issue = [-1] ++ [c[temp_definer[v]] + lat(q1,v) | v in real_temps(q1)],
-      } in
-        card(op_operands[o2]) = 1 /\ % sanity check
-        forall(v in real_temps(q1))(kill_live_range(v)) /\
-	c[o2] = issue[y[q1]] /\
-	if card(real_temps(q1))=1 then
-	  same_temp(p1,q1) /\ rt[p1] = rt[q1]
-	else
-	  sum(o in o1s)(a[o]) <= 1
-	endif
-    endif
-  );
+%% %% DOMINATION: live range of temp occurring in (kill)
+%% predicate kill_live_range(int: v) =
+%%   (ld[v] = lt[temp_def[v]]);
+%% 
+%% %% Model::post_kill_issue_cycle_constraints
+%% constraint
+%%   forall(o2 in 0..MAXO where op_type[o2] = TYPE_KILL)(
+%%     if op_mand[o2] then % e.g. after function call, multiple operands
+%%       let {array[int] of var int: lats = [lat(q,v) | q in op_operands[o2],
+%% 						     v in {single_temp(q)}],
+%% 	   array[int] of int: ts = [v | q in op_operands[o2],
+%% 					v in {single_temp(q)}],
+%% 	   set of int: o1s = {temp_definer[v] | q in op_operands[o2],
+%% 						v in {single_temp(q)}},
+%%       } in
+%%         forall(v in ts)(kill_live_range(v)) /\
+%% 	c[o2] = c[min(o1s)] + max(lats)
+%%     else % e.g. after move subject to pack, one operand, multiple temps
+%%       let {int: q1 = min(op_operands[o2]),
+%%            int: p1 = temp_def[single_temp(q1)],
+%% 	   set of int: o1s = {temp_definer[v] | v in real_temps(q1)},
+%% 	   array[int] of var int: issue = [-1] ++ [c[temp_definer[v]] + lat(q1,v) | v in real_temps(q1)],
+%%       } in
+%%         card(op_operands[o2]) = 1 /\ % sanity check
+%%         forall(v in real_temps(q1))(kill_live_range(v)) /\
+%% 	c[o2] = issue[y[q1]] /\
+%% 	if card(real_temps(q1))=1 then
+%% 	  same_temp(p1,q1) /\ rt[p1] = rt[q1]
+%% 	else
+%% 	  sum(o in o1s)(a[o]) <= 1
+%% 	endif
+%%     endif
+%%   );
 
 %% [matsc] domination constraint for slack, in fact make it a functional dependency
 %% N.B. Subsumes post_slack_lower_bound_constraints
@@ -1285,27 +1285,27 @@ constraint
 	forall(p in outps)(s[p] = min(outub,max(outlb,0)))
   );
 
-%% domination constraint: sequential schedule as a makespan UB
-%% Model::post_sequential_upper_bound_constraints
-constraint
-  forall(bb in index_set(bb_ops))(
-    let {set of int: os = bb_ops[bb],
-         array[os] of var 0..MAXC: wc = array1d(os, [o_wcet(o) | o in os])}
-    in c[max(os)] <= sum(o in os)(wc[o])
-  );
-
-var 0..MAXC: o_wcet(0..MAXO: o) =
-  let {array[int] of var int: wcs = [wcet[jj,3] | jj in index_set_1of2(wcet) where wcet[jj,1] = o],
-       int: nwcs = length(wcs)}
-  in if forall(jj in 1..nwcs)(wcs[jj] = 1)
-       then a[o]
-     else if not op_mand[o] /\ forall(jj in 2..nwcs)(wcs[jj] = 1)
-       then a[o]
-     else
-       wcs[ii[o]]
-     endif endif;
-
-%% output
+%% %% domination constraint: sequential schedule as a makespan UB
+%% %% Model::post_sequential_upper_bound_constraints
+%% constraint
+%%   forall(bb in index_set(bb_ops))(
+%%     let {set of int: os = bb_ops[bb],
+%%          array[os] of var 0..MAXC: wc = array1d(os, [o_wcet(o) | o in os])}
+%%     in c[max(os)] <= sum(o in os)(wc[o])
+%%   );
+%% 
+%% var 0..MAXC: o_wcet(0..MAXO: o) =
+%%   let {array[int] of var int: wcs = [wcet[jj,3] | jj in index_set_1of2(wcet) where wcet[jj,1] = o],
+%%        int: nwcs = length(wcs)}
+%%   in if forall(jj in 1..nwcs)(wcs[jj] = 1)
+%%        then a[o]
+%%      else if not op_mand[o] /\ forall(jj in 2..nwcs)(wcs[jj] = 1)
+%%        then a[o]
+%%      else
+%%        wcs[ii[o]]
+%%      endif endif;
+%% 
+%% %% output
 
 output
     ["\"cost\": "]   ++ [show(obj)] ++ ["\n"] ++

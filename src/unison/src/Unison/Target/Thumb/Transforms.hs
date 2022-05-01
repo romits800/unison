@@ -21,7 +21,8 @@ module Unison.Target.Thumb.Transforms
      combineLoadStores,
      reorderCalleeSavedSpills,
      enforceStackFrame,
-     extendNonSymmetricOperands) where
+     extendNonSymmetricOperands,
+     isNonSymmetric) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -451,7 +452,7 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
   in p {altTemps = ats'}
 
 -- TODO(Romy): Add more instructions similar to tEOR
-isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBICs]
+isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBICs, TMUL]
 
 
 

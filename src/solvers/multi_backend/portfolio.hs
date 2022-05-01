@@ -150,7 +150,7 @@ fznFlag opt = ["--fzn-flag", opt]
 chuffedTimeoutFlags to
   -- just to be sure that fzn-chuffed dies after the timeout (it does not
   -- always honor the kill signal)
-  | to >= 0 = ["--time-out", show (to `div` timeoutFactor)]
+  | to >= 0 = ["--time-out", show (1000 * (to `div` timeoutFactor))]
   | otherwise = []
 
 callSilentProcess exec args =
