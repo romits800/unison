@@ -47,7 +47,7 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 
   // Find mem operations
   
-  vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi"}; 
+  vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi", "SW_fi", "LW_fi"}; 
   for (operation o : O()) { 
     if (input -> type[o] == COPY)
       memops.push_back(o);
