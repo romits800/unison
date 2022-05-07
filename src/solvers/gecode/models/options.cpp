@@ -139,6 +139,7 @@ ModelOptions::ModelOptions(void)
     _decomp_r("decomp-r", "Set decomposition relax rate", 0.3),
     _sec_implementation("sec-implementation", "Set which implementation to use for power side channels", SEC_R2_M2),
     _disable_sec_regreg_constraints("disable-sec-regreg-constraints", "Disable the random register to random register constraints.", false),
+    _disable_sec_memmem_constraints("disable-sec-memmem-constraints", "Disable the memory to memory constraints constraints.", false),
     _disable_sec_secret_constraints("disable-sec-secret-constraints", "Disable the secret register preceeded by random register constraints.", false),
     _disable_sec_mem_constraints("disable-sec-mem-constraints", "Disable memory constraints.", false)    
 {
@@ -278,6 +279,7 @@ ModelOptions::ModelOptions(void)
   add(_sec_implementation);
 
   add(_disable_sec_regreg_constraints);
+  add(_disable_sec_memmem_constraints);
   add(_disable_sec_secret_constraints);
   add(_disable_sec_mem_constraints);
 }

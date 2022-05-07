@@ -348,11 +348,14 @@ public:
   // [SEC] pairs of temporaries that should not share registers
   vector<vector<int> > rpairs;
 
+  // [SEC] pairs of temporaries that should not share registers
+  vector<vector<int> > mmpairs;
+ 
   // [SEC] pairs of one secret memory operations and copies that can hide them
   vector<vector<vector<int>> > cpairs;
 
   // [SEC] pairs of one secret memory operations and memory accesses that may hide them
-  vector<vector<vector<int>> > mpairs;
+  vector<vector<vector<int>> > mspairs;
 
   // [SEC] pairs of one secret operand and other operands that should precede them
   vector<vector<vector<int>> > spairs;
@@ -673,6 +676,9 @@ public:
 
   // Compatible secret mem - random mem pairs
   vector<pair<vector<operation>, vector<operation>> > mempairs;
+
+  // Not compatible random mpairs
+  vector<pair<operation, operation> > memmempairs;
 
   // Compatible secret mem - copy pairs - instruction should be the last
   // vector<pair<vector<operation>, vector<operation>> > copypairs;

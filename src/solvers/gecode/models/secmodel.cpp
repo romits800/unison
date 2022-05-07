@@ -267,6 +267,7 @@ void SecModel::post_m1_constraints(void) {
       IntVarArray sorted_lts = int_var_array(op_size, -1, maxval);
       // IntVarArray os_map = int_var_array(op_size, -1, maxval);
       for (operation o: memops) { // Hardware registers
+	// a bit hacky - the last instruction is the memory instruction
 	int mem = input -> instructions[o][input -> instructions[o].size() - 1];
 	BoolVar if1 = (input -> type[o] == COPY) ? var(i(o) == mem) : var(i(o) == i(o));
 	BoolVar ifb  = var((a(o) == 1) && if1); 
@@ -338,6 +339,7 @@ void SecModel::post_m2_constraints(void) {
 	IntVarArgs lts;
  	for (operation o2 : memops) {
       	  if (o1 != o2) {
+	    // a bit hacky - the last instruction is the memory instruction
 	    int mem = input -> instructions[o2][input -> instructions[o2].size() - 1];
 	    BoolVar if1 = (input -> type[o2] == COPY) ? var(i(o2) == mem) : var(i(o2) == i(o2));
 	    BoolVar ifb  = var(a(o2) && if1 && (c(o2) <= c(o1)));
@@ -405,6 +407,19 @@ void SecModel::post_secret_mem_constraints(void) {
       if (b.size() > 0)
 	constraint(sum(b) >0);
     }
+  }
+}
+
+
+
+void SecModel::post_random_mem_constraints(void) {
+  // Memory operations that are random or public and should not follow each other 
+  for (std::pair<const operation, const operation> op : input -> memmempairs) {
+    operation o1 = op.first;
+    operation o2 = op.second;
+    constraint((a(o1) && a(o2)) >>
+	       (!msubseq(o1,o2) && !msubseq(o2,o1)));
+
   }
 }
 
@@ -603,6 +618,9 @@ void SecModel::post_security_constraints(void) {
     post_secret_register_constraints();
   if (!options-> disable_sec_mem_constraints())
     post_secret_mem_constraints();
+  if (!options-> disable_sec_memmem_constraints())
+    post_random_mem_constraints();
+
 }
 
 void SecModel::post_tt_constraints(void) {

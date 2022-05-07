@@ -149,7 +149,8 @@ Parameters::Parameters(Json::Value root) :
   
   rpairs     (get_2d_vector<int>(getRoot(root, "pairs"))),
   // cpairs     (get_3d_vector<int>(getRoot(root, "cpairs"))),
-  mpairs     (get_3d_vector<int>(getRoot(root, "mpairs"))),
+  mmpairs     (get_2d_vector<int>(getRoot(root, "mmpairs"))),
+  mspairs     (get_3d_vector<int>(getRoot(root, "mspairs"))),
   spairs     (get_3d_vector<int>(getRoot(root, "spairs"))),
   HR        (get_vector<int>(getRoot(root, "HR")))
 {
@@ -935,13 +936,18 @@ void Parameters::compute_derived() {
       secpairs.push_back(make_pair(spairs[i][0][0], tmp));
     }
 
+  if (memmempairs.size() == 0)
+    for (unsigned int i = 0; i < mmpairs.size(); i++)
+      memmempairs.push_back(make_pair(mmpairs[i][0], mmpairs[i][1]));
+
+  
   if (mempairs.size() == 0)
-    for (unsigned int i = 0; i < mpairs.size(); i++) {
+    for (unsigned int i = 0; i < mspairs.size(); i++) {
       vector<int> tmp1, tmp2;
-      for (unsigned int j = 0; j < mpairs[i][0].size(); j++)
-	tmp1.push_back(mpairs[i][0][j]);
-      for (unsigned int j = 0; j < mpairs[i][1].size(); j++)
-	tmp2.push_back(mpairs[i][1][j]);
+      for (unsigned int j = 0; j < mspairs[i][0].size(); j++)
+	tmp1.push_back(mspairs[i][0][j]);
+      for (unsigned int j = 0; j < mspairs[i][1].size(); j++)
+	tmp2.push_back(mspairs[i][1][j]);
 
       mempairs.push_back(make_pair(tmp1, tmp2));
     }

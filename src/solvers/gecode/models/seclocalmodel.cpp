@@ -579,6 +579,19 @@ void SecLocalModel::post_secret_mem_constraints(void) {
 }
 
 
+void SecLocalModel::post_random_mem_constraints(void) {
+  // These pairs should not be in the same register or should not be consequent
+  for (std::pair<const operation, const operation> op : input -> memmempairs) {
+    operation o1 = op.first;
+    operation o2 = op.second;
+    int op_size = O().size();
+    if (instr(o1) < op_size && instr(o2) < op_size &&
+	instr(o1) >= 0 && instr(o2) >= 0) 
+      constraint((a(o1) && a(o2)) >>
+		 (!msubseq(o1,o2) && !msubseq(o2,o1)));
+  }
+}
+
 
 void SecLocalModel::post_implied_constraints(void) {
   BoolVarArgs ts;
@@ -765,6 +778,9 @@ void SecLocalModel::post_security_constraints(void) {
     post_secret_register_constraints();
   if (!options-> disable_sec_mem_constraints())
     post_secret_mem_constraints();
+  if (!options-> disable_sec_memmem_constraints())
+    post_random_mem_constraints();
+
 }
 
 

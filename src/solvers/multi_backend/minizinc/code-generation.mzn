@@ -276,8 +276,11 @@ array[int] of set of int: sets;
 %% Romy: pairs of random temps
 array[int,int] of int: pairs;
 
+array[int,int] of int: mpairs;
+
 set of int: HR;
 int: PSIZE;
+int: MSIZE;
 int: SSIZE;
 int: SWIDTH;
 % Sum of MAXC
@@ -498,6 +501,10 @@ predicate is_before(int: t1, int: t2) = (samereg(t1,t2) /\ (gle[t1] <= gls[t2]))
 
 %% TODO: add condition for copies
 predicate is_before_oper(int: o1, int: o2) = (a[o2]  /\ (gc[o2] <= gc[o1]));
+
+predicate is_memory_oper(int: o) =
+      %% Same as gecode but a bit hacky..
+     (ii[o] = op_instructions[o][card(op_instructions[o])]);
 
 predicate msubseq(int: o1, int: o2) = (a[o2]  /\ (ok[o2] = gc[o1]));
 
@@ -1393,7 +1400,7 @@ constraint
    forall(t1 in PTS) (lk[t1] =
    			  max([ite(is_before(t2,t1), gle[t2], -1)  | t2 in 0..MAXT]))  /\
    forall(o1 in POS) (ok[o1] =
-   			  max([ite(is_before_oper(o1,o2), gc[o2], -1)  | o2 in 0..MAXO]));
+   			  max([ite(is_before_oper(o1,o2) /\ is_memory_oper(o1,o2), gc[o2], -1)  | o2 in 0..MAXO]));
 
 %% Random pairs that should not be assigned to the same register
 constraint
@@ -1401,6 +1408,15 @@ constraint
      let {int: t1 = pairs[pn,1],
           int: t2 = pairs[pn,2]}
     in samereg(t1,t2) -> (not subseq(t1,t2) /\ not subseq(t2,t1)));
+
+
+
+%% Random memory pairs that should not be assigned to the same register
+% constraint
+%   forall(pn in 1..MSIZE) (
+%      let {int: o1 = mpairs[pn,1],
+%           int: o2 = mpairs[pn,2]}
+%      in a(o1) /\ a(o2) -> (not msubseq(o1,o2) /\ not msubseq(o2,o1)));
 
 
 %% secret temporaries that should be preceded by a random temporary
@@ -1517,13 +1533,13 @@ output
     ["\"live duration\": "]   ++ [show([ld[v] | v in 0..MAXT])] ++ ["\n"] ++
     ["\"live end\": "]   ++ [show([le[v] | v in 0..MAXT])] ++ ["\n"] ++
     % handy for debugging
-    ["\"active\": "]      ++ [show(a)]   ++ ["\n"] ++
-    ["\"regs of temporaries\": "] ++ [show(rt)]   ++ ["\n"] ++
-    ["\"lk\": "] ++ [show(lk)]   ++ ["\n"] ++
-    ["\"global live start\": "]   ++ [show([gls[v] | v in 0..MAXT])] ++ ["\n"] ++
-    ["\"global live end\": "]   ++ [show([gle[v] | v in 0..MAXT])] ++ ["\n"] ++
-    ["\"secrets alive\": "]     ++ [show([ls[i] | i in spairs_secrets])] ++ ["\n"] ++
-["\"pairs\": "]     ++ [show({pairs[pn,i] | pn in 1..PSIZE, i in 1..2} union {i | i in spairs_secrets})] ++ ["\n"] ++ 
+%     ["\"active\": "]      ++ [show(a)]   ++ ["\n"] ++
+%     ["\"regs of temporaries\": "] ++ [show(rt)]   ++ ["\n"] ++
+%     ["\"lk\": "] ++ [show(lk)]   ++ ["\n"] ++
+%     ["\"global live start\": "]   ++ [show([gls[v] | v in 0..MAXT])] ++ ["\n"] ++
+%     ["\"global live end\": "]   ++ [show([gle[v] | v in 0..MAXT])] ++ ["\n"] ++
+%     ["\"secrets alive\": "]     ++ [show([ls[i] | i in spairs_secrets])] ++ ["\n"] ++
+% ["\"pairs\": "]     ++ [show({pairs[pn,i] | pn in 1..PSIZE, i in 1..2} union {i | i in spairs_secrets})] ++ ["\n"] ++ 
     % ["\"lat\": "] ++ [show(lt)]   ++ ["\n"] ++
     % ["\"slack\": "] ++ [show(s)]   ++ ["\n"] ++
     % ["\"temp nb\": "] ++ [show(y)]   ++ ["\n"] ++

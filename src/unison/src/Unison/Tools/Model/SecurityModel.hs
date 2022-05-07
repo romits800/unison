@@ -35,11 +35,12 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
     sec'            = filter (\x -> head x == 't' && (isNothing $ Map.lookup x inmap)) sec
     sec''           = filter (\x -> head x == 'F') sec  -- memory secrets
     ran''           = filter (\x -> head x == 'F' || head x == 't') ran  -- memory randoms
-
+    pub''           = filter (\x -> head x == 'F' || head x == 't') pub
     -- Parameters
     pairs           = findPairs ran' pub' nt []
     secdom          = findRandSec sec' ran' nt []
     p2o             = Map.union c2o' m2o'
+    mpairs          = findPairsMC ran'' pub'' nt p2o []
     secdommem       = findRandSecMC sec'' ran'' nt p2o [] 
     hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
     hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
@@ -51,7 +52,8 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
       ("pairs",     toJSON $ map toInt pairs), -- pairs of random vars that should not reside in the same register
       -- todo(Romy): is it enough with random x random or should I check public x random
       ("spairs",    toJSON $ map toInt2 secdom), -- secret vars that should be preceeded by a random variable in the same register.
-      ("mpairs",    toJSON secdommem), -- secret memory - operations
+      ("mmpairs",    toJSON  mpairs), -- mem to memory leakage
+      ("mspairs",    toJSON secdommem), -- secret memory - operations
       -- ("adj2",      toJSON $ Map.toList p2p), -- secret memory - operations
       -- ("adj25",     toJSON adjacent), -- secret memory - operations
       -- ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
@@ -212,7 +214,52 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o
   in findRandSecMC ss rs types t2o ((ops1,ops2'):res)
 
 
-  
+
+findPairsMC [] _ _ _ res = res
+findPairsMC (p:ps) pubs types t2o res = 
+  let
+    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res p2 =
+      let
+        s1   = Map.findWithDefault Map.empty p supp
+        s2   = Map.findWithDefault Map.empty p2 supp
+        u1   = Map.findWithDefault Map.empty p unq
+        u2   = Map.findWithDefault Map.empty p2 unq
+        d1   = Map.findWithDefault Map.empty p dom
+        d2   = Map.findWithDefault Map.empty p2 dom
+        x1   = Map.findWithDefault False p xor
+        x2   = Map.findWithDefault False p2 xor
+        x12  = x1 && x2
+
+        -- supp'= updateBSupps (supp, xor) [p] [p2] ["tmp"]
+        -- unq' = updateBUnqs (unq, supp) [p] [p2] ["tmp"]
+        -- dom' = updateBDoms (dom, unq') [p] [p2] ["tmp"]
+
+        s12  = Map.union s1 s2
+        is12 = Map.intersection s1 s2
+        u12  = Map.difference (Map.union u1 u2) is12
+        d12  = Map.intersection (Map.union d1 d2) u12
+        supp' = Map.insert "tmp" s12 supp
+        unq' = Map.insert "tmp" u12 unq
+        dom' = Map.insert "tmp" d12 dom
+        xor' = Map.insert "tmp" x12 xor
+
+        -- get operations that correspond to p and p2
+        ops1 = map fst $ Map.toList $ Map.findWithDefault Map.empty p t2o
+        ops2 = map fst $ Map.toList $ Map.findWithDefault Map.empty p2 t2o
+        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [p] [p2] "tmp"
+        typ  = Map.lookup "tmp" pmap'
+        pairs = [ (i,j) | i <- ops1, j <- ops2]
+      in
+        -- if (p == "t26" && p2 == "t12") || (p == "t12" && p2 == "t26") then
+        --   error (show typ)
+        -- else 
+          if isMaybeSecret typ
+          then pairs ++ res
+          else res
+      -- in (p,p2):res
+    res' = foldl (f types) res (ps ++ pubs)
+  in findPairsMC ps pubs types t2o res'
+
 -- lowerConstraintExpr fs (OrExpr es) = OrExpr (map (lowerConstraintExpr fs) es)
 -- lowerConstraintExpr fs (AndExpr es) = AndExpr (map (lowerConstraintExpr fs) es)
 -- lowerConstraintExpr fs (XorExpr e1 e2) =
