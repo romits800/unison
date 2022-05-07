@@ -893,10 +893,10 @@ string produce_dzn(Parameters &input) {
       if (tp.second.size() > mswidth) mswidth=tp.second.size();
     }
   }
-  for (int i=0; i< mpairs_rands.size(); i++) {
+  for (int i=0; i< mpairs_secrets.size(); i++) {
     int size = mpairs_rands[i].size();
     for (int j=size; j< mswidth; j++)
-      spairs_rands[i].push_back(-1);
+      mpairs_rands[i].push_back(-1);
   }
 
 
