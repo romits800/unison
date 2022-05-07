@@ -283,6 +283,7 @@ int: PSIZE;
 int: MSIZE;
 int: SSIZE;
 int: SWIDTH;
+int: MSSIZE;
 int: MSWIDTH;
 % Sum of MAXC
 int: SUMC;
@@ -1428,15 +1429,14 @@ constraint
     in live(ts) -> exists (i in 1..SWIDTH where spairs_rands[pn,i] != -1)
                           (let {int: tr = spairs_rands[pn,i]} in live(tr) /\ subseq(tr, ts)));
 
-
 % array[int,int] of int: mpairs_secrets;
 % array[int,int] of int: mpairs_rands;
 %% Memory instruction that load or store secrets in memory
-% constraint
-%   forall(i in 0..card(mpairs_secrets))(
-%     let {int: oss = mpairs_secrets[i],
-%          int: ors = mpairs_rands[i]}
-%     in forall(o1 in oss)( a[o1] ->  exists (o2 in ors) (a[o2] /\ msubseq(o2, o1))));
+constraint
+  forall(pn in 1..MSSIZE)(
+    let {int: os = mpairs_secrets[pn]}
+    in a[os] -> exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
+                          (let {int: or = spairs_rands[pn,i]} in a[or] /\ msubseq(or, os)));
 
 
 %% IMPLIED Security constraints

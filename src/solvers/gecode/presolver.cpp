@@ -1025,6 +1025,7 @@ string produce_dzn(Parameters &input) {
        << emit_dzn_line("mpairs", input.mmpairs)
        << emit_dzn_line("SSIZE", (int)input.spairs.size())
        << emit_dzn_line("SWIDTH", swidth)
+       << emit_dzn_line("MSSIZE", (int)mpairs_secrets.size())
        << emit_dzn_line("MSWIDTH", mswidth)
        << emit_dzn_line("spairs_secrets", spairs_secrets)
        << emit_dzn_line("spairs_rands", spairs_rands)
