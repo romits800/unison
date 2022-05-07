@@ -1400,7 +1400,7 @@ constraint
    forall(t1 in PTS) (lk[t1] =
    			  max([ite(is_before(t2,t1), gle[t2], -1)  | t2 in 0..MAXT]))  /\
    forall(o1 in POS) (ok[o1] =
-   			  max([ite(is_before_oper(o1,o2) /\ is_memory_oper(o1,o2), gc[o2], -1)  | o2 in 0..MAXO]));
+   			  max([ite(is_before_oper(o1,o2) /\ is_memory_oper(o1) /\ is_memory_oper(o2), gc[o2], -1)  | o2 in 0..MAXO]));
 
 %% Random pairs that should not be assigned to the same register
 constraint
