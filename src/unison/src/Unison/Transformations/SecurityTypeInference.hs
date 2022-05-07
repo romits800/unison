@@ -148,7 +148,7 @@ getOpidTemps MOperand {operandId = oid,
 getOpidTemps op = error $ "GetOidTemps failed: " ++ show op
 
 
-getRegTemps MOperand {operandId = oid,
+getRegTemps MOperand {operandId = _,
                        altTemps = ts,
                        operandReg = r} =
   let ts' = getTids ts []
@@ -165,7 +165,7 @@ filterF (Random ('F':_)) = True
 filterF _ = False
 
 getPoliciesF:: Show r => Show i => Function i r -> Map String (Policy String) -> [Policy String]
-getPoliciesF f @ Function {fCode = code} policies =
+getPoliciesF Function {fCode = code} policies =
   let 
     fs = filter filterF $ map snd $ Map.toList policies
   in foldl (getPoliciesB policies) fs code
@@ -199,6 +199,8 @@ getPoliciesO pols accpol SingleOperation
 getPoliciesO _ accpol _ = accpol
 
 
+addPrefix True = "F"
+addPrefix False = "S"
 
 inferTypes:: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> StateTuple r -> Function i r -> StateTuple r 
 inferTypes target types f @ Function {fCode = code} =
@@ -268,7 +270,8 @@ inferTypesOperation target _ _ types SingleOperation
     oOpr = Natural {oNatural = Linear {
                       oIs = i, -- Instruction i
                       oUs = MOperand {altTemps = ts} :
-                            mfi @ (Bound (MachineFrameIndex {mfiIndex = mf})) : _,
+                            mfi @ (Bound (MachineFrameIndex {mfiIndex = mf,
+                                                             mfiFixed = isfixed})) : _,
                       oDs = [] }}} =
   let
     (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) = types
@@ -277,7 +280,7 @@ inferTypesOperation target _ _ types SingleOperation
     dom'  = updateDoms dom ts [mfi]
     isxor = any (isXor target) i
     isgmul = any (isGMul target) i
-    m2o' = updateM2o m2o ("F" ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
     args' = updateArgsUop args  ts [mfi]
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args') ts [] [mfi]
   in (pmap', init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args')
@@ -286,7 +289,8 @@ inferTypesOperation target _ _ types SingleOperation
     oOpr = Natural {oNatural = Linear {
                       oIs = i, -- Instruction i
                       oUs = t @ Temporary {} :
-                            mfi @ (Bound (MachineFrameIndex {mfiIndex = mf})) : _,
+                            mfi @ (Bound (MachineFrameIndex {mfiIndex = mf,
+                                                             mfiFixed = isfixed})) : _,
                       oDs = [] }}} =
   let
     (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) = types
@@ -295,7 +299,7 @@ inferTypesOperation target _ _ types SingleOperation
     dom'  = updateDoms dom [t] [mfi]
     isxor = any (isXor target) i
     isgmul = any (isGMul target) i
-    m2o' = updateM2o m2o ("F" ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
     args' = updateArgsUop args  [t] [mfi]
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args') [t] [] [mfi]
   in (pmap', init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args')
@@ -349,7 +353,8 @@ inferTypesOperation _ _ _ types SingleOperation
     oId  = oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
-                      oUs = (u @ (Bound (MachineFrameIndex {mfiIndex = mf}))) : _,
+                      oUs = (u @ (Bound (MachineFrameIndex {mfiIndex = mf,
+                                                           mfiFixed = isfixed}))) : _,
                       oDs = [MOperand {altTemps = d}] }}} =
   let
     (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) = types
@@ -360,7 +365,7 @@ inferTypesOperation _ _ _ types SingleOperation
     isgmul= False
     xor' = updateXor xor d [] True d
     args' = updateArgsUop args  [u] d
-    m2o' = updateM2o m2o ("F" ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args') [u] [] d
   in (pmap', init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args')
 inferTypesOperation _ _ _ types SingleOperation
@@ -368,7 +373,8 @@ inferTypesOperation _ _ _ types SingleOperation
     oId  = oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
-                      oUs = (u @ (Bound (MachineFrameIndex {mfiIndex = mf}))) : _,
+                      oUs = (u @ (Bound (MachineFrameIndex {mfiIndex = mf,
+                                                            mfiFixed = isfixed}))) : _,
                       oDs = [t @ Temporary {}] }}} =
   let
     (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) = types
@@ -379,7 +385,7 @@ inferTypesOperation _ _ _ types SingleOperation
     isgmul= False
     xor' = updateXor xor [t] [] True [t]
     args' = updateArgsUop args  [u] [t]
-    m2o' = updateM2o m2o ("F" ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args') [u] [] [t]
   in (pmap', init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args')
 inferTypesOperation _ _ _ _ SingleOperation
@@ -523,7 +529,7 @@ insertOutTemps pmap init oouts =
   in init'
 
 
-anyOp f [] = Nothing
+anyOp _ [] = Nothing
 anyOp f (h:tail) = case f h of
   Just x -> Just x
   Nothing -> anyOp f tail
@@ -646,7 +652,7 @@ updateDoms dom sts dts =
 all_xor xor stids =
   foldl (&&) True $ map (\tid -> Map.findWithDefault True tid xor) stids
   
-updateBSupps True (supp, xor, args) sts1 sts2 dts
+updateBSupps True (supp, _, args) sts1 sts2 dts
   | (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
     case getSameOperand args ts1 ts2 of
       Just (KOXor, _, ts2') ->
@@ -655,7 +661,7 @@ updateBSupps True (supp, xor, args) sts1 sts2 dts
             f2 s1 s dtid = Map.insert dtid s1 s
             supp' = foldl (f2 s2) supp dtids
         in supp'
-      otherwise -> updateSupps supp (sts1 ++ sts2) dts
+      _ -> updateSupps supp (sts1 ++ sts2) dts
   where
     dtids = getTids dts [] -- destinations
     ts1 = getTids sts1 [] -- destinations
@@ -671,7 +677,7 @@ updateBSupps _ (supp, xor,_) sts1 sts2 dts | all_xor xor (getTids dts []) =
       f2 s1 s dtid = Map.insert dtid s1 s
       supp' = foldl (f2 s1s2) supp dtids
   in supp'
-updateBSupps _ (supp, xor, _) sts1 sts2 dts =
+updateBSupps _ (supp, _, _) sts1 sts2 dts =
   updateSupps supp (sts1 ++ sts2) dts
 
 -- updateBUnqs (unq, supp) sts1 sts2 dts | "t38" `elem` (getTids dts [])  =
@@ -806,7 +812,7 @@ updatePmapID _ _ (pmap, _, _, _, dom, _, _, _, _, _, _) _ _ dt
 updatePmapID _ _ (pmap, init, supp, _, dom, _, _, _, _, _, _) _ _ dt
   | (isEmpty dt dom) && (not $ intersectSec supp init dt)  =
     Map.insert dt (Public dt) pmap    
-updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, args) ts1 ts2 dt
+updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts2 dt
   | isxor && (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
     case getSameOperand args ts1 ts2 of
       Nothing -> updatePmapID isxor isgmul types ts1 ts2 dt
@@ -946,8 +952,9 @@ getTids [] tids = tids
 getTids ((Temporary {tId = tid}):ts) tids = getTids ts (("t" ++ show tid):tids)
 getTids (NullTemporary:ts) tids = getTids ts tids
 getTids ((MOperand {altTemps = temps}):ts) tids = getTids (temps ++ ts) tids
-getTids (Bound (MachineFrameIndex {mfiIndex = mi}):ts) tids =
-         getTids ts (("F" ++ show mi):tids)
+getTids (Bound (MachineFrameIndex {mfiIndex = mi,
+                                   mfiFixed = isfixed}):ts) tids =
+         getTids ts ((addPrefix isfixed ++ show mi):tids)
 getTids (_:ts) tids = getTids ts tids
 
 

@@ -33,9 +33,9 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
     ran'            = filter (\x -> head x == 't') ran
     pub'            = filter (\x -> head x == 't') pub
     sec'            = filter (\x -> head x == 't' && (isNothing $ Map.lookup x inmap)) sec
-    sec''           = filter (\x -> head x == 'F') sec  -- memory secrets
-    ran''           = filter (\x -> head x == 'F' || head x == 't') ran  -- memory randoms
-    pub''           = filter (\x -> head x == 'F' || head x == 't') pub
+    sec''           = filter (\x -> head x == 'F' || head x == 'S') sec  -- memory secrets
+    ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') ran  -- memory randoms
+    pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') pub
     -- Parameters
     pairs           = findPairs ran' pub' nt []
     secdom          = findRandSec sec' ran' nt []
