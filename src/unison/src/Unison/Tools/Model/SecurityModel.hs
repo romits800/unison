@@ -26,22 +26,27 @@ import Unison.ParseSecurityPolicies
 import Unison.Transformations.SecurityTypeInference
 
 
+isNotInInmap inmap t = isNothing $ Map.lookup t inmap
+
+allNotInmap ts inmap =
+  all (isNotInInmap inmap) ts 
+
 parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
   let
     nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _,_) = inferSecurityTypes target f policies
     (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
     ran'            = filter (\x -> head x == 't') ran
     pub'            = filter (\x -> head x == 't') pub
-    sec'            = filter (\x -> head x == 't' && (isNothing $ Map.lookup x inmap)) sec
+    sec'            = filter (\x -> head x == 't' && isNotInInmap inmap x) sec
     sec''           = filter (\x -> head x == 'F' || head x == 'S') sec  -- memory secrets
     ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') ran  -- memory randoms
     pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') pub
     -- Parameters
     pairs           = findPairs ran' pub' nt []
     secdom          = findRandSec sec' ran' nt []
-    p2o             = Map.union c2o' m2o'
+    p2o             = Map.union c2o' m2o'   --- Not the same key
     mpairs          = findPairsMC ran'' pub'' nt p2o []
-    secdommem       = findRandSecMC sec'' ran'' nt p2o [] 
+    secdommem       = findRandSecMC sec'' ran'' nt p2o inmap [] 
     hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
     hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
   in
@@ -173,14 +178,22 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _, _) res =
   in findRandSec ss rs types (([s],ress):res)
 
 
-findRandSecMC [] _ _ _ res = res
-findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o res = 
+filterInmap [] _ res = res
+filterInmap ((op1, ts):rest) inmap res =
+  if allNotInmap ts inmap
+  then filterInmap rest inmap (op1:res)
+  else filterInmap rest inmap res 
+
+
+findRandSecMC [] _ _ _ _ res = res
+findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o inmap res = 
   let
     s1   = Map.findWithDefault Map.empty s supp
     u1   = Map.findWithDefault Map.empty s unq
     d1   = Map.findWithDefault Map.empty s dom
     x1   = Map.findWithDefault False s xor
-    ops1 = map fst $ Map.toList $ Map.findWithDefault Map.empty s m2o
+    ops  = Map.toList $ Map.findWithDefault Map.empty s m2o
+    ops1 = filterInmap ops inmap []
     f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res r = 
       let
         s2   = Map.findWithDefault Map.empty r supp
@@ -211,7 +224,7 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o
          else res
     ress = foldl (f types) Map.empty rs
     ops2' = map fst $ Map.toList ress
-  in findRandSecMC ss rs types t2o ((ops1,ops2'):res)
+  in findRandSecMC ss rs types t2o inmap ((ops1,ops2'):res)
 
 
 

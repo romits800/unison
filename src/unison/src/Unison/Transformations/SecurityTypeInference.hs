@@ -34,14 +34,14 @@ import qualified Unison.Graphs.BCFG as BCFG
 data KnownOperations = KOAnd | KOOr | KOXor | KOGmul | KOOther
   deriving Show
 
-type StateTuple r = (Map String (Policy String),
+type StateTuple r = (Map String (Policy String),          -- pmap
                      Map String (Policy String),
                      Map String (Map String String),
                      Map String (Map String String),
                      Map String (Map String String),
                      Map String Bool,
-                     Map String (Map Integer Integer),
-                     Map String (Map Integer Integer),
+                     Map String (Map Integer [String]),   -- m2o
+                     Map String (Map Integer [String]),
                      Map Integer Integer,
                      Map Integer [Operand r],
                      Map String (KnownOperations, [String], [String]))
@@ -280,7 +280,7 @@ inferTypesOperation target _ _ types SingleOperation
     dom'  = updateDoms dom ts [mfi]
     isxor = any (isXor target) i
     isgmul = any (isGMul target) i
-    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid ts
     args' = updateArgsUop args  ts [mfi]
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args') ts [] [mfi]
   in (pmap', init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args')
@@ -299,7 +299,7 @@ inferTypesOperation target _ _ types SingleOperation
     dom'  = updateDoms dom [t] [mfi]
     isxor = any (isXor target) i
     isgmul = any (isGMul target) i
-    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid []
     args' = updateArgsUop args  [t] [mfi]
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args') [t] [] [mfi]
   in (pmap', init, supp', unq', dom', xor, m2o', c2o, p2p, p2t, args')
@@ -365,7 +365,7 @@ inferTypesOperation _ _ _ types SingleOperation
     isgmul= False
     xor' = updateXor xor d [] True d
     args' = updateArgsUop args  [u] d
-    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid d
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args') [u] [] d
   in (pmap', init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args')
 inferTypesOperation _ _ _ types SingleOperation
@@ -385,7 +385,7 @@ inferTypesOperation _ _ _ types SingleOperation
     isgmul= False
     xor' = updateXor xor [t] [] True [t]
     args' = updateArgsUop args  [u] [t]
-    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid
+    m2o' = updateM2o m2o (addPrefix isfixed ++ show mf) oid []
     pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args') [u] [] [t]
   in (pmap', init, supp', unq', dom', xor', m2o', c2o, p2p, p2t, args')
 inferTypesOperation _ _ _ _ SingleOperation
@@ -430,7 +430,7 @@ inferTypesOperation _ _ _ types SingleOperation
       isgmul= False
       xor' = updateXor xor (sop:uops) [] True (dop:defops)
       args' = updateArgsUop args  (sop:uops) (dop:defops)
-      c2o' = updateC2o c2o (dop:defops) oid -- take only destinations - dests and sources are the same..
+      c2o' = updateC2o c2o (dop:defops) oid (sop:uops) -- take only destinations - dests and sources are the same..
       pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o', p2p, p2t, args') (sop:uops) [] (dop:defops)
   in (pmap', init, supp', unq', dom', xor', m2o, c2o', p2p, p2t, args')
 -- virtual copies
@@ -444,7 +444,7 @@ inferTypesOperation _ _ _ types SingleOperation
       dom'  = updateDoms dom [s] [d]
       xor'  = updateXor xor [s] [] True [d]
       args' = updateArgsUop args  [s] [d]
-      c2o'  = updateC2o c2o [d] oid -- take only destinations - dests and sources are the same..
+      c2o'  = updateC2o c2o [d] oid [s]-- take only destinations - dests and sources are the same..
       pmap' = updatePmaps False False (pmap, init, supp', unq', dom', xor', m2o, c2o', p2p, p2t, args') [s] [] [d]
   in (pmap', init, supp', unq', dom', xor', m2o, c2o', p2p, p2t, args')
 -- TODO(VirtualOperation): Phi/Delimiter/Kill/Define
@@ -503,20 +503,22 @@ updateNewTemps p2t p2p types (oid, tmps) =
            Nothing -> error $ "updateNewTemps: " ++ show oid ++ " " ++ show tmps 
        Nothing -> types
 
-updateM2o m2o fid oid =
+updateM2o m2o fid oid tids =
   let
+    dtids = getTids tids [] -- destinations
     f v = case v of
-      Just m -> Just (Map.insert oid oid m)
-      Nothing -> Just (Map.insert oid oid Map.empty)
+      Just m -> Just (Map.insert oid dtids m)
+      Nothing -> Just (Map.insert oid dtids Map.empty)
   in Map.alter f fid m2o
 
 
-updateC2o c2o dts oid =
+updateC2o c2o dts oid sts =
   let
     dtids  = getTids dts [] -- destinations
+    stids  = getTids sts [] -- sources
     f v = case v of
-      Just m -> Just (Map.insert oid oid m)
-      Nothing -> Just (Map.insert oid oid Map.empty)
+      Just m -> Just (Map.insert oid stids m)
+      Nothing -> Just (Map.insert oid stids Map.empty)
   in foldl (\mnew -> \cid -> Map.alter f cid mnew) c2o dtids 
 
 
