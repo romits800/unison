@@ -228,10 +228,10 @@ inferTypesOperation target _ _ types SingleOperation
     (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) = types
     isxor = any (isXor target) i
     isgmul= any (isGMul target) i
-    xor' = updateXor xor ts1 ts2 isxor [d] 
-    supp' = updateBSupps (supp, xor') ts1 ts2 [d]
-    unq' = updateBUnqs (unq, supp) ts1 ts2 [d]
+    xor' = updateXor xor ts1 ts2 isxor [d]
     args' = updateArgs args (knownOp target i) ts1 ts2 [d]
+    supp' = updateBSupps isxor (supp, xor', args') ts1 ts2 [d]
+    unq' = updateBUnqs (unq, supp) ts1 ts2 [d]
     -- if is xor
     dom' = if isxor
            then updateBDoms (dom, unq') ts1 ts2 [d]
@@ -253,9 +253,9 @@ inferTypesOperation target _ _ types SingleOperation
     isxor = any (isXor target) i
     isgmul= any (isGMul target) i
     xor' = updateXor xor [t1] [t2] isxor [d]
-    supp' = updateBSupps (supp, xor') [t1] [t2] [d]
-    unq' = updateBUnqs (unq, supp) [t1] [t2] [d]
     args' = updateArgs args (knownOp target i) [t1] [t2] [d]
+    supp' = updateBSupps isxor (supp, xor', args') [t1] [t2] [d]
+    unq' = updateBUnqs (unq, supp) [t1] [t2] [d]
     dom' = if isxor
            then updateBDoms (dom, unq') [t1] [t2] [d]
            else updateBDomsEmpty dom [d]
@@ -646,7 +646,21 @@ updateDoms dom sts dts =
 all_xor xor stids =
   foldl (&&) True $ map (\tid -> Map.findWithDefault True tid xor) stids
   
-updateBSupps (supp, xor) sts1 sts2 dts | all_xor xor (getTids dts []) =
+updateBSupps True (supp, xor, args) sts1 sts2 dts
+  | (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
+    case getSameOperand args ts1 ts2 of
+      Just (KOXor, _, ts2') ->
+        let f m s tid = Map.union s $ Map.findWithDefault Map.empty tid m
+            s2    = foldl (f supp) Map.empty ts2'
+            f2 s1 s dtid = Map.insert dtid s1 s
+            supp' = foldl (f2 s2) supp dtids
+        in supp'
+      otherwise -> updateSupps supp (sts1 ++ sts2) dts
+  where
+    dtids = getTids dts [] -- destinations
+    ts1 = getTids sts1 [] -- destinations
+    ts2 = getTids sts2 [] -- destinations
+updateBSupps _ (supp, xor,_) sts1 sts2 dts | all_xor xor (getTids dts []) =
   let stids1 = getTids sts1 [] -- sources
       stids2 = getTids sts2 [] -- sources
       dtids = getTids dts [] -- destinations
@@ -657,7 +671,7 @@ updateBSupps (supp, xor) sts1 sts2 dts | all_xor xor (getTids dts []) =
       f2 s1 s dtid = Map.insert dtid s1 s
       supp' = foldl (f2 s1s2) supp dtids
   in supp'
-updateBSupps (supp, xor) sts1 sts2 dts =
+updateBSupps _ (supp, xor, _) sts1 sts2 dts =
   updateSupps supp (sts1 ++ sts2) dts
 
 -- updateBUnqs (unq, supp) sts1 sts2 dts | "t38" `elem` (getTids dts [])  =
@@ -791,7 +805,7 @@ updatePmapID _ _ (pmap, _, _, _, dom, _, _, _, _, _, _) _ _ dt
     Map.insert dt (Random dt) pmap
 updatePmapID _ _ (pmap, init, supp, _, dom, _, _, _, _, _, _) _ _ dt
   | (isEmpty dt dom) && (not $ intersectSec supp init dt)  =
-    Map.insert dt (Public dt) pmap
+    Map.insert dt (Public dt) pmap    
 updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, args) ts1 ts2 dt
   | isxor && (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
     case getSameOperand args ts1 ts2 of
@@ -810,7 +824,31 @@ updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, ar
           case (typ1,typ2) of
             (Just (Secret _), _) -> Map.insert dt (Secret dt) pmap
             (_,Just (Secret _)) -> Map.insert dt (Secret dt) pmap
-            _ -> Map.insert dt (Public dt) pmap    
+            _ -> Map.insert dt (Public dt) pmap
+-- updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, args) ts1 ts2 dt
+--   | isxor && dt == "t125" =
+
+--   let supp1   = unionMaps supp ts1
+--       supp2   = unionMaps supp ts2
+--       dom1    = unionMaps dom ts1 
+--       dom2    = unionMaps dom ts2
+--       xordt   = Map.findWithDefault False dt xor
+--       suppxor = if xordt
+--                 then Just (Map.union (Map.difference supp1 supp2) (Map.difference supp2 supp1))
+--                 else Nothing
+--       is1s2  = Map.null $ Map.intersection supp1 supp2
+--       eqs1s2 = (Map.null $ Map.difference supp1 supp2) && (Map.null $ Map.difference supp2 supp1)
+--       eqd1d2 = (Map.null $ Map.difference dom1 dom2) && (Map.null $ Map.difference dom2 dom1)
+--       diffd1s2 = Map.null $ Map.difference dom1 supp2
+--       diffd2s1 = Map.null $ Map.difference dom2 supp1
+--       diffd1d2 = Map.null $ Map.difference dom1 dom2
+--       diffd2d1 = Map.null $ Map.difference dom2 dom1
+--       typs1  = map (\tid -> Map.lookup tid pmap) ts1
+--       typs2  = map (\tid -> Map.lookup tid pmap) ts2
+--       typ1   = mergeTypes typs1
+--       typ2   = mergeTypes typs2
+--   in  error (show ts1 ++ show ts2 ++ show typ1 ++ show typ2 ++ show supp1 ++ show supp2)
+
 updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _, _) ts1 ts2 dt =
   let supp1   = unionMaps supp ts1
       supp2   = unionMaps supp ts2

@@ -623,6 +623,7 @@ isCSRegisterObject _ = False
 
 postProcess to = [expandPseudos to, if keepNops to then replaceNops to else removeAllNops,
                   removeFrameIndex,
+                  reverseInstruction,
                   cleanLoadMerges,
                   removeEmptyBundles, reorderImplicitOperands,
                   exposeCPSRRegister,
@@ -800,6 +801,19 @@ removeFrameIndexInstr mi @ MachineSingle {msOpcode = MachineTargetOpc i}
 
 removeFi i = read $ dropSuffix "_fi" (show i)
 removeCpi i = read $ dropSuffix "_cpi" (show i)
+
+
+reverseInstruction = mapToMachineInstruction reverseInstructionInstr
+
+reverseInstructionInstr
+  mi @ MachineSingle {msOpcode = MachineTargetOpc i,
+                      msOperands = [d1, d2, s1, s2, cc, p]}
+  | i `elem` [TEOR_r, TAND_r, TORR_r, TBIC_r, TMUL_r] =
+    let mos = [d1, d2, s2, s1, cc, p]
+    in mi {msOpcode = mkMachineTargetOpc $ removeR i, msOperands = mos}
+reverseInstructionInstr mi = mi
+
+removeR i = read $ dropSuffix "_r" (show i)
 
 cleanLoadMerges = filterMachineInstructions (not . isSingleLoadMerge)
 
@@ -1006,8 +1020,8 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
 
 constraints f =
   foldMatch altRetConstraints [] f ++
-  foldMatch altLoadStoreConstraints [] f ++
-  foldMatch altNonSymmetricConstraints [] f
+  foldMatch altLoadStoreConstraints [] f -- ++
+  -- foldMatch altNonSymmetricConstraints [] f
 
 altRetConstraints (
   op @ SingleOperation {oOpr = Copy {
@@ -1024,27 +1038,26 @@ altRetConstraints (
 
 altRetConstraints (_ : code) constraints = (code, constraints)
 
---- TODO
-altNonSymmetricConstraints (
-  op1 @ SingleOperation {oOpr = Natural {
-       oNatural = Linear{
-           oIs = [ General NullInstruction, TargetInstruction i ],
-           oUs = (MOperand {altTemps = ts1}):(MOperand {altTemps = ts2}):ous
-           }
-       }}
-  :
-  op2 @ SingleOperation {oOpr = Natural {
-       oNatural = Linear{
-           oIs = [ General NullInstruction, TargetInstruction i' ],
-           oUs = (MOperand {altTemps = ts1'}):(MOperand {altTemps = ts2'}):ous'
-           }
-       }}
-  :
-  code) constraints | isNonSymmetric i' && isNonSymmetric i' && equalTemps (ff ts1) (ff ts2') && equalTemps (ff ts1') (ff ts2) =
-  let alt = XorExpr (ActiveExpr (oId op1)) (ActiveExpr (oId op2))
-  in (code, constraints ++ [alt])
-  where ff ts1 = sort $ getTemporaries [] ts1
-altNonSymmetricConstraints (_ : code) constraints = (code, constraints)
+-- altNonSymmetricConstraints (
+--   op1 @ SingleOperation {oOpr = Natural {
+--        oNatural = Linear{
+--            oIs = [ General NullInstruction, TargetInstruction i ],
+--            oUs = (MOperand {altTemps = ts1}):(MOperand {altTemps = ts2}):ous
+--            }
+--        }}
+--   :
+--   op2 @ SingleOperation {oOpr = Natural {
+--        oNatural = Linear{
+--            oIs = [ General NullInstruction, TargetInstruction i' ],
+--            oUs = (MOperand {altTemps = ts1'}):(MOperand {altTemps = ts2'}):ous'
+--            }
+--        }}
+--   :
+--   code) constraints | isNonSymmetric i' && isNonSymmetric i' && equalTemps (ff ts1) (ff ts2') && equalTemps (ff ts1') (ff ts2) =
+--   let alt = XorExpr (ActiveExpr (oId op1)) (ActiveExpr (oId op2))
+--   in (code, constraints ++ [alt])
+--   where ff ts1 = sort $ getTemporaries [] ts1
+-- altNonSymmetricConstraints (_ : code) constraints = (code, constraints)
 
 
 getTemporaries :: [Integer] -> [Operand r] -> [Integer] 
