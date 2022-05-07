@@ -289,7 +289,7 @@ int: SUMC;
 array[int] of int: spairs_secrets;
 array[int,int] of int: spairs_rands;
 
-array[int,int] of int: mpairs_secrets;
+array[int] of int: mpairs_secrets;
 array[int,int] of int: mpairs_rands;
 
 %% problem variables
