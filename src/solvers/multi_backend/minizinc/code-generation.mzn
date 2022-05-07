@@ -1417,7 +1417,7 @@ constraint
   forall(pn in 1..MSIZE) (
      let {int: o1 = mpairs[pn,1],
           int: o2 = mpairs[pn,2]}
-     in a(o1) /\ a(o2) -> (not msubseq(o1,o2) /\ not msubseq(o2,o1)));
+     in a[o1] /\ a[o2] -> (not msubseq(o1,o2) /\ not msubseq(o2,o1)));
 
 
 %% secret temporaries that should be preceded by a random temporary
