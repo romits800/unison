@@ -1436,7 +1436,7 @@ constraint
   forall(pn in 1..MSSIZE)(
     let {int: os = mpairs_secrets[pn]}
     in a[os] -> exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
-                          (let {int: or = spairs_rands[pn,i]} in a[or] /\ msubseq(or, os)));
+                          (let {int: or = mpairs_rands[pn,i]} in a[or] /\ msubseq(or, os)));
 
 
 %% IMPLIED Security constraints
