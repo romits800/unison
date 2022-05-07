@@ -224,7 +224,9 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o
          else res
     ress = foldl (f types) Map.empty rs
     ops2' = map fst $ Map.toList ress
-  in findRandSecMC ss rs types t2o inmap ((ops1,ops2'):res)
+  in case ops1 of
+    [] -> findRandSecMC ss rs types t2o inmap res
+    _ -> findRandSecMC ss rs types t2o inmap ((ops1,ops2'):res)
 
 
 
