@@ -1,11 +1,14 @@
 gecode-solver
 gecode-presolver
 gecode-diversify
+gecode-secsolver
+gecode-secdiversify
 generated.mk
 gecode-solver-static
 generated-static.mk
 presolver-generated.mk
 div-generated.mk
+*.mk
 *.o
 moc_*.cpp
 moc_*.h
