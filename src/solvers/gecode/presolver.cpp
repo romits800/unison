@@ -883,13 +883,24 @@ string produce_dzn(Parameters &input) {
   }
 
 
-  vector<vector<operation>> mpairs_secrets;
+  vector<operation> mpairs_secrets;
   vector<vector<operation>> mpairs_rands;
-  for (std::pair<const vector<temporary>, const vector<temporary>> tp : input.mempairs) {
-    mpairs_secrets.push_back(tp.first);
-    mpairs_rands.push_back(tp.second);
+  int mswidth = 0;
+  for (std::pair<const vector<operation>, const vector<operation>> tp : input.mempairs) {
+    for (operation o1: tp.first) {
+      mpairs_secrets.push_back(o1);
+      mpairs_rands.push_back(tp.second);
+      if (tp.second.size() > mswidth) mswidth=tp.second.size();
+    }
+  }
+  for (int i=0; i< mpairs_rands.size(); i++) {
+    int size = mpairs_rands[i].size();
+    for (int j=size; j< mswidth; j++)
+      spairs_rands[i].push_back(-1);
   }
 
+
+  
   dzn  << emit_dzn_line("MAXF", input.maxf[0])
        << emit_dzn_line("MAXO", input.O.back())
        << emit_dzn_line("MAXP", input.P.back())
@@ -1014,6 +1025,7 @@ string produce_dzn(Parameters &input) {
        << emit_dzn_line("mpairs", input.mmpairs)
        << emit_dzn_line("SSIZE", (int)input.spairs.size())
        << emit_dzn_line("SWIDTH", swidth)
+       << emit_dzn_line("MSWIDTH", mswidth)
        << emit_dzn_line("spairs_secrets", spairs_secrets)
        << emit_dzn_line("spairs_rands", spairs_rands)
        << emit_dzn_line("mpairs_secrets", mpairs_secrets)

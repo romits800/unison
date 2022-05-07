@@ -283,6 +283,7 @@ int: PSIZE;
 int: MSIZE;
 int: SSIZE;
 int: SWIDTH;
+int: MSWIDTH;
 % Sum of MAXC
 int: SUMC;
 array[int] of int: spairs_secrets;
