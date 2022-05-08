@@ -558,6 +558,15 @@ isSameOperand args ts1 ts2 =
   in  (any  f $ ext ts1 ts2) 
 
 
+isExactlySameOperand :: Map String (KnownOperations, [String], [String]) -> [String] -> [String] -> Bool
+isExactlySameOperand args ts1 ts2 =
+  let f (t,t') = case (Map.lookup t' args, Map.lookup t args) of
+        (Just (_, tsa', tsb'), Just (_, tsa, tsb)) | tsa == tsa' && tsb == tsb' -> True
+        _ -> False
+      ext ts1 ts2 = [ (t1,t2) | t1 <- ts1, t2 <- ts2 ]
+  in  (any  f $ ext ts1 ts2) 
+
+
 
   --   isSameOperand args ts1 ts2 =
   -- let tids1 = map (\tid -> Map.lookup tid args) ts1
@@ -597,15 +606,6 @@ updateArgsUop args ts dts =
       Just x -> Map.insert dtid x s
       Nothing -> s
     args' = foldl (f2 s1) args dtids
-    --   t = case Map.lookup t args of
-    --       Just (op, tsa, tsb) -> Just (op, tsa, tsb)
-    --       Nothing -> Nothing
-    -- f m s tid = Map.union s $ Map.findWithDefault Map.empty tid m
-    --   s1    = foldl (f unq) Map.empty stids
-    --   f2 s1 s dtid = Map.insert dtid s1 s
-    --   unq' = foldl (f2 s1) unq dtids
-    -- f s dtid = Map.insert dtid (op, stids1, stids2) s
-    -- args' = foldl f args dtids
   in args'
 
      
@@ -814,6 +814,8 @@ updatePmapID _ _ (pmap, _, _, _, dom, _, _, _, _, _, _) _ _ dt
 updatePmapID _ _ (pmap, init, supp, _, dom, _, _, _, _, _, _) _ _ dt
   | (isEmpty dt dom) && (not $ intersectSec supp init dt)  =
     Map.insert dt (Public dt) pmap    
+updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts2 dt
+  | isxor && isExactlySameOperand args ts1 ts2 = Map.insert dt (Public dt) pmap
 updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts2 dt
   | isxor && (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
     case getSameOperand args ts1 ts2 of
