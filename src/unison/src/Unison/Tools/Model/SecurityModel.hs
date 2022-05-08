@@ -42,10 +42,10 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
     ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') ran  -- memory randoms
     pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') pub
     -- Parameters
-    pairs           = findPairs ran' pub' nt []
+    pairs           = findPairs (ran' ++ pub') nt []
     secdom          = findRandSec sec' ran' nt []
     p2o             = Map.union c2o' m2o'   --- Not the same key
-    mpairs          = findPairsMC ran'' pub'' nt p2o []
+    mpairs          = findPairsMC (ran'' ++ pub'') nt p2o []
     secdommem       = findRandSecMC sec'' ran'' nt p2o inmap [] 
     hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
     hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
@@ -98,8 +98,8 @@ toInt1 t       = error $ "SecTypeInf: toInt cannot convert to integer: " ++ t
 
 
 -- TODO (Check if this is correct)
-findPairs [] _ _ res = res
-findPairs (p:ps) pubs types res = 
+findPairs [] _ res = res
+findPairs (p:ps) types res = 
   let
     f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res p2 =
       let
@@ -135,10 +135,8 @@ findPairs (p:ps) pubs types res =
           then (p,p2):res
           else res
       -- in (p,p2):res
-    res' = foldl (f types) res (ps ++ pubs)
-  in findPairs ps pubs types res'
-
-
+    res' = foldl (f types) res ps
+  in findPairs ps types res'
 
 
 findRandSec [] _ _ res = res
@@ -230,8 +228,8 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o
 
 
 
-findPairsMC [] _ _ _ res = res
-findPairsMC (p:ps) pubs types t2o res = 
+findPairsMC [] _ _ res = res
+findPairsMC (p:ps) types t2o res = 
   let
     f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res p2 =
       let
@@ -272,8 +270,8 @@ findPairsMC (p:ps) pubs types t2o res =
           then pairs ++ res
           else res
       -- in (p,p2):res
-    res' = foldl (f types) res (ps ++ pubs)
-  in findPairsMC ps pubs types t2o res'
+    res' = foldl (f types) res ps
+  in findPairsMC ps types t2o res'
 
 -- lowerConstraintExpr fs (OrExpr es) = OrExpr (map (lowerConstraintExpr fs) es)
 -- lowerConstraintExpr fs (AndExpr es) = AndExpr (map (lowerConstraintExpr fs) es)

@@ -536,23 +536,23 @@ void SecLocalModel::apply_sec_solution(const SecModel * gs) {
 void SecLocalModel::post_secret_register_constraints(void) {
   // Temporaries that are secret should be preceeded by a random
   for (std::pair<const temporary, const vector<temporary>> tp : input -> secpairs) {
-    BoolVarArgs b;
-    // BoolVarArgs b1;
+    BoolVarArgs b1;
+    BoolVarArgs b2;
     temporary tsec = tp.first;
     int temp_size = T().size();
     // std::cout << tsec << "| ";
     if (temp(tsec) < temp_size && temp(tsec) >= 0) {
       for (const temporary trand: tp.second) {
 	if (temp(trand) < temp_size && temp(trand) >= 0) {
-	  b << var (l(trand) && subseq(trand,tsec));
-	  //b1 << var(l(tsec) ==1);
-	  // std::cout << trand << ", ";
+	  b1 << var (l(trand) && subseq(trand,tsec));
+	  b2 << var (l(trand) && subseq(tsec,trand));
 	}
       }
-      // std::cout << std::endl << b << std::endl;
-      // std::cout << b1 << std::endl;
-      if (b.size() > 0)
-	constraint( l(tsec) >> (sum(b) > 0));
+      if (b1.size() > 0)
+	constraint( l(tsec) >> (sum(b1) > 0));
+      if (b2.size() > 0)
+	constraint( l(tsec) >> (sum(b2) > 0));
+
     }
   }
 }
@@ -563,16 +563,20 @@ void SecLocalModel::post_secret_mem_constraints(void) {
   // Memory operations that are secret should be preceeded by a random
   for (std::pair<const vector<operation>, const vector<operation>> tp : input -> mempairs) {
     for (const operation o1: tp.first) {
-      BoolVarArgs b;
+      BoolVarArgs b1;
+      BoolVarArgs b2;
       int op_size = O().size();
       if (instr(o1) < op_size && instr(o1) >= 0) {
 	for (const operation o2: tp.second) {
 	  if (instr(o2) < op_size && instr(o2) >= 0) {
-	    b << var (a(o2) && msubseq(o1,o2));
+	    b1 << var (a(o2) && msubseq(o1,o2));
+	    b2 << var (a(o2) && msubseq(o2,o1));
 	  }
 	}
-	if (b.size() > 0)
-	  constraint(a(o1) >> (sum(b) >0));
+	if (b1.size() > 0)
+	  constraint(a(o1) >> (sum(b1) > 0));
+	if (b2.size() > 0)
+	  constraint(a(o1) >> (sum(b2) > 0));
       }
     }
   }

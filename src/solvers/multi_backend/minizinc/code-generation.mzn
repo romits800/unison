@@ -1426,8 +1426,10 @@ constraint
 constraint
   forall(pn in 1..SSIZE)(
     let {int: ts = spairs_secrets[pn]}
-    in live(ts) -> exists (i in 1..SWIDTH where spairs_rands[pn,i] != -1)
-                          (let {int: tr = spairs_rands[pn,i]} in live(tr) /\ subseq(tr, ts)));
+    in live(ts) -> (exists (i in 1..SWIDTH where spairs_rands[pn,i] != -1)
+                          (let {int: tr = spairs_rands[pn,i]} in live(tr) /\ subseq(tr, ts))) /\
+                   (exists (i in 1..SWIDTH where spairs_rands[pn,i] != -1)
+		          (let {int: tr = spairs_rands[pn,i]} in live(tr) /\ subseq(ts, tr))));
 
 % array[int,int] of int: mpairs_secrets;
 % array[int,int] of int: mpairs_rands;
@@ -1435,9 +1437,10 @@ constraint
 constraint
   forall(pn in 1..MSSIZE)(
     let {int: os = mpairs_secrets[pn]}
-    in a[os] -> exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
-                          (let {int: or = mpairs_rands[pn,i]} in a[or] /\ msubseq(or, os)));
-
+    in a[os] -> (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
+		 (let {int: or = mpairs_rands[pn,i]} in a[or] /\ msubseq(or, os)))) /\
+                (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
+		 (let {int: or = mpairs_rands[pn,i]} in a[or] /\ msubseq(os, or))))
 
 %% IMPLIED Security constraints
 

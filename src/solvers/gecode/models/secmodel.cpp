@@ -374,23 +374,23 @@ void SecModel::post_random_register_constraints(void) {
 void SecModel::post_secret_register_constraints(void) {
   // Temporaries that are secret should be preceeded by a random
   for (std::pair<const temporary, const vector<temporary>> tp : input -> secpairs) {
-    BoolVarArgs b;
     BoolVarArgs b1;
     BoolVarArgs b2;
     temporary tsec = tp.first;
     // std::cout << tsec << std::endl;
     for (const temporary trand: tp.second) {
-      b << var (  (l(trand) && subseq(trand,tsec)));
-      // b1 << var(l(trand) ==1);
-      // b2 << var(subseq(trand,tsec) ==1);
-      // std::cout << trand << ", ";
+      b1 << var (  (l(trand) && subseq(trand,tsec)));
     }
-    // std::cout << std::endl << b << std::endl;
-    // std::cout << b1 << std::endl;
-    // std::cout << b2 << std::endl;
-    // std::cout << v_lk << std::endl;
-    if (b.size() > 0)
-      constraint(l(tsec)  >> (sum(b) > 0));
+    if (b1.size() > 0)
+      constraint(l(tsec)  >> (sum(b1) > 0));
+
+
+    for (const temporary trand: tp.second) {
+      b2 << var (  (l(trand) && subseq(tsec,trand)));
+    }
+    if (b2.size() > 0)
+      constraint(l(tsec)  >> (sum(b2) > 0));
+
   }
 }
 
@@ -400,12 +400,20 @@ void SecModel::post_secret_mem_constraints(void) {
   // Memory operations that are secret should be preceeded by a random
   for (std::pair<const vector<operation>, const vector<operation>> tp : input -> mempairs) {
     for (const operation o1: tp.first) {
-      BoolVarArgs b;
+      BoolVarArgs b1;
+      BoolVarArgs b2;
       for (const operation o2: tp.second) {
-	b << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
+	b1 << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
       }
-      if (b.size() > 0)
-	constraint(sum(b) >0);
+      if (b1.size() > 0)
+	constraint(sum(b1) >0);
+
+      // the other direction
+      for (const operation o2: tp.second) {
+	b2 << var (a(o1) >> (a(o2) && msubseq(o1,o2)));
+      }
+      if (b2.size() > 0)
+	constraint(sum(b2) >0);
     }
   }
 }
