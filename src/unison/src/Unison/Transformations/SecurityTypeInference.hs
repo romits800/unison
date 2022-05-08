@@ -866,7 +866,10 @@ updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _, _) ts1 ts2
       suppxor = if xordt
                 then Just (Map.union (Map.difference supp1 supp2) (Map.difference supp2 supp1))
                 else Nothing
-      is1s2  = Map.null $ Map.intersection supp1 supp2
+      is1s2  = Map.intersection supp1 supp2
+      is1s2null = Map.null is1s2
+      is1s2norand = not $ intersectRand2 is1s2 init
+      -- is1s2  = Map.null $ Map.intersection supp1 supp2
       eqs1s2 = (Map.null $ Map.difference supp1 supp2) && (Map.null $ Map.difference supp2 supp1)
       eqd1d2 = (Map.null $ Map.difference dom1 dom2) && (Map.null $ Map.difference dom2 dom1)
       diffd1s2 = Map.null $ Map.difference dom1 supp2
@@ -877,36 +880,38 @@ updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _, _) ts1 ts2
       typs2  = map (\tid -> Map.lookup tid pmap) ts2
       typ1   = mergeTypes typs1
       typ2   = mergeTypes typs2
-  in case (typ1, typ2, is1s2, eqs1s2, eqd1d2, diffd1s2, diffd2s1, diffd1d2, diffd2d1, suppxor) of
-    (Just (Public _), Nothing, _, _, _, _, _, _, _, _) -> -- a copy
+  in case (typ1, typ2, is1s2null, eqs1s2, eqd1d2, diffd1s2, diffd2s1, diffd1d2, diffd2d1, suppxor, is1s2norand) of
+    (Just (Public _), Nothing, _, _, _, _, _, _, _, _, _) -> -- a copy
       Map.insert dt (Public dt) pmap    
-    (Nothing, Just (Public _), _, _, _, _, _, _, _, _) -> -- a copy
+    (Nothing, Just (Public _), _, _, _, _, _, _, _, _, _) -> -- a copy
       Map.insert dt (Public dt) pmap
     -- (Just (Random _), Just (Random _), _, _, _, False, _, _) | not isxor -> 
     --                                                            Map.insert dt (Public dt) pmap
-    (Just (Public _), Just (Public _), True, _, _, _, _, _, _, _) ->
+    (Just (Public _), Just (Public _), True, _, _, _, _, _, _, _, _) ->
       Map.insert dt (Public dt) pmap
-    (Just (Public _), Just (Random _), True, _, _, _, _, _, _, _) | not isxor && not isgmul -> 
+    (Just (Public _), Just (Random _), True, _, _, _, _, _, _, _, _) | not isxor && not isgmul -> 
                                                            Map.insert dt (Public dt) pmap
-    (Just (Random _), Just (Public _), True, _, _, _, _, _, _, _) | not isxor && not isgmul -> 
+    (Just (Random _), Just (Public _), True, _, _, _, _, _, _, _, _) | not isxor && not isgmul -> 
                                                            Map.insert dt (Public dt) pmap
-    (Just (Random _), _, _, True, True, True, _, _, _, _) -> Map.insert dt (Public dt) pmap
-    (_, Just (Random _), _, True, True, _, True, _, _, _) -> Map.insert dt (Public dt) pmap
-    (Just (Random _), Just (Random _), _, _, _, False, _, _, _, _) | not isxor && not isgmul -> 
+    (Just (Random _), _, _, True, True, True, _, _, _, _, _) -> Map.insert dt (Public dt) pmap
+    (_, Just (Random _), _, True, True, _, True, _, _, _, _) -> Map.insert dt (Public dt) pmap
+    (Just (Random _), Just (Random _), _, _, _, False, _, _, _, _, _) | not isxor && not isgmul -> 
                                                             Map.insert dt (Public dt) pmap
-    (Just (Random _), Just (Random _), _, _, _, _, False, _, _, _) | not isxor && not isgmul -> 
+    (Just (Random _), Just (Random _), _, _, _, _, False, _, _, _, _) | not isxor && not isgmul -> 
                                                             Map.insert dt (Public dt) pmap
-    (Just (Random _), Just (Public _), _, _, _, False, _, _, _, _) | isgmul ->
+    (Just (Random _), Just (Public _), _, _, _, False, _, _, _, _, _) | isgmul ->
                                                  Map.insert dt (Public dt) pmap
-    (Just (Public _), Just (Random _), _, _, _, _, False, _, _, _) | isgmul ->
+    (Just (Public _), Just (Random _), _, _, _, _, False, _, _, _, _) | isgmul ->
                                                  Map.insert dt (Public dt) pmap
-    (Just (Random _), Just (Random _), _, _, _, _, _, False, _, _) | isgmul ->
+    (Just (Random _), Just (Random _), _, _, _, _, _, False, _, _, _) | isgmul ->
                                                  Map.insert dt (Public dt) pmap
-    (Just (Random _), Just (Random _), _, _, _, _, _, _, False, _) | isgmul ->
+    (Just (Random _), Just (Random _), _, _, _, _, _, _, False, _, _) | isgmul ->
                                                  Map.insert dt (Public dt) pmap
-    (_, _, _, _, _, _, _, _, _, Just d) | not $ intersectSec2 d init ->
+    (_, _, _, _, _, _, _, _, _, Just d, _) | not $ intersectSec2 d init ->
                                     Map.insert dt (Public dt) pmap
-    (_, _, _, _, _, _, _, _, _, _) -> Map.insert dt (Secret dt) pmap
+    (Just (Public _), Just (Public _), _, _, _, _, _, _, _, _, True) ->
+      Map.insert dt (Public dt) pmap
+    (_, _, _, _, _, _, _, _, _, _, _) -> Map.insert dt (Secret dt) pmap
 
 -- to complete
 
@@ -943,6 +948,13 @@ intersectSec2 ds m2 =
 
 isMaybeSecret (Just (Secret _)) = True
 isMaybeSecret _ = False
+
+
+intersectRand2 ds m2 =
+  any (\di -> isMaybeRandom $ Map.lookup di m2 ) (map fst $ Map.toList ds)
+  
+isMaybeRandom (Just (Random _)) = True
+isMaybeRandom _ = False
 
 isEmpty t mp =
   case Map.lookup t mp of
