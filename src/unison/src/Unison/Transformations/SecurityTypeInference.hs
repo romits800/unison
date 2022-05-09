@@ -814,13 +814,13 @@ updatePmapID _ _ (pmap, _, _, _, dom, _, _, _, _, _, _) _ _ dt
 updatePmapID _ _ (pmap, init, supp, _, dom, _, _, _, _, _, _) _ _ dt
   | (isEmpty dt dom) && (not $ intersectSec supp init dt)  =
     Map.insert dt (Public dt) pmap    
-updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts2 dt
-  | isxor && isExactlySameOperand args ts1 ts2 = Map.insert dt (Public dt) pmap
-updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts2 dt
-  | isxor && (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
+updatePmapID True isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts2 dt
+  | isExactlySameOperand args ts1 ts2 = Map.insert dt (Public dt) pmap
+updatePmapID True isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts2 dt
+  | (isSameOperand args ts1 ts2 || isSameOperand args ts2 ts1) =
     case getSameOperand args ts1 ts2 of
-      Nothing -> updatePmapID isxor isgmul types ts1 ts2 dt
-      Just (KOOther, _, _) -> updatePmapID isxor isgmul types ts1 ts2 dt
+      Nothing -> updatePmapID True isgmul types ts1 ts2 dt
+      Just (KOOther, _, _) -> updatePmapID True isgmul types ts1 ts2 dt
       -- Just (KOXor, _, _) -> updatePmapID False False types ts1 ts2 dt
       Just (KOXor, _, ts2') -> updatePmapID False False types ts2' [] dt
       Just (KOOr, ts1', ts2') -> updatePmapID False False types ts1' ts2' dt
@@ -835,9 +835,10 @@ updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts
             (Just (Secret _), _) -> Map.insert dt (Secret dt) pmap
             (_,Just (Secret _)) -> Map.insert dt (Secret dt) pmap
             _ -> Map.insert dt (Public dt) pmap
--- updatePmapID isxor isgmul types @ (pmap, init, supp, _, dom, xor, _, _, _, _, args) ts1 ts2 dt
---   | isxor && dt == "t125" =
 
+
+-- updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _, _) ts1 ts2 dt
+--   | dt == "temp" && (("t34" `elem` ts1 && "t29" `elem` ts2) || ("t34" `elem` ts2 && "t29" `elem` ts1)) =
 --   let supp1   = unionMaps supp ts1
 --       supp2   = unionMaps supp ts2
 --       dom1    = unionMaps dom ts1 
@@ -846,7 +847,10 @@ updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts
 --       suppxor = if xordt
 --                 then Just (Map.union (Map.difference supp1 supp2) (Map.difference supp2 supp1))
 --                 else Nothing
---       is1s2  = Map.null $ Map.intersection supp1 supp2
+--       is1s2  = Map.intersection supp1 supp2
+--       is1s2null = Map.null is1s2
+--       is1s2norand = not $ intersectRand2 is1s2 init
+--       -- is1s2  = Map.null $ Map.intersection supp1 supp2
 --       eqs1s2 = (Map.null $ Map.difference supp1 supp2) && (Map.null $ Map.difference supp2 supp1)
 --       eqd1d2 = (Map.null $ Map.difference dom1 dom2) && (Map.null $ Map.difference dom2 dom1)
 --       diffd1s2 = Map.null $ Map.difference dom1 supp2
@@ -857,7 +861,7 @@ updatePmapID isxor isgmul types @ (pmap, _, _, _, _, _, _, _, _, _, args) ts1 ts
 --       typs2  = map (\tid -> Map.lookup tid pmap) ts2
 --       typ1   = mergeTypes typs1
 --       typ2   = mergeTypes typs2
---   in  error (show ts1 ++ show ts2 ++ show typ1 ++ show typ2 ++ show supp1 ++ show supp2)
+--   in error (show ts1 ++ show ts2 ++ show typ1 ++ show typ2 ++ show supp1 ++ show supp2)
 
 updatePmapID isxor isgmul (pmap, init, supp, _, dom, xor, _, _, _, _, _) ts1 ts2 dt =
   let supp1   = unionMaps supp ts1
