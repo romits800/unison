@@ -1418,7 +1418,7 @@ constraint
   forall(pn in 1..MSIZE) (
      let {int: o1 = mpairs[pn,1],
           int: o2 = mpairs[pn,2]}
-     in a[o1] /\ a[o2] -> (not msubseq(o1,o2) /\ not msubseq(o2,o1)));
+     in a[o1] /\ a[o2] /\ is_memory_oper(o1) /\ is_memory_oper(o2) -> (not msubseq(o1,o2) /\ not msubseq(o2,o1)));
 
 
 %% secret temporaries that should be preceded by a random temporary
@@ -1437,10 +1437,11 @@ constraint
 constraint
   forall(pn in 1..MSSIZE)(
     let {int: os = mpairs_secrets[pn]}
-    in a[os] -> (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
-		 (let {int: or = mpairs_rands[pn,i]} in a[or] /\ msubseq(or, os))) /\
-                (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
-		 (let {int: or = mpairs_rands[pn,i]} in a[or] /\ msubseq(os, or))));
+    in a[os] && is_memory_oper(os) ->
+              (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
+	       (let {int: or = mpairs_rands[pn,i]} in a[or] /\ is_memory_oper(or) /\ msubseq(or, os))) /\
+              (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
+	       (let {int: or = mpairs_rands[pn,i]} in a[or] /\ is_memory_oper(or) /\ msubseq(os, or))));
 
 %% IMPLIED Security constraints
 

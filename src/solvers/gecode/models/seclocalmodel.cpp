@@ -566,17 +566,22 @@ void SecLocalModel::post_secret_mem_constraints(void) {
       BoolVarArgs b1;
       BoolVarArgs b2;
       int op_size = O().size();
+      int mem1 = input -> instructions[o1][input -> instructions[o1].size() - 1];
+      BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == mem1) : var(i(o1) == i(o1));
+
       if (instr(o1) < op_size && instr(o1) >= 0) {
 	for (const operation o2: tp.second) {
 	  if (instr(o2) < op_size && instr(o2) >= 0) {
-	    b1 << var (a(o2) && msubseq(o1,o2));
-	    b2 << var (a(o2) && msubseq(o2,o1));
+	    int mem2 = input -> instructions[o2][input -> instructions[o2].size() - 1];
+	    BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == mem2) : var(i(o2) == i(o2));
+	    b1 << var (a(o2) && if2 && msubseq(o1,o2));
+	    b2 << var (a(o2) && if2 && msubseq(o2,o1));
 	  }
 	}
 	if (b1.size() > 0)
-	  constraint(a(o1) >> (sum(b1) > 0));
+	  constraint((a(o1) && if1) >> (sum(b1) > 0));
 	if (b2.size() > 0)
-	  constraint(a(o1) >> (sum(b2) > 0));
+	  constraint((a(o1) && if1) >> (sum(b2) > 0));
       }
     }
   }
@@ -590,9 +595,14 @@ void SecLocalModel::post_random_mem_constraints(void) {
     operation o2 = op.second;
     int op_size = O().size();
     if (instr(o1) < op_size && instr(o2) < op_size &&
-	instr(o1) >= 0 && instr(o2) >= 0) 
-      constraint((a(o1) && a(o2)) >>
+	instr(o1) >= 0 && instr(o2) >= 0) {
+      int mem1 = input -> instructions[o1][input -> instructions[o1].size() - 1];
+      BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == mem1) : var(i(o1) == i(o1));
+      int mem2 = input -> instructions[o2][input -> instructions[o2].size() - 1];
+      BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == mem2) : var(i(o2) == i(o2));
+      constraint((a(o1) && if1 && a(o2) && if2) >>
 		 (!msubseq(o1,o2) && !msubseq(o2,o1)));
+    }
   }
 }
 
