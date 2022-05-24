@@ -627,20 +627,24 @@ void SecModel::post_connecting_constraints(void) {
 
 
 void SecModel::post_security_constraints(void) {
-  if (!options-> disable_sec_regreg_constraints()) {
-    post_random_register_constraints();
-    post_tt_constraints();
-    post_implied_constraints();
-    post_connecting_constraints();
-    // // post_strict_constraints();
+  if (options -> enable_power_constraints()) {
+    if (!options-> disable_sec_regreg_constraints()) {
+      post_random_register_constraints();
+      post_tt_constraints();
+      post_implied_constraints();
+      post_connecting_constraints();
+      // // post_strict_constraints();
+    }
+    if (!options-> disable_sec_secret_constraints())
+      post_secret_register_constraints();
+    if (!options-> disable_sec_mem_constraints())
+      post_secret_mem_constraints();
+    if (!options-> disable_sec_memmem_constraints())
+      post_random_mem_constraints();
   }
-  if (!options-> disable_sec_secret_constraints())
-    post_secret_register_constraints();
-  if (!options-> disable_sec_mem_constraints())
-    post_secret_mem_constraints();
-  if (!options-> disable_sec_memmem_constraints())
-    post_random_mem_constraints();
-
+  if (options -> enable_ct_constraints()) {
+    // TODO
+  }
 }
 
 void SecModel::post_tt_constraints(void) {

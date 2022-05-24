@@ -363,6 +363,9 @@ public:
   // [SEC] hardware registers
   vector<int> HR;
 
+  // [SEC] pairs of basic blocks that should have the same cycles
+  vector<vector<int> > bbs;
+
 
   Parameters(Json::Value root);
 
@@ -679,6 +682,9 @@ public:
 
   // Not compatible random mpairs
   vector<pair<operation, operation> > memmempairs;
+
+  // Not compatible random pairs
+  vector<pair<block, block> > bbpairs;
 
   // Compatible secret mem - copy pairs - instruction should be the last
   // vector<pair<vector<operation>, vector<operation>> > copypairs;

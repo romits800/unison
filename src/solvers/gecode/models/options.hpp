@@ -163,10 +163,13 @@ protected:
   Driver::DoubleOption _decomp_r; // Relax rate for decomposition model
   Driver::StringOption _sec_implementation; // Select security implementation
 
-  Driver::BoolOption _disable_sec_memmem_constraints;
   Driver::BoolOption _disable_sec_regreg_constraints;
+  Driver::BoolOption _disable_sec_memmem_constraints;
   Driver::BoolOption _disable_sec_secret_constraints;
   Driver::BoolOption _disable_sec_mem_constraints;
+
+  Driver::BoolOption _enable_power_constraints;
+  Driver::BoolOption _enable_ct_constraints;
   
 public:
 
@@ -275,9 +278,12 @@ public:
 
   SecImplementation sec_implementation(void) const { return static_cast <SecImplementation>( _sec_implementation.value());}
 
-  bool disable_sec_memmem_constraints(void) const {return _disable_sec_memmem_constraints.value();}
   bool disable_sec_regreg_constraints(void) const {return _disable_sec_regreg_constraints.value();}
+  bool disable_sec_memmem_constraints(void) const {return _disable_sec_memmem_constraints.value();}
   bool disable_sec_secret_constraints(void) const {return _disable_sec_secret_constraints.value();}
   bool disable_sec_mem_constraints(void) const {return _disable_sec_mem_constraints.value();}
+  
+  bool enable_power_constraints(void) const {return _enable_power_constraints.value();}
+  bool enable_ct_constraints(void) const {return _enable_ct_constraints.value();}
 };
 #endif

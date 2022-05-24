@@ -175,6 +175,7 @@ string produce_json(Parameters &input, int presolver_time)
        << emit_json_line("mmpairs", input.mmpairs)
        // << emit_json_line("cpairs", input.cpairs)
        << emit_json_line("HR", input.HR)
+       << emit_json_line("bbs", input.bbs)
        << emit_json_line("freq_scale", input.freq_scale)
        << emit_json_line_last("presolver_time", presolver_time)
        << "}\n";
@@ -1032,7 +1033,9 @@ string produce_dzn(Parameters &input) {
        << emit_dzn_line("mpairs_secrets", mpairs_secrets)
        << emit_dzn_line("mpairs_rands", mpairs_rands)
        << emit_dzn_line("SUMC", sum_of(input.maxc))
-       << emit_dzn_line("HR", FDSet(input.HR));
+       << emit_dzn_line("HR", FDSet(input.HR))
+       << emit_dzn_line("BBSSIZE", (int)input.rpairs.size())
+       << emit_dzn_line("bbs", input.bbs);
   
   return dzn.str();
 }
