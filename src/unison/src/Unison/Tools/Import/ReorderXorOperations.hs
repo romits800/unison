@@ -25,7 +25,8 @@ import Unison.Constructors
 
 reorderXorOperations policies f @ Function {fCode = code} target =
   let
-    (pmap, _, _, _, _, _, _, _, _, _, _, _, _) = inferSecurityTypes target f policies
+    types = inferSecurityTypes target f policies
+    pmap  = fPmap types
     code' = foldl (reorderXorOperationsBl target pmap) [] code
   in f {fCode = code'}
 
