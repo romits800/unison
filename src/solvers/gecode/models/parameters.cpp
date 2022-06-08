@@ -149,10 +149,10 @@ Parameters::Parameters(Json::Value root) :
   
   rpairs     (get_2d_vector<int>(getRoot(root, "pairs"))),
   // cpairs     (get_3d_vector<int>(getRoot(root, "cpairs"))),
-  mmpairs     (get_2d_vector<int>(getRoot(root, "mmpairs"))),
-  mspairs     (get_3d_vector<int>(getRoot(root, "mspairs"))),
+  mmpairs    (get_2d_vector<int>(getRoot(root, "mmpairs"))),
+  mspairs    (get_3d_vector<int>(getRoot(root, "mspairs"))),
   spairs     (get_3d_vector<int>(getRoot(root, "spairs"))),
-  HR        (get_vector<int>(getRoot(root, "HR"))),
+  HR         (get_vector<int>(getRoot(root, "HR"))),
   bbs        (get_2d_vector<int>(getRoot(root, "bbs")))
 {
   compute_derived();

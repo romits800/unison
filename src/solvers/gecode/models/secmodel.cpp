@@ -626,6 +626,17 @@ void SecModel::post_connecting_constraints(void) {
 }
 
 
+void SecModel::post_ct_constraints(void) {
+  // These pairs should not be in the same register or should not be consequent
+  for (std::pair<const block, const block> tp : input -> bbpairs) {
+    block b1 = tp.first;
+    block b2 = tp.second;
+    for (unsigned int n = 0; n < input->N; n++) {
+      constraint(f(b1,n) == f(b2,n));
+    }
+  }
+}
+
 void SecModel::post_security_constraints(void) {
   if (options -> enable_power_constraints()) {
     if (!options-> disable_sec_regreg_constraints()) {
@@ -643,6 +654,7 @@ void SecModel::post_security_constraints(void) {
       post_random_mem_constraints();
   }
   if (options -> enable_ct_constraints()) {
+    post_ct_constraints();
     // TODO
   }
 }

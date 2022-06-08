@@ -101,6 +101,7 @@ public:
   void post_secret_register_constraints(void);
   void post_secret_mem_constraints(void);
   void post_random_mem_constraints(void);
+  void post_ct_constraints(void);
   void post_security_constraints(void);
 
   void post_implied_constraints(void);
