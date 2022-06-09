@@ -513,8 +513,8 @@ inferTypesOperation target f bid types (SingleOperation
 inferTypesOperation _ _ _ types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
-                      oUs = [],
-                      oDs = [] }}}:_) = types
+                      oUs = [_],
+                      oDs = [_] }}}:_) = types
 inferTypesOperation _ _ _ _ (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = ins, -- Instruction i
