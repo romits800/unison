@@ -40,57 +40,59 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   GlobalModel(p_input, p_options, p_ipl)
 {
 
-  // Implementation 2
-  int temp_size = T().size();
-  int op_size = O().size();
-  int maxval = sum_of(input->maxc);
-  int block_number = input -> B.size();
+  if (options -> enable_power_constraints()) {
+    // Implementation 2
+    int temp_size = T().size();
+    int op_size = O().size();
+    int maxval = sum_of(input->maxc);
+    int block_number = input -> B.size();
 
-  // Glboal variables
-  v_gb = int_var_array(block_number, 0, maxval);
-  v_lgs = int_var_array(temp_size, 0, maxval);
-  v_lge = int_var_array(temp_size, 0, maxval);
-  post_global_cycle_offset();
-  init_tts();
+    // Glboal variables
+    v_gb = int_var_array(block_number, 0, maxval);
+    v_lgs = int_var_array(temp_size, 0, maxval);
+    v_lge = int_var_array(temp_size, 0, maxval);
+    post_global_cycle_offset();
+    init_tts();
   
-  vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi", "SW_fi", "LW_fi"}; 
-  for (operation o : O()) { 
-    if (input -> type[o] == COPY)
-      memops.push_back(o);
-    else {
-      for(instruction i : input-> instructions[o]) {
-	if (contains(memstrings, input -> insname[i])) {
-	  memops.push_back(o);
-	  break;
+    vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi", "SW_fi", "LW_fi"}; 
+    for (operation o : O()) { 
+      if (input -> type[o] == COPY)
+	memops.push_back(o);
+      else {
+	for(instruction i : input-> instructions[o]) {
+	  if (contains(memstrings, input -> insname[i])) {
+	    memops.push_back(o);
+	    break;
+	  }
 	}
       }
     }
+  
+    v_lk = int_var_array(temp_size, -1, maxval);
+    v_tbt = int_var_array(temp_size, -1, temp_size);
+    v_tat = int_var_array(temp_size, -1, temp_size);
+    v_ok = int_var_array(op_size, -1, maxval);
+    //}
+    // v_lk, v_ok uninitialized
+    post_r2_constraints();
+    post_m2_constraints();
+    // Implementation 1
+  
+    int reg_size = input->HR.size();
+    v_rtle = int_var_array(reg_size * temp_size, -1, maxval);
+    v_rtlemap = int_var_array(reg_size * temp_size, -1, maxval);
+
+
+    v_opcy = int_var_array(op_size, -1, maxval);
+    v_opcymap = int_var_array(op_size, -1, maxval);
+
+    post_r1_constraints();
+    post_m1_constraints();
+  
+    post_security_constraints();
+
+    post_connecting_constraints();
   }
-  
-  v_lk = int_var_array(temp_size, -1, maxval);
-  v_tbt = int_var_array(temp_size, -1, temp_size);
-  v_tat = int_var_array(temp_size, -1, temp_size);
-  v_ok = int_var_array(op_size, -1, maxval);
-  //}
-  // v_lk, v_ok uninitialized
-  post_r2_constraints();
-  post_m2_constraints();
-  // Implementation 1
-  
-  int reg_size = input->HR.size();
-  v_rtle = int_var_array(reg_size * temp_size, -1, maxval);
-  v_rtlemap = int_var_array(reg_size * temp_size, -1, maxval);
-
-
-  v_opcy = int_var_array(op_size, -1, maxval);
-  v_opcymap = int_var_array(op_size, -1, maxval);
-
-  post_r1_constraints();
-  post_m1_constraints();
-  
-  post_security_constraints();
-
-  post_connecting_constraints();
 }
 
 

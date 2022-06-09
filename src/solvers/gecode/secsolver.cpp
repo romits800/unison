@@ -1230,6 +1230,35 @@ int main(int argc, char* argv[]) {
     }
   }
 
+
+  // IterationState next_state(state);
+  // next_state.next(&options);
+  if (!options.decomposition() &&
+      options.monolithic()) { // Run monolithic solver
+    if (options.verbose())
+      cerr << monolithic() << "running monolithic solver..." << endl;
+    Solution<SecModel> ms = solve_monolithic(base, go);
+    double solving_time = t.stop();
+    total_failed += ms.failures;
+    total_nodes += ms.nodes;
+    if (ms.result == OPTIMAL_SOLUTION) {
+      vector<int> ms_sol = var_vector(ms.solution->cost());
+      // base->post_lower_bound(ms_sol);
+      // base->post_upper_bound(ms_sol);
+      // status_lb(base);
+      if (options.verbose())
+	cerr << monolithic() << "found optimal solution "
+	     << "(" << cost_status_report(base, ms.solution) << ")" << endl;
+      results.push_back(ResultData(ms.solution, true, ms.failures, ms.nodes,
+				   presolver_time, presolving_time,
+				   solving_time, solving_time));
+      proven = true;
+    } else if (ms.result == UNSATISFIABLE) {
+      if (options.verbose())
+	cerr << monolithic() << "Monolithic solver: unsat" << endl;
+    }
+  }
+  
   execution_time = t.stop();
 
   if (options.verbose()) {

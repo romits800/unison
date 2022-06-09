@@ -38,78 +38,79 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 			     const SecModel * gs, block p_b) :
   LocalModel(p_input, p_options, p_ipl, gs, p_b)
 {
+  if (options -> enable_power_constraints()) {
+    int temp_size = T().size(); // These come from LocalModel
+    int gltemp_size = input -> T.size(); // These come from LocalModel
+    int op_size = O().size();
+    int maxval = sum_of(input->maxc);
+    int reg_size = input->HR.size();
 
-  int temp_size = T().size(); // These come from LocalModel
-  int gltemp_size = input -> T.size(); // These come from LocalModel
-  int op_size = O().size();
-  int maxval = sum_of(input->maxc);
-  int reg_size = input->HR.size();
-
-  // Find mem operations
+    // Find mem operations
   
-  vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi", "SW_fi", "LW_fi"}; 
-  for (operation o : O()) { 
-    if (input -> type[o] == COPY)
-      memops.push_back(o);
-    else {
-      for(instruction i : input-> instructions[o]) {
-	if (contains(memstrings, input -> insname[i])) {
-	  memops.push_back(o);
-	  break;
+    vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi", "SW_fi", "LW_fi"}; 
+    for (operation o : O()) { 
+      if (input -> type[o] == COPY)
+	memops.push_back(o);
+      else {
+	for(instruction i : input-> instructions[o]) {
+	  if (contains(memstrings, input -> insname[i])) {
+	    memops.push_back(o);
+	    break;
+	  }
 	}
       }
     }
-  }
 
-  // for(instruction i1 : input-> instructions[o1]) {
-  // 	  if ( contains(memstrings, (input -> insname[i1]))
+    // for(instruction i1 : input-> instructions[o1]) {
+    // 	  if ( contains(memstrings, (input -> insname[i1]))
 	    
-  // 	  vector<operand> ps = input -> operands[o1];
-  // 	  int cls = input -> rclass[o][i][p];
-  // 	  char * classname = input -> classname[cls];
-  // 	  vector<instruction> ins = input-> instructions[o1];
-  // 	}
-  // 	  // vector<temporaries> temps = input -> temps[ops[0]];
-  // 	for (operation o2 : O()) {
-  // 	  if (o1 != o2) {
-  // 	    BoolVar ifb  = var(a(o2) && (c(o2) <= c(o1)));
-  // 	    IntVar thenb = var( c(o2) );
-  // 	    IntVar elseb = var( -1 ); 
-  // 	    IntVar res = IntVar(*this, -1, maxval);
-  // 	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
-  // 	    lts <<  res;
-  // 	  }
-  // 	}
-  // 	max(*this, lts, v_ok[instr(o1)]);
-  //   }
-  // }
+    // 	  vector<operand> ps = input -> operands[o1];
+    // 	  int cls = input -> rclass[o][i][p];
+    // 	  char * classname = input -> classname[cls];
+    // 	  vector<instruction> ins = input-> instructions[o1];
+    // 	}
+    // 	  // vector<temporaries> temps = input -> temps[ops[0]];
+    // 	for (operation o2 : O()) {
+    // 	  if (o1 != o2) {
+    // 	    BoolVar ifb  = var(a(o2) && (c(o2) <= c(o1)));
+    // 	    IntVar thenb = var( c(o2) );
+    // 	    IntVar elseb = var( -1 ); 
+    // 	    IntVar res = IntVar(*this, -1, maxval);
+    // 	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
+    // 	    lts <<  res;
+    // 	  }
+    // 	}
+    // 	max(*this, lts, v_ok[instr(o1)]);
+    //   }
+    // }
 
   
-  // Implementation 2
-  v_lk = int_var_array(temp_size, -1, maxval);
-  v_ok = int_var_array(op_size, -1, maxval);
+    // Implementation 2
+    v_lk = int_var_array(temp_size, -1, maxval);
+    v_ok = int_var_array(op_size, -1, maxval);
 
-  v_tat = int_var_array(temp_size, -1, gltemp_size);
-  v_tbt = int_var_array(temp_size, -1, gltemp_size);
+    v_tat = int_var_array(temp_size, -1, gltemp_size);
+    v_tbt = int_var_array(temp_size, -1, gltemp_size);
   
-  post_r2_constraints();
-  post_m2_constraints();
+    post_r2_constraints();
+    post_m2_constraints();
 
-  // Implementation 1
-  v_rtle = int_var_array(reg_size * temp_size, -1, maxval);
-  v_rtlemap = int_var_array(reg_size * temp_size, -1, maxval);
+    // Implementation 1
+    v_rtle = int_var_array(reg_size * temp_size, -1, maxval);
+    v_rtlemap = int_var_array(reg_size * temp_size, -1, maxval);
 
-  v_opcy = int_var_array(op_size, -1, maxval);
-  v_opcymap = int_var_array(op_size, -1, maxval);
+    v_opcy = int_var_array(op_size, -1, maxval);
+    v_opcymap = int_var_array(op_size, -1, maxval);
 
-  apply_sec_solution(gs);
+    apply_sec_solution(gs);
 
-  post_r1_constraints();
-  post_m1_constraints();
+    post_r1_constraints();
+    post_m1_constraints();
 
-  post_security_constraints();
+    post_security_constraints();
+
+  }
 }
-
 
 SecLocalModel::SecLocalModel(SecLocalModel& cg) :
   LocalModel(cg),
@@ -782,19 +783,21 @@ void SecLocalModel::post_implied_constraints(void) {
 
 void SecLocalModel::post_security_constraints(void) {
   // post_implied_subseq();
-
-  if (!options-> disable_sec_regreg_constraints()) {
-    post_random_register_constraints();
-    post_implied_constraints();
-    post_tt_constraints();
+  if (options -> enable_power_constraints()) {
+    if (!options-> disable_sec_regreg_constraints()) {
+      post_random_register_constraints();
+      post_implied_constraints();
+      post_tt_constraints();
+    }
+    if (!options-> disable_sec_secret_constraints())
+      post_secret_register_constraints();
+    if (!options-> disable_sec_mem_constraints())
+      post_secret_mem_constraints();
+    if (!options-> disable_sec_memmem_constraints())
+      post_random_mem_constraints();
   }
-  if (!options-> disable_sec_secret_constraints())
-    post_secret_register_constraints();
-  if (!options-> disable_sec_mem_constraints())
-    post_secret_mem_constraints();
-  if (!options-> disable_sec_memmem_constraints())
-    post_random_mem_constraints();
-
+  // ct constraints are only global
+    
 }
 
 
