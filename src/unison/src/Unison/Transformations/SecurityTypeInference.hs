@@ -509,7 +509,12 @@ inferTypesOperation target f bid types (SingleOperation
     types'' = types' {fPmap = pmap'}
     -- types' = (pmap', init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args', bbs, flag)
   in inferTypesOperation target f bid types'' codes
-  -- in pmap' `seq` error "lalal"
+-- Special case for some MIPS instruction  
+inferTypesOperation _ _ _ types (SingleOperation
+  {oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = [],
+                      oDs = [] }}}:_) = types
 inferTypesOperation _ _ _ _ (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = ins, -- Instruction i
