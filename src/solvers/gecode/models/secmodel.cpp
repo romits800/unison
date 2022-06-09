@@ -448,7 +448,7 @@ void SecModel::post_random_mem_constraints(void) {
 
 
 void SecModel::post_different_solution(SecModel * g1, bool unsat) {
-  std::cout << "posting different solution" << std:: endl;
+ // std::cout << "posting different solution" << std:: endl;
   BoolVarArgs lits;
   for (temporary t : tbts)
     if (g1->v_tbt[t].assigned())
