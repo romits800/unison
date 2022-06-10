@@ -493,8 +493,6 @@ inferTypesOperation target f bid types (SingleOperation
                       oIs = _, -- Instruction i
                       oUs = Bound (MachineImm {}) : _,
                       oDs = d:_ }}}:codes) = 
-  -- if join of uops is...
-  -- add defops to the map
   let
     -- (pmap, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args, bbs, flag) = types
     supp'  = updateSupps (fSupp types) [] [d]
@@ -510,17 +508,30 @@ inferTypesOperation target f bid types (SingleOperation
     -- types' = (pmap', init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args', bbs, flag)
   in inferTypesOperation target f bid types'' codes
 -- Special case for some MIPS instruction  
-inferTypesOperation _ _ _ types (SingleOperation
+inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
                       oUs = [],
-                      oDs = [] }}}:_) = types
+                      oDs = [] }}}:codes) = inferTypesOperation target f bid types codes
 -- TODO: Check this again
-inferTypesOperation _ _ _ types (SingleOperation
+inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
                       oUs = [],
-                      oDs = [_] }}}:_) = types
+                      oDs = [d] }}}:codes) =
+  let
+    supp'  = updateSupps (fSupp types) [] [d]
+    unq'   = updateUnqs (fUnq types) [] [d]
+    dom'   = updateDoms (fDom types) [] [d]
+    isxor  = False
+    isgmul = False
+    xor'   = updateXor (fXor types) [] [] True [d]
+    args'  = updateArgsUop (fArgs types)  [] [d]
+    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+    pmap'  = updatePmaps isxor isgmul types' [] [] [d]
+    types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+
 inferTypesOperation _ _ _ _ (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = ins, -- Instruction i
@@ -678,22 +689,18 @@ inferTypesOperation target f bid types (SingleOperation
 updateNewTemps :: Show r => Map Integer [Operand r] -> Map Integer [Integer] -> StateTuple r -> (Integer, [Operand r]) -> StateTuple r
 updateNewTemps p2t p2p types (oid, tmps) = 
   let 
-    -- (pmap, init, supp, unq, dom, xor, m2o, c2o, _, _, args, bbs, flag) = types
     adj = Map.lookup oid p2p
     -- in case of a phi
     f oldtmps isAnyNothing tmps =
       let
         supp'  = updateSupps (fSupp types) oldtmps tmps 
         xor'   = updateXor (fXor types) oldtmps [] True tmps
-        -- args' = updateArgs args KOOther ts1 ts2 [d]
         unq'   = updateLUnqs (fUnq types, fSupp types) oldtmps tmps
         dom'   = updateBDomsEmpty (fDom types) tmps
         types' = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
         pmap'  = updateLPmaps types' oldtmps tmps
-        -- pmap'  = updateLPmaps (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args, bbs, flag) oldtmps tmps
         flag' = (fFlag types) {hasPhis = isAnyNothing}
         types'' = types' {fPmap = pmap', fFlag = flag'}
-        -- types' = (pmap', init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args, bbs, flag')
       in types''
     f2 oldtmps tmps = 
       let 
@@ -721,7 +728,6 @@ updateNewTemps p2t p2p types (oid, tmps) =
            notIsNoth = \ai -> not $ isNothing ai
            isAnyNothing = any isNothing ats
            ats_nonothing = concatMap fJust $ filter notIsNoth ats
-           -- ats = concatMap id ats_nonothing
          in f ats_nonothing isAnyNothing tmps
        Nothing -> types
 
