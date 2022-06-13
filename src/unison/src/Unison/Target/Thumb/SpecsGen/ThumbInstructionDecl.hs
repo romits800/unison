@@ -2953,6 +2953,7 @@ data ThumbInstruction = ABS
                       | VLDRD_cpi
                       | VLDRS_cpi
                       | T2LEApcrel_cpi
+                      | TLDRpci_cpi
                       | MOVE
                       | MOVE_ALL
                       | MOVE_D
