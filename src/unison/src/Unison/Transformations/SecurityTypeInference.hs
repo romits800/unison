@@ -520,7 +520,7 @@ inferTypesOperation target f bid types (SingleOperation
     oId  = oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
-                      oUs = (u @ (Bound (MachineConstantPoolIndex {}))) : _,
+                      oUs = (Bound (MachineConstantPoolIndex {})) : _,
                       oDs = [MOperand {altTemps = d}] }}}:codes) =
   let
     supp' = updateSupps (fSupp types) [] d
@@ -539,7 +539,7 @@ inferTypesOperation target f bid types (SingleOperation
     oId  = oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
-                      oUs = (u @ (Bound (MachineConstantPoolIndex {}))) : _,
+                      oUs = (Bound (MachineConstantPoolIndex {})) : _,
                       oDs = [t @ Temporary {}] }}}:codes) =
   let
     supp' = updateSupps (fSupp types) [] [t]
