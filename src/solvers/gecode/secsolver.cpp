@@ -843,6 +843,10 @@ int main(int argc, char* argv[]) {
 
   if (options.decomposition()) {
 
+    vector<block> bs;
+    for (block b: input.B)
+      bs.push_back(b);
+    
     unsigned long int iteration = 0;
 
     // Whether the current iteration is a "deactivation iteration"
@@ -927,7 +931,10 @@ int main(int argc, char* argv[]) {
 
 	// maybe shuffle the blocks?
 	bool found_all_local = true, unsat = false;
-	for (block b: input.B) {
+	std::default_random_engine rng(12345);
+	shuffle(bs.begin(), bs.end(), rng);
+
+	for (block b: bs) {
 	  //std::cout << "Block " << b << std::endl;
 	  Solution<SecLocalModel> ls = local_problem(gs.solution, b);
 	  if (ls.result != UNSATISFIABLE) {

@@ -186,6 +186,7 @@ string produce_json(Parameters &input, int presolver_time)
 
 #define ZEROBASED1 1
 #define ZEROBASED2 2
+#define ZEROBASED3 8
 #define MINUSONEBASED1 4
 
 class FDSet {
@@ -508,6 +509,36 @@ string emit_dzn(const vector<vector<int>> xss, int opt) {
   }
   s << "])";
   return s.str();
+}
+
+
+string emit_dzn(const vector<vector<vector<int>>> xsss, int opt) {
+  stringstream s;
+  int beg1 = 1;
+  int beg2 = 1;
+  int beg3 = 1;
+  int dim1 = xsss.size();
+  int dim2 = dim1==0 ? 0 : xsss[0].size();
+  int dim3 = dim2==0 ? 0 : xsss[0][0].size();
+  if (opt & ZEROBASED1)
+    beg1 = 0;
+  if (opt & ZEROBASED2)
+    beg2 = 0;
+  if (opt & ZEROBASED3)
+    beg3 = 0;
+  int r = 0;
+  s << "array2d(" << beg1 << ".." << dim1+beg1-1 << ", " << beg2 << ".." << dim2+beg2-1 << ", " << beg3 << ".." << dim3+beg3-1 << ", [";
+  for (vector<vector<int>> xss : xsss) {
+    for (vector<int> xs : xss) {
+      for (int x : xs) {
+	if (r++)
+	  s << ", ";
+	s << x;
+      }
+    }
+    s << "])";
+    return s.str();
+  }
 }
 
 
@@ -1034,8 +1065,9 @@ string produce_dzn(Parameters &input) {
        << emit_dzn_line("mpairs_rands", mpairs_rands)
        << emit_dzn_line("SUMC", sum_of(input.maxc))
        << emit_dzn_line("HR", FDSet(input.HR))
-       << emit_dzn_line("BBSSIZE", (int)input.rpairs.size())
+       << emit_dzn_line("BBSSIZE", (int)input.bbs.size())
        << emit_dzn_line("bbs", input.bbs);
+  // TODO: fix bbs for different lengths of paths
   
   return dzn.str();
 }

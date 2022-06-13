@@ -107,9 +107,8 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
     post_r1_constraints();
     post_m1_constraints();
 
-    post_security_constraints();
-
   }
+  post_security_constraints();
 }
 
 SecLocalModel::SecLocalModel(SecLocalModel& cg) :

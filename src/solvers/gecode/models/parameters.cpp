@@ -153,7 +153,7 @@ Parameters::Parameters(Json::Value root) :
   mspairs    (get_3d_vector<int>(getRoot(root, "mspairs"))),
   spairs     (get_3d_vector<int>(getRoot(root, "spairs"))),
   HR         (get_vector<int>(getRoot(root, "HR"))),
-  bbs        (get_2d_vector<int>(getRoot(root, "bbs")))
+  bbs        (get_3d_vector<int>(getRoot(root, "bbs")))
 {
   compute_derived();
 }
@@ -964,9 +964,9 @@ void Parameters::compute_derived() {
   // }
 
   // CT constraints
-  if (bbpairs.size() == 0)
-    for (unsigned int i = 0; i < bbs.size(); i++)
-      bbpairs.push_back(make_pair(bbs[i][0], bbs[i][1]));
+  // if (bbpairs.size() == 0)
+  //   for (unsigned int i = 0; i < bbs.size(); i++)
+  //     bbpairs.push_back(make_pair(bbs[i][0], bbs[i][1]));
 
   
   // for (unsigned int i = 0; i < hr.size(); i++)

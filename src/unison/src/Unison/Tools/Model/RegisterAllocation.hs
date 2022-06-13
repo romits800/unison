@@ -37,76 +37,7 @@ import qualified Unison.Graphs.Partition as P
 
 import Unison.Tools.Model.Definitions
 
--- parameters noCC (cg, _, _, t2w, ra, _) f @ Function {fCode = code1:[code2]} target =
---     let oif         = operandInfo target
---         bif         = branchInfo target
---         apf         = alignedPairs target
---         ppf         = packedPairs target
---         rpf         = relatedPairs target
---         ibf         = infRegClassBound target
 
---         bcfg        = BCFG.fromFunction bif f
---         fCode       = sortBy (comparing oId) (flatten [code1,code2])
---         im          = instructionManager fCode
-
---         p           = codeOperands fCode
---         t           = sort $ tUniqueOps fCode
-
---         tmp         = blockMap (sort . tUniqueOps) [code1,code2]
---         operands    = map oAllOperands fCode
---         use         = toValueListM $ operandUse fCode
---         p2ts        = operandTemps fCode
---         temps       = toValueListM p2ts
---         definer     = toValueList (tempDefiners fCode)
---         operation   = toValueList (operandOperation fCode)
-
---         sg          = SG.fromFunction (Just apf) f
---         congr       = sort $ map sort $ SG.sameOperandPartitions sg
-
---         preassign   = computeModelPreAssignments ra (preAssignments [code1,code2])
-
---         width       = toValueListM t2w
---         (aligned,
---          adist)     = unzip $ sort $ alignedTuples apf im t2w fCode
---         packed      = packedTuples ppf fCode
---         (exrelated,
---          table)     = unzip $ sort $ concatMap (relatedTuples rpf ra) fCode
-
---         pp          = map S.fromList congr
---         adjacent    = sort $ BCFG.eqvNeighborTemps bcfg pp
-
---         rs2a        = map (\rs -> (rs, rsAtoms ra rs)) $ raRss ra
---         rcs         = raRcs ra
---         atoms       = map (rcAtoms ra) rcs
---         ocf         = operationClass oif ra im
---         rclass      = map ocf fCode
---         n           = 2
---         o           = fCode !! n
---         instr       = oIInstructions im (fCode!!n)!!1
---         (IndexedInstruction _ (TargetInstruction instr')) = instr
---         t2rc2       = tempsToRc oif o instr'
---         tinfo       = tempsToInfo oif o instr'
---         hinfo       = oif instr'
---         t2rc        = tempsToIRc ra oif o instr'
---         -- imo         = isModelOperand instr'
---         --        tempsToIRc ra oif o op = map (second (raIndexedRc ra)) $ tempsToRc oif o op
---         -- map (instructionClass oif ra o) (oIInstructions om o)
---   -- tempsToRc oif i op =
---   --     nub $ sort $ [(op, rc) | (op, TemporaryInfo {oiRegClass = rc})
---   --                          <- tempsToInfo oif i op,
---   --                          isDefinedRegisterClass rc, isModelOperand op]
-
-
---   in error $ show (rclass !! n) ++ "\n" ++ show o ++ "\n" ++
---      show (oIInstructions im o) ++ "\n" ++
---      show instr' ++ "\n" ++
---      show hinfo ++ "\n" ++
---      show tinfo ++ "\n" ++
---      -- show imo ++ "\n" ++
---      show t2rc2 ++ "\n" ++
---      show t2rc ++ "\n" ++
---      show (instructionClass oif ra o instr) 
-     
 parameters noCC (cg, _, _, t2w, ra, _) f @ Function {fCode = code} target =
     let oif         = operandInfo target
         bif         = branchInfo target

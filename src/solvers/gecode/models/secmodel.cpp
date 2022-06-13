@@ -88,11 +88,10 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
 
     post_r1_constraints();
     post_m1_constraints();
-  
-    post_security_constraints();
 
     post_connecting_constraints();
   }
+  post_security_constraints();
 }
 
 
@@ -629,12 +628,24 @@ void SecModel::post_connecting_constraints(void) {
 
 
 void SecModel::post_ct_constraints(void) {
-  // These pairs should not be in the same register or should not be consequent
-  for (std::pair<const block, const block> tp : input -> bbpairs) {
-    block b1 = tp.first;
-    block b2 = tp.second;
-    for (unsigned int n = 0; n < input->N; n++) {
-      constraint(f(b1,n) == f(b2,n));
+  // The paths that should be ct time
+  // for every constraint that consists of many paths
+  for (unsigned int n = 0; n < input->N; n++) {
+    for (vector<vector<block>> ci: input -> bbs) {
+      // for every path in a constraint
+      IntVarArgs cs;
+      for (vector<block> pi: ci) {
+	IntVarArgs path;
+	for (block bi: pi) {
+	  std::cout << "Bi" << bi;
+	  path << var(f(bi,n));
+	}
+	std::cout << std::endl;
+	cs << var (sum(path));
+      }
+      std::cout << cs << std::endl;
+      // all paths should have the same number of cycles
+      rel(*this, cs, IRT_EQ);
     }
   }
 }
