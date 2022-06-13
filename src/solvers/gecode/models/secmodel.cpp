@@ -637,13 +637,13 @@ void SecModel::post_ct_constraints(void) {
       for (vector<block> pi: ci) {
 	IntVarArgs path;
 	for (block bi: pi) {
-	  std::cout << "Bi" << bi;
+	  // std::cout << "Bi" << bi;
 	  path << var(f(bi,n));
 	}
-	std::cout << std::endl;
+	// std::cout << std::endl;
 	cs << var (sum(path));
       }
-      std::cout << cs << std::endl;
+      // std::cout << cs << std::endl;
       // all paths should have the same number of cycles
       rel(*this, cs, IRT_EQ);
     }

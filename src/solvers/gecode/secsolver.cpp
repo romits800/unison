@@ -88,6 +88,8 @@
 #include "inspectors/operandlatencyinspector.hpp"
 #endif
 
+#include <random>
+
 using namespace Gecode;
 using namespace std;
 
