@@ -267,7 +267,7 @@ inferTypesOperation target f bid types (
             bbs' = 
                if isMaybeSecret typ then
                  let paths = findPaths bid types --Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
-                 in Map.insert bid paths (fBbs types) --error $ show paths --Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
+                 in Map.insert bid paths (fBbs types) --error $ show paths 
                else fBbs types
             types'' = types {fBbs = bbs'} 
         in inferTypesOperation target f bid types'' codes
@@ -436,7 +436,7 @@ inferTypesOperation target f bid types (SingleOperation
     oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
                       oUs = (u @ (Bound (MachineFrameIndex {mfiIndex = mf,
-                                                           mfiFixed = isfixed}))) : _,
+                                                            mfiFixed = isfixed}))) : _,
                       oDs = [MOperand {altTemps = d}] }}}:codes) =
   let
     supp' = updateSupps (fSupp types) [u] d
@@ -496,7 +496,7 @@ inferTypesOperation target f bid types (SingleOperation
                       oIs = _, -- Instruction i
                       oUs = [],
                       oDs = [] }}}:codes) = inferTypesOperation target f bid types codes
--- TODO: Check this again
+-- Special case for some MIPS instruction  
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
@@ -514,7 +514,46 @@ inferTypesOperation target f bid types (SingleOperation
     pmap'  = updatePmaps isxor isgmul types' [] [] [d]
     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
-
+-- Special case for CM0 - Machine ConstantPoolIndex (cpi)
+inferTypesOperation target f bid types (SingleOperation
+  {
+    oId  = oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = (u @ (Bound (MachineConstantPoolIndex {}))) : _,
+                      oDs = [MOperand {altTemps = d}] }}}:codes) =
+  let
+    supp' = updateSupps (fSupp types) [] d
+    unq'  = updateUnqs (fUnq types) [] d
+    dom'  = updateDoms (fDom types) [] d
+    isxor = False
+    isgmul= False
+    xor' = updateXor (fXor types) d [] True d
+    args' = updateArgsUop (fArgs types)  [] d
+    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+    pmap' = updatePmaps isxor isgmul types' [] [] d
+    types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+inferTypesOperation target f bid types (SingleOperation
+  {
+    oId  = oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = (u @ (Bound (MachineConstantPoolIndex {}))) : _,
+                      oDs = [t @ Temporary {}] }}}:codes) =
+  let
+    supp' = updateSupps (fSupp types) [] [t]
+    unq'  = updateUnqs (fUnq types) [] [t]
+    dom'  = updateDoms (fDom types) [] [t]
+    isxor = False
+    isgmul= False
+    xor' = updateXor (fXor types) [t] [] True [t]
+    args' = updateArgsUop (fArgs types)  [] [t]
+    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+    pmap' = updatePmaps isxor isgmul types' [] [] [t]
+    types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+-- Not handled operations
 inferTypesOperation _ _ _ _ (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = ins, -- Instruction i
