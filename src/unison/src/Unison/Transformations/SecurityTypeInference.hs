@@ -265,10 +265,10 @@ inferTypesOperation target f bid types (
             pmap' = updatePmapID isxor isgmul types' ts1 ts2 d
             typ  = Map.lookup "brtemp" pmap'
             bbs' = 
-              if isMaybeSecret typ then
-                let paths = findPaths bid types --Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
-                in Map.insert bid paths (fBbs types) --error $ show paths --Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
-              else fBbs types
+               if isMaybeSecret typ then
+                 let paths = findPaths bid types --Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
+                 in Map.insert bid paths (fBbs types) --error $ show paths --Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
+               else fBbs types
             types'' = types {fBbs = bbs'} 
         in inferTypesOperation target f bid types'' codes
       (t1:[], [BlockRef {blockRefId=blid}])    ->
@@ -660,6 +660,7 @@ inferTypesOperation target f bid types (SingleOperation
   { oId = _,
     oOpr = Virtual (_)}:codes) = inferTypesOperation target f bid types codes
 
+foundTerm bid ((bid':_):[]) | bid == bid' = True
 foundTerm bid ((bid':_):rest) | bid == bid' = foundTerm bid rest
 foundTerm _ _ = False
 
@@ -681,6 +682,9 @@ findPathsI bcfg ((bid:rest):allrest) acc =
   in
     case bids of
       [] -> findPathsI bcfg allrest ((bid:rest):acc)
+      --[bid'] | bid' `elem` (bid:rest)-> error "lala"
+      [bid'] | bid' `elem` (bid:rest)-> error ("Cycle Detected! bid:" ++ show bid' ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
+      [bid1,bid2] | bid1 `elem` (bid:rest) || bid2 `elem` (bid:rest) -> error ("Cycle Detected! bid:" ++ show bid1 ++ " bid2:" ++ show bid2 ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
       [bid'] ->
         let extpath = bid':bid:rest
             paths = allrest ++ [extpath]
