@@ -332,7 +332,7 @@ alignedPairs i ([_], [])
        MTLO, MTLO64, MTLO_MM, MTM0, MTM1, MTM2, MTP0, MTP1, MTP2,
        PseudoIndirectBranch, PseudoIndirectBranch64,
        PseudoIndirectBranch_NOP, PseudoReturn, PseudoReturn64,
-       PseudoReturn_NOP, TAILCALL64_R, TAILCALL_R]
+       PseudoReturn_NOP, SUBu_sp, TAILCALL64_R, TAILCALL_R]
     = []
 alignedPairs i ([_], [_])
   | i `elem` [MTHI_DSP, MTHI_DSP_MM, MTLO_DSP, MTLO_DSP_MM] = []
@@ -516,7 +516,6 @@ alignedPairs i ([_, _, src], [src'])
        PRECR_SRA_R_PH_W, PRECR_SRA_R_PH_W_MMR2, PREPEND, PREPEND_MMR2]
     = [(src, src')]
 alignedPairs i ([_, _], [_]) | i `elem` [RDHWR_MMR6] = []
-alignedPairs i ([_], []) | i `elem` [SUBu_sp] = []
 alignedPairs i ([_], [_])
   | i `elem` [CTC1, CTC1_MM, DMTC1, MTC1, MTC1_MM] = []
 alignedPairs i ([_], [_])

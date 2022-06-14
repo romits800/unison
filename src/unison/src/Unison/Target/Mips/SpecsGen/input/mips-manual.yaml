@@ -134,8 +134,8 @@ instruction-set:
         - id:                 SUBu_sp
           parent:             SUBu
           operands:
-           - rt:              [register, use, GPR32Opnd]
-          uses:               [rt]
+           - rs:              [register, use, GPR32Opnd]
+          uses:               [rs]
           defines:            []
           size:               4
           affects:
