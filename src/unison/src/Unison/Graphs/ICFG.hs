@@ -82,11 +82,15 @@ isLiveAtEdge ::
     (ICFGraph i r -> Int -> Int) -> Int -> ICFGraph i r -> Operand r -> Bool
 isLiveAtEdge toEdgeInstr b icfg t =
     let e       = toEdgeInstr icfg b
-        [d]     = [i | (i, (_, oOper)) <- labNodes icfg, isDefiner t oOper]
-        icfg'   = delNode d icfg
-        rs      = reachable e icfg'
-        lrs     = map (nodeInstr icfg') rs
-        in any (isUser t) lrs
+        ds     = [i | (i, (_, oOper)) <- labNodes icfg, isDefiner t oOper]
+    in case ds of
+         [d] ->
+           let icfg'   = delNode d icfg
+               rs      = reachable e icfg'
+               lrs     = map (nodeInstr icfg') rs
+           in any (isUser t) lrs
+         [] -> error "isLiveAtEdge: Empty list"
+         ds -> error $ "isLiveAtEdge: May solutions" ++ show ds
 
 label icfg n = fromJust $ lab icfg n
 
