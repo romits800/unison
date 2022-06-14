@@ -90,8 +90,7 @@ isLiveAtEdge toEdgeInstr b icfg t =
                lrs     = map (nodeInstr icfg') rs
            in any (isUser t) lrs
          [] -> error "isLiveAtEdge: Empty list"
-         ds -> error $ "isLiveAtEdge: Many solutions " ++ show ds ++ "\n" ++
-               "Temporary: " ++ t
+         ds -> error $ "isLiveAtEdge: Many solutions " ++ show ds ++ "\n" ++ "Temporary: " ++ t
 
 label icfg n = fromJust $ lab icfg n
 
