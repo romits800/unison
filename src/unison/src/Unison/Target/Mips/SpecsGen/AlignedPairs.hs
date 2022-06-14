@@ -516,6 +516,7 @@ alignedPairs i ([_, _, src], [src'])
        PRECR_SRA_R_PH_W, PRECR_SRA_R_PH_W_MMR2, PREPEND, PREPEND_MMR2]
     = [(src, src')]
 alignedPairs i ([_, _], [_]) | i `elem` [RDHWR_MMR6] = []
+alignedPairs i ([_], []) | i `elem` [SUBu_sp] = []
 alignedPairs i ([_], [_])
   | i `elem` [CTC1, CTC1_MM, DMTC1, MTC1, MTC1_MM] = []
 alignedPairs i ([_], [_])

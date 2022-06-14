@@ -2253,6 +2253,7 @@ instance Show MipsInstruction where
         show LH_fi = "LH_fi"
         show SWC1_fi = "SWC1_fi"
         show LWC1_fi = "LWC1_fi"
+        show SUBu_sp = "SUBu_sp"
         show ADDiu_sp = "ADDiu_sp"
         show ADDiu_negsp = "ADDiu_negsp"
         show SW_sp = "SW_sp"

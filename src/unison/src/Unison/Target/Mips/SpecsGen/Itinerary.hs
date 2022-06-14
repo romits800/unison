@@ -324,7 +324,8 @@ itinerary i
   | i `elem` [SRAV, SRAV_MM] = II_SRAV
   | i `elem` [SRL, SRL16_MM, SRL16_MMR6, SRL_MM] = II_SRL
   | i `elem` [SRLV, SRLV_MM] = II_SRLV
-  | i `elem` [SUBU16_MM, SUBU16_MMR6, SUBu, SUBu_MM] = II_SUBU
+  | i `elem` [SUBU16_MM, SUBU16_MMR6, SUBu, SUBu_MM, SUBu_sp] =
+    II_SUBU
   | i `elem` [FSUB_D32, FSUB_D64, FSUB_D_MMR6, FSUB_MM] = II_SUB_D
   | i `elem` [FSUB_S, FSUB_S_MM, FSUB_S_MMR6] = II_SUB_S
   | i `elem` [SUXC1, SUXC164, SUXC1_MM] = II_SUXC1

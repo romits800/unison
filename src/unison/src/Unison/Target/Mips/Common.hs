@@ -30,7 +30,8 @@ hiddenStackPointerInstruction i =
 hiddenStackPointerVersions = M.fromList
   [(SW, SW_sp),
    (SWC1, SWC1_sp),
-   (SDC1, SDC1_sp)]
+   (SDC1, SDC1_sp),
+   (SUBu, SUBu_sp)]
 
 isDelaySlotInstr i = M.member i delaySlotNOPVersions
 isDelaySlotNOPInstr i = M.member i (inverseMap delaySlotNOPVersions)
