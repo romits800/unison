@@ -137,7 +137,6 @@ instruction-set:
            - rs:              [register, use, GPR32Opnd]
           uses:               [rs]
           defines:            []
-          size:               4
           affects:
            - SP:              register
           affected-by:

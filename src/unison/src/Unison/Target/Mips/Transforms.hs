@@ -440,7 +440,7 @@ enforceMandatoryFrame f (
   a @ SingleOperation {
      oOpr = (Natural ai @ Linear {oIs = [_, TargetInstruction i]})}
   :
-  rest) _ | i `elem` [ADDiu_sp, ADDiu_negsp] &&
+  rest) _ | i `elem` [ADDiu_sp, ADDiu_negsp, SUBu_sp] &&
             any isCall (flatCode f) &&
             any isReturnBlock (fCode f) &&
             none isExitBlock (fCode f) =
