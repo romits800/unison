@@ -310,7 +310,7 @@ addEpilogue (_, oid, _) code =
         addSp = mkOpt oid ADDiu_sp [Bound mkMachineFrameSize] []
     in f ++ [addSp] ++ e
 
-spUsers = (filter isSPUser SpecsGen.allInstructions) \\ [ADDiu_sp, ADDiu_negsp]
+spUsers = (filter isSPUser SpecsGen.allInstructions) \\ [ADDiu_sp, ADDiu_negsp, SUBu_sp]
 isSPUser = readsObject (OtherSideEffect SP)
 readsObject rwo i = rwo `elem` (fst $ SpecsGen.readWriteInfo i)
 
@@ -407,6 +407,10 @@ expandSimple mi (i, [MachineImm mfs])
       in  mi {msOpcode   = MachineTargetOpc ADDiu,
               msOperands = [mkMachineReg SP, mkMachineReg SP,
                             mkMachineImm mfs']}
+-- TODO
+expandSimple mi (SUBu_sp, [v]) = mi {msOpcode   = MachineTargetOpc SUBu,
+                                     msOperands = [mkMachineReg SP, v,
+                                                   mkMachineReg SP]}
 
 expandSimple mi (i, [v, off])
   | i `elem` [SW_sp, SWC1_sp] =
