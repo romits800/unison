@@ -254,11 +254,22 @@ fromCopy Copy {oCopyIs = [TargetInstruction i], oCopyS = s, oCopyD = d}
                oUs = [mkOprArmSP | w] ++ defaultUniPred ++
                      map (Register . TargetRegister) (pushRegs i ++ [LR]),
                oDs = [mkOprArmSP | w]}
+  | i `elem` [TPUSH_r4_7, TPUSH_r8_11] =
+    let w = i == TPUSH2_r4_11
+    in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
+               oUs = [mkOprArmSP | w] ++ defaultUniPred ++
+                     map (Register . TargetRegister) (pushRegs i ++ [LR]),
+               oDs = [mkOprArmSP | w]}
   | i `elem` [VSTMDDB_UPD_d8_15] =
     Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
             oUs = [mkOprArmSP] ++ defaultUniPred ++ mkPushRegs i,
             oDs = [mkOprArmSP]}
   | i `elem` [TPOP2_r4_7, TPOP2_r4_7_RET, TPOP2_r4_11, TPOP2_r4_11_RET] =
+    let w = i `elem` [TPOP2_r4_11, TPOP2_r4_11_RET]
+    in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
+               oUs = [mkOprArmSP | w] ++ defaultUniPred ++ mkPushRegs i,
+               oDs = [mkOprArmSP | w]}
+  | i `elem` [TPOP_r4_7, TPOP_r8_11] =
     let w = i `elem` [TPOP2_r4_11, TPOP2_r4_11_RET]
     in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
                oUs = [mkOprArmSP | w] ++ defaultUniPred ++ mkPushRegs i,
