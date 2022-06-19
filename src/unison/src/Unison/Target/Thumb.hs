@@ -714,8 +714,10 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
 expandPseudo _ mi = [[mi]]
 
 pushRegs i
-  | i `elem` [TPUSH2_r4_7, TPOP2_r4_7, TPOP2_r4_7_RET] =
+  | i `elem` [TPUSH2_r4_7, TPOP2_r4_7, TPOP2_r4_7_RET, TPUSH_r4_7, TPOP_r4_7] =
       [R4, R5, R6, R7]
+  | i `elem` [TPUSH_r8_11, TPOP_r8_11] =
+      [R8, R9, R10, R11]
   | i `elem` [TPUSH2_r4_11, TPOP2_r4_11, TPOP2_r4_11_RET] =
       pushRegs TPUSH2_r4_7 ++ [R8, R9, R10, R11]
   | i `elem` [VSTMDDB_UPD_d8_15, VLDMDIA_UPD_d8_15] =
