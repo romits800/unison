@@ -899,7 +899,7 @@ transforms ImportPostLift = [peephole handlePromotedOperands,
                              defineFP]
 -- Romy: Extend operations that are not symmetric
 -- transforms ImportPostCC   = [peephole extendNonSymmetricOperands]
-transforms AugmentPreRW = [peephole combinePushTPops,
+transforms AugmentPreRW = [peephole combinePushPops,
                            peephole expandRets,
                            fixpoint (peephole normalizeLoadStores),
                            peephole combineLoadStores,
