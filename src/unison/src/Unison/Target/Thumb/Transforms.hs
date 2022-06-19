@@ -452,7 +452,6 @@ getEquivalentInstruction i = case i of
     o3: [p1{ -, t1}, p3{ -, t3}]  <- { -, tPUSH/POP2_r4_7, tPUSH/POP2_r4_11}  [p0{ -, t0}, p2{ -, t2}]
 -}
 
--- combinePushPops to (o:code) _ | cortex_m0 to = (code, [o])
 combinePushPops _ (
   SingleOperation {
      oOpr = Copy {oCopyIs = [General NullInstruction,

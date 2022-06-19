@@ -254,22 +254,11 @@ fromCopy Copy {oCopyIs = [TargetInstruction i], oCopyS = s, oCopyD = d}
                oUs = [mkOprArmSP | w] ++ defaultUniPred ++
                      map (Register . TargetRegister) (pushRegs i ++ [LR]),
                oDs = [mkOprArmSP | w]}
-  | i `elem` [TPUSH_r4_7, TPUSH_r8_11] =
-    let w = i == TPUSH2_r4_11
-    in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
-               oUs = [mkOprArmSP | w] ++ defaultUniPred ++
-                     map (Register . TargetRegister) (pushRegs i ++ [LR]),
-               oDs = [mkOprArmSP | w]}
   | i `elem` [VSTMDDB_UPD_d8_15] =
     Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
             oUs = [mkOprArmSP] ++ defaultUniPred ++ mkPushRegs i,
             oDs = [mkOprArmSP]}
   | i `elem` [TPOP2_r4_7, TPOP2_r4_7_RET, TPOP2_r4_11, TPOP2_r4_11_RET] =
-    let w = i `elem` [TPOP2_r4_11, TPOP2_r4_11_RET]
-    in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
-               oUs = [mkOprArmSP | w] ++ defaultUniPred ++ mkPushRegs i,
-               oDs = [mkOprArmSP | w]}
-  | i `elem` [TPOP_r4_7, TPOP_r8_11] =
     let w = i `elem` [TPOP2_r4_11, TPOP2_r4_11_RET]
     in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
                oUs = [mkOprArmSP | w] ++ defaultUniPred ++ mkPushRegs i,
@@ -308,12 +297,6 @@ fromCopyInstr MOVE_ALL (s, d)
 --  | isGPR s && isSPR d = VMOVSR
 --  | isSPR s && isGPR d = VMOVRS
 --  | isSPR s && isSPR d = VMOVS
-fromCopyInstr TPUSH_r4_7 _  = TPUSH
-fromCopyInstr TPUSH_r8_11 _  = TPUSH
-fromCopyInstr TPOP_r4_7 _  = TPOP
--- fromCopyInstr TPOP_r4_7_RET _  = TPOP_RET
-fromCopyInstr TPOP_r8_11 _  = TPOP
--- fromCopyInstr TPOP_r8_11_RET _  = TPOP_RET
 fromCopyInstr TPUSH2_r4_7 _  = TPUSH
 fromCopyInstr TPUSH2_r4_11 _ = T2STMDB_UPD
 fromCopyInstr VSTMDDB_UPD_d8_15 _ = VSTMDDB_UPD
@@ -714,10 +697,8 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
 expandPseudo _ mi = [[mi]]
 
 pushRegs i
-  | i `elem` [TPUSH2_r4_7, TPOP2_r4_7, TPOP2_r4_7_RET, TPUSH_r4_7, TPOP_r4_7] =
+  | i `elem` [TPUSH2_r4_7, TPOP2_r4_7, TPOP2_r4_7_RET] =
       [R4, R5, R6, R7]
-  | i `elem` [TPUSH_r8_11, TPOP_r8_11] =
-      [R8, R9, R10, R11]
   | i `elem` [TPUSH2_r4_11, TPOP2_r4_11, TPOP2_r4_11_RET] =
       pushRegs TPUSH2_r4_7 ++ [R8, R9, R10, R11]
   | i `elem` [VSTMDDB_UPD_d8_15, VLDMDIA_UPD_d8_15] =
@@ -918,8 +899,8 @@ transforms ImportPostLift = [peephole handlePromotedOperands,
                              defineFP]
 -- Romy: Extend operations that are not symmetric
 -- transforms ImportPostCC   = [peephole extendNonSymmetricOperands]
-transforms AugmentPreRW = [--peephole combinePushPops,
-                           --peephole expandRets,
+transforms AugmentPreRW = [peephole combinePushPops,
+                           peephole expandRets,
                            fixpoint (peephole normalizeLoadStores),
                            peephole combineLoadStores,
                            reorderCalleeSavedSpills,

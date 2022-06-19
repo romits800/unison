@@ -1,0 +1,87 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            autohelperowl_vital_apat34
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: rgpr }
+  - { id: 1, class: rgpr }
+  - { id: 2, class: gpr }
+  - { id: 3, class: gpr }
+  - { id: 4, class: rgpr }
+  - { id: 5, class: gprnopc }
+  - { id: 6, class: rgpr }
+  - { id: 7, class: gprnopc }
+  - { id: 8, class: gpr }
+  - { id: 9, class: gprnopc }
+  - { id: 10, class: rgpr }
+  - { id: 11, class: rgpr }
+  - { id: 12, class: gpr }
+liveins:         
+  - { reg: '%r0', virtual-reg: '%0' }
+  - { reg: '%r1', virtual-reg: '%1' }
+  - { reg: '%r2', virtual-reg: '%2' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    4
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8):
+    liveins: %r0, %r1, %r2
+    liveouts: %r0
+  
+    %2 = COPY %r2
+    %1 = COPY %r1
+    %0 = COPY %r0
+    %4 = t2MOVi32imm @transformation
+    %5 = t2ADDrs killed %4, %0, 18, 14, _, _
+    %6 = t2MOVi16 24256, 14, _
+    %7 = t2LDRs killed %5, killed %6, 0, 14, _, <0x20a3550> = !{!"unison-memory-partition", i32 0} :: (load 4 from %ir.1)
+    ADJCALLSTACKDOWN 8, 14, _, implicit-def dead %sp, implicit %sp
+    %8 = COPY %sp
+    %9 = t2ADDrr killed %7, %1, 14, _, _
+    t2STRi12 killed %9, %8, 0, 14, _, <0x20a3550> = !{!"unison-memory-partition", i32 0} :: (store 4 into stack)
+    t2STRi12 %1, %8, 4, 14, _, <0x20a3550> = !{!"unison-memory-partition", i32 0} :: (store 4 into stack + 4)
+    %10 = t2MOVi 0, 14, _, _
+    %11 = t2MOVi 1, 14, _, _
+    %r0 = COPY %2
+    %r1 = COPY %10
+    %r2 = COPY %11
+    %r3 = COPY %1
+    tBL 14, _, @play_attack_defend2_n, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit %r1, implicit %r2, implicit %r3, implicit-def %sp, implicit-def %r0
+    ADJCALLSTACKUP 8, 0, 14, _, implicit-def dead %sp, implicit %sp
+    %12 = COPY %r0
+    %r0 = COPY %12
+    tBX_RET 14, _, implicit %r0
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- size
+- speed
+unison-test-expected-cost:
+- 23
+- 22
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

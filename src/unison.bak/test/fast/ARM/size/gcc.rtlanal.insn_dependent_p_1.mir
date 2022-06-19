@@ -1,0 +1,84 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            insn_dependent_p_1
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gprnopc }
+  - { id: 1, class: gpr }
+  - { id: 2, class: gpr }
+  - { id: 3, class: gpr }
+  - { id: 4, class: gprnopc }
+  - { id: 5, class: rgpr }
+liveins:         
+  - { reg: '%r0', virtual-reg: '%1' }
+  - { reg: '%r2', virtual-reg: '%3' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 20):
+    successors: %bb.3(37), %bb.1(62)
+    liveins: %r0, %r2
+  
+    %3 = COPY %r2
+    %1 = COPY %r0
+    %0 = t2LDRi12 %3, 0, 14, _, <0x26be3a0> = !{!"unison-memory-partition", i32 0} :: (load 4 from %ir.1)
+    t2CMPri %0, 0, 14, _, implicit-def %cpsr
+    t2Bcc %bb.3, 0, %cpsr
+    t2B %bb.1, 14, _
+  
+  bb.1 (%ir-block.4, freq 12):
+    successors: %bb.3(37), %bb.2(62)
+  
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    %r0 = COPY %1
+    %r1 = COPY %0
+    tBL 14, _, @reg_mentioned_p, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit %r1, implicit-def %sp, implicit-def %r0
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+    %4 = COPY %r0
+    t2CMPri %4, 0, 14, _, implicit-def %cpsr
+    t2Bcc %bb.3, 0, %cpsr
+    t2B %bb.2, 14, _
+  
+  bb.2 (%ir-block.7, freq 8):
+    successors: %bb.3(100)
+  
+    %5 = t2MOVi 0, 14, _, _
+    t2STRi12 killed %5, %3, 0, 14, _, <0x26be3a0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.8)
+  
+  bb.3 (%ir-block.9, freq 20):
+    liveouts:
+  
+    tBX_RET 14, _
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- size
+unison-test-expected-cost:
+- 15
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

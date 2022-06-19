@@ -1,0 +1,328 @@
+From 99c63810fe96ce43dc21a9db7d54e9b70a813868 Mon Sep 17 00:00:00 2001
+From: Romy Tsoupidi <tsoupidi@kth.se>
+Date: Fri, 28 Jan 2022 17:04:48 +0100
+Subject: [PATCH] Add store_fi instruction and fix the stack pointer offset.
+
+---
+ src/Makefile                                            |  3 ++-
+ src/unison/src/Unison/Graphs/DG.hs                      |  2 +-
+ .../Unison/Target/ARM/SpecsGen/ARMInstructionDecl.hs    |  1 +
+ src/unison/src/Unison/Target/Thumb.hs                   | 17 +++++++++++++----
+ .../src/Unison/Target/Thumb/SpecsGen/AlignedPairs.hs    |  2 +-
+ .../src/Unison/Target/Thumb/SpecsGen/AllInstructions.hs |  2 +-
+ .../src/Unison/Target/Thumb/SpecsGen/InstructionType.hs |  6 +++---
+ .../src/Unison/Target/Thumb/SpecsGen/Itinerary.hs       |  2 +-
+ .../src/Unison/Target/Thumb/SpecsGen/OperandInfo.hs     |  2 +-
+ src/unison/src/Unison/Target/Thumb/SpecsGen/Parent.hs   |  1 +
+ src/unison/src/Unison/Target/Thumb/SpecsGen/ReadOp.hs   |  1 +
+ .../src/Unison/Target/Thumb/SpecsGen/ReadWriteInfo.hs   |  6 +++---
+ .../src/Unison/Target/Thumb/SpecsGen/ShowInstance.hs    |  1 +
+ src/unison/src/Unison/Target/Thumb/SpecsGen/Size.hs     |  6 +++---
+ .../Target/Thumb/SpecsGen/ThumbInstructionDecl.hs       |  1 +
+ .../Target/Thumb/SpecsGen/ThumbRegisterClassDecl.hs     |  2 +-
+ .../Unison/Target/Thumb/SpecsGen/input/arm-manual.yaml  | 16 ++++++++++++++++
+ src/unison/src/Unison/Tools/Model.hs                    | 12 ++++++------
+ 18 files changed, 57 insertions(+), 26 deletions(-)
+
+diff --git a/src/Makefile b/src/Makefile
+index b09d528..9c8c9dc 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -136,7 +136,8 @@ install-specsgen:
+ 	cp $(UNISONSPECSGENDIR)/build/specsgen $(BINDIR)
+ 
+ run-specsgen: run-specsgen-hexagon run-specsgen-mips run-specsgen-arm \
+-	            run-specsgen-minimal
++	            run-specsgen-minimal \
++	            run-specsgen-thumb
+ 
+ run-specsgen-hexagon:
+ 	specsgen --targetname=Hexagon $(SGHEXAGONINPUTYAML) $(SGHEXAGONAUXYAML) \
+diff --git a/src/unison/src/Unison/Graphs/DG.hs b/src/unison/src/Unison/Graphs/DG.hs
+index 6fa7e91..7aa3f39 100644
+--- a/src/unison/src/Unison/Graphs/DG.hs
++++ b/src/unison/src/Unison/Graphs/DG.hs
+@@ -59,7 +59,7 @@ fromBlock rwlf rm oif Block {bCode = code} =
+                    extendedEdges lfs,
+                    callFunctionEdges
+                   ]
+-  in edg
++  in  edg
+ 
+ insertEdges code dg f =
+     let newEdges = f dg code
+diff --git a/src/unison/src/Unison/Target/ARM/SpecsGen/ARMInstructionDecl.hs b/src/unison/src/Unison/Target/ARM/SpecsGen/ARMInstructionDecl.hs
+index 58c783e..f064bcd 100644
+--- a/src/unison/src/Unison/Target/ARM/SpecsGen/ARMInstructionDecl.hs
++++ b/src/unison/src/Unison/Target/ARM/SpecsGen/ARMInstructionDecl.hs
+@@ -2923,6 +2923,7 @@ data ARMInstruction = ABS
+                     | TSTRi
+                     | TSTRr
+                     | TSTRspi
++                    | TSTRspi_fi
+                     | TSUBi3
+                     | TSUBi8
+                     | TSUBrr
+diff --git a/src/unison/src/Unison/Target/Thumb.hs b/src/unison/src/Unison/Target/Thumb.hs
+index af35685..87a94e1 100644
+--- a/src/unison/src/Unison/Target/Thumb.hs
++++ b/src/unison/src/Unison/Target/Thumb.hs
+@@ -665,14 +665,15 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc TFP} =
+   [[mi {msOpcode = mkMachineTargetOpc TADDrSPi}]]
+ 
+ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
+-                                   msOperands = [off]}
++                                   msOperands = [MachineImm {miValue = off}]}
+   | i `elem` [TSUBspi_pseudo, TADDspi_pseudo] =
+     let i' = case i of
+               TSUBspi_pseudo -> TSUBspi
+               TADDspi_pseudo -> TADDspi
+         sp = mkMachineReg SP
++        off' = mkMachineImm (off `div` 4)
+     in [[mi {msOpcode = mkMachineTargetOpc i',
+-             msOperands = [sp, sp, off] ++ defaultMIRPred}]]
++             msOperands = [sp, sp, off'] ++ defaultMIRPred}]]
+ 
+ 
+ 
+@@ -697,7 +698,7 @@ replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} | cortex_m0 t
+            mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
+                      msOperands = [r8, r8] ++ defaultMIRPred}
+        in [[mi']]
+-replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} =
++replaceNop _ mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} =
+        let r0 = mkMachineReg R0
+            mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
+                      msOperands = [r0, r0] ++ defaultMIRPred}
+@@ -745,9 +746,17 @@ removeFrameIndex = mapToMachineInstruction removeFrameIndexInstr
+ removeFrameIndexInstr
+   mi @ MachineSingle {msOpcode = MachineTargetOpc TLDRspi_fi,
+                       msOperands = [d, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} = 
+-    let mioff = mkMachineImm (off `div` 4) -- TODO(Romy): Very hacky.
++    let mioff = mkMachineImm (off `div` 4) 
+         mos = [d, mkMachineReg SP, mioff, cc, p]
+     in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TLDRspi_fi, msOperands = mos}
++-- Frame store using sp
++removeFrameIndexInstr
++  mi @ MachineSingle {msOpcode = MachineTargetOpc TSTRspi_fi,
++                      msOperands = [s, MachineImm {miValue = off}, MachineImm {miValue = 0}, cc, p]} =
++
++  let mioff = mkMachineImm (off `div` 4) 
++      mos = [s, mkMachineReg SP, mioff, cc, p]
++  in mi {msOpcode = mkMachineTargetOpc $ removeFi $ mkMachineTargetOpc TSTRspi_fi, msOperands = mos}
+ 
+ removeFrameIndexInstr
+   mi @ MachineSingle {msOpcode = MachineTargetOpc i,
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/AlignedPairs.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/AlignedPairs.hs
+index 853b71e..a0797b6 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/AlignedPairs.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/AlignedPairs.hs
+@@ -526,7 +526,7 @@ alignedPairs i ([_, _, _, _, _], [])
+   | i `elem`
+       [STRBi12, STRi12, T2STRBi12, T2STRBi12_fi, T2STRBi8, T2STRHi12,
+        T2STRHi12_fi, T2STRHi8, T2STRi12, T2STRi12_fi, T2STRi8, TSTRBi,
+-       TSTRBr, TSTRHi, TSTRHr, TSTRi, TSTRr, TSTRspi]
++       TSTRBr, TSTRHi, TSTRHr, TSTRi, TSTRr, TSTRspi, TSTRspi_fi]
+     = []
+ alignedPairs i ([_, _, _, _, _], [_]) | i `elem` [T2STREX] = []
+ alignedPairs i ([_, _, _, _, _], [_])
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/AllInstructions.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/AllInstructions.hs
+index 22722d3..c1e2d21 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/AllInstructions.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/AllInstructions.hs
+@@ -616,7 +616,7 @@ allInstructions
+      T2LDMIA_UPD_4_11, T2LDMIA_RET_4_8, T2LDMIA_RET_4_9,
+      T2LDMIA_RET_4_10, T2LDMIA_RET_4_11, T2LSLricc, T2ADDricc,
+      T2ANDricc, T2ORRricc, T2SUBricc, T2SUBrrcc, T2ADDrrcc, T2ADDrscc,
+-     Register_class_decl_dummy, T2MOVi_source, T2MOVi_demat,
++     Register_class_decl_dummy, TSTRspi_fi, T2MOVi_source, T2MOVi_demat,
+      T2MOVi_remat, T2MOVi16_source, T2MOVi16_demat, T2MOVi16_remat,
+      T2MOVi32imm_source, T2MOVi32imm_demat, T2MOVi32imm_remat,
+      TMOVi8s_source, TMOVi8s_demat, TMOVi8s_remat, T2ADDri_fi_source_fi,
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/InstructionType.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/InstructionType.hs
+index be21f77..dd8b3f8 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/InstructionType.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/InstructionType.hs
+@@ -636,8 +636,8 @@ instructionType i
+        TPUSH_4, TPUSH_4_5, TPUSH_4_6, TPUSH_4_7, TREV, TREV16, TREVSH,
+        TROR, TRORs, TRSB, TRSBs, TSBC, TSETEND, TSTMIA_UPD, TSTRBi,
+        TSTRBr, TSTRBrz, TSTRHi, TSTRHr, TSTRHrz, TSTRi, TSTRr, TSTRrz,
+-       TSTRspi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr, TSUBrrs,
+-       TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH, TSXTHz, TTRAP, TTST,
+-       TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
++       TSTRspi, TSTRspi_fi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr,
++       TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH, TSXTHz, TTRAP,
++       TTST, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
+     = LinearInstructionType
+ 
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/Itinerary.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/Itinerary.hs
+index 470dd09..c3cd6ec 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/Itinerary.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/Itinerary.hs
+@@ -817,7 +817,7 @@ itinerary i
+     IIC_iStore_d_ru
+   | i `elem`
+       [STORE, STORE_T, T2STRT, T2STRi12, T2STRi12_fi, T2STRi8, TSTRi,
+-       TSTRspi]
++       TSTRspi, TSTRspi_fi]
+     = IIC_iStore_i
+   | i `elem`
+       [STR_POST_IMM, STR_PRE_IMM, T2STRH_PRE, T2STR_POST, T2STR_PRE]
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/OperandInfo.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/OperandInfo.hs
+index 910749a..4b43ed9 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/OperandInfo.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/OperandInfo.hs
+@@ -2692,7 +2692,7 @@ operandInfo i
+     ([TemporaryInfo (RegisterClass TGPR) 0 False],
+      [TemporaryInfo (RegisterClass TGPR) 1 False,
+       TemporaryInfo (AbstractRegisterClass Unknown) 1 False])
+-  | i `elem` [TSTRspi] =
++  | i `elem` [TSTRspi, TSTRspi_fi] =
+     ([TemporaryInfo (RegisterClass TGPR) 0 False,
+       TemporaryInfo (RegisterClass GPR) 0 False, BoundInfo, BoundInfo,
+       TemporaryInfo (RegisterClass CCR) 0 False],
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/Parent.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/Parent.hs
+index a6b9128..bb50f86 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/Parent.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/Parent.hs
+@@ -707,6 +707,7 @@ parent i
+   | i `elem` [TSTRBrz] = Just TSTRBr
+   | i `elem` [TSTRHrz] = Just TSTRHr
+   | i `elem` [TSTRrz] = Just TSTRr
++  | i `elem` [TSTRspi_fi] = Just TSTRspi
+   | i `elem` [TSUBspi_pseudo] = Just TSUBspi
+   | i `elem` [TSXTHz] = Just TSXTH
+   | i `elem` [TTST_cpsr] = Just TTST
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadOp.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadOp.hs
+index baa1676..b15d460 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadOp.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadOp.hs
+@@ -3068,6 +3068,7 @@ readOp "t2SUBrrcc" = T2SUBrrcc
+ readOp "t2ADDrrcc" = T2ADDrrcc
+ readOp "t2ADDrscc" = T2ADDrscc
+ readOp "register_class_decl_dummy" = Register_class_decl_dummy
++readOp "tSTRspi_fi" = TSTRspi_fi
+ readOp "t2MOVi_source" = T2MOVi_source
+ readOp "t2MOVi_demat" = T2MOVi_demat
+ readOp "t2MOVi_remat" = T2MOVi_remat
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadWriteInfo.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadWriteInfo.hs
+index 66fadaf..41efbf4 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadWriteInfo.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/ReadWriteInfo.hs
+@@ -436,9 +436,9 @@ readWriteInfo i
+        TMOVi8s_remat, TMOVi8s_source, TMOVr, TMUL, TMULz, TMVN, TMVNs,
+        TORR, TORRs, TPICADD, TREV, TREV16, TREVSH, TROR, TRORs, TRSB,
+        TRSBs, TSETEND, TSTRBi, TSTRBr, TSTRBrz, TSTRHi, TSTRHr, TSTRHrz,
+-       TSTRi, TSTRr, TSTRrz, TSTRspi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s,
+-       TSUBrr, TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH, TSXTHz,
+-       TTRAP, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
++       TSTRi, TSTRr, TSTRrz, TSTRspi, TSTRspi_fi, TSUBi3, TSUBi3s, TSUBi8,
++       TSUBi8s, TSUBrr, TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB, TSXTH,
++       TSXTHz, TTRAP, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
+     = ([], [])
+   | i `elem`
+       [STLEX, STLEXB, STLEXD, STLEXH, STMDA, STMDA_UPD, STMDB, STMDB_UPD,
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/ShowInstance.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/ShowInstance.hs
+index e65dc3e..4d8fcaa 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/ShowInstance.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/ShowInstance.hs
+@@ -3070,6 +3070,7 @@ instance Show ThumbInstruction where
+         show T2ADDrrcc = "t2ADDrrcc"
+         show T2ADDrscc = "t2ADDrscc"
+         show Register_class_decl_dummy = "register_class_decl_dummy"
++        show TSTRspi_fi = "tSTRspi_fi"
+         show T2MOVi_source = "t2MOVi_source"
+         show T2MOVi_demat = "t2MOVi_demat"
+         show T2MOVi_remat = "t2MOVi_remat"
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/Size.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/Size.hs
+index f9a3985..24595dc 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/Size.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/Size.hs
+@@ -139,9 +139,9 @@ size i
+        TPUSH_4_7, TPUSH_r4_7, TPUSH_r8_11, TREV, TREV16, TREVSH, TROR,
+        TRORs, TRSB, TRSBs, TSBC, TSETEND, TSTMIA_UPD, TSTRBi, TSTRBr,
+        TSTRBrz, TSTRHi, TSTRHr, TSTRHrz, TSTRi, TSTRr, TSTRrz, TSTRspi,
+-       TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr, TSUBrrs, TSUBspi,
+-       TSUBspi_pseudo, TSVC, TSXTB, TSXTH, TSXTHz, TTRAP, TTST, TTST_cpsr,
+-       TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
++       TSTRspi_fi, TSUBi3, TSUBi3s, TSUBi8, TSUBi8s, TSUBrr, TSUBrrs,
++       TSUBspi, TSUBspi_pseudo, TSVC, TSXTB, TSXTH, TSXTHz, TTRAP, TTST,
++       TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH, TUXTHz]
+     = 2
+   | i `elem`
+       [ADCri, ADCrr, ADCrsi, ADCrsr, ADDSri, ADDSrr, ADDSrsi, ADDSrsr,
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbInstructionDecl.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbInstructionDecl.hs
+index f6fed64..76393eb 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbInstructionDecl.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbInstructionDecl.hs
+@@ -3069,6 +3069,7 @@ data ThumbInstruction = ABS
+                       | T2ADDrrcc
+                       | T2ADDrscc
+                       | Register_class_decl_dummy
++                      | TSTRspi_fi
+                       | T2MOVi_source
+                       | T2MOVi_demat
+                       | T2MOVi_remat
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbRegisterClassDecl.hs b/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbRegisterClassDecl.hs
+index f0ca498..e5516ca 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbRegisterClassDecl.hs
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/ThumbRegisterClassDecl.hs
+@@ -2,7 +2,7 @@
+ 
+ module Unison.Target.Thumb.SpecsGen.ThumbRegisterClassDecl
+        (ThumbRegisterClass(..)) where
+-
++ 
+ data ThumbRegisterClass = ALL
+                         | CCR
+                         | CRS
+diff --git a/src/unison/src/Unison/Target/Thumb/SpecsGen/input/arm-manual.yaml b/src/unison/src/Unison/Target/Thumb/SpecsGen/input/arm-manual.yaml
+index 66ebc3c..6958098 100644
+--- a/src/unison/src/Unison/Target/Thumb/SpecsGen/input/arm-manual.yaml
++++ b/src/unison/src/Unison/Target/Thumb/SpecsGen/input/arm-manual.yaml
+@@ -1520,3 +1520,19 @@ instruction-set:
+           affects:
+           affected-by:
+           itinerary:          NoItinerary
++
++        - id:                 tSTRspi_fi
++          parent:             tSTRspi
++          type:               linear
++          operands:
++           - Rt:              [register, use, tGPR]
++           - addr1:           [register, use, GPR]
++           - addr2:           bound
++           - p1:              bound
++           - p2:              bound
++          uses:               [Rt, addr1, addr2, p1, p2]
++          defines:            []
++          size:               2
++          affects:
++          affected-by:
++          itinerary:          IIC_iStore_i
+diff --git a/src/unison/src/Unison/Tools/Model.hs b/src/unison/src/Unison/Tools/Model.hs
+index 0e215ba..360a21a 100644
+--- a/src/unison/src/Unison/Tools/Model.hs
++++ b/src/unison/src/Unison/Tools/Model.hs
+@@ -106,12 +106,12 @@ optimizationParameters (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
+         fact  = if scaleFreq then scaleFactor (rm, oif, deps) code else 1.0
+         factd = fromRational fact :: Double
+         maxf0 = case baseMir of
+-                 (Just mir) ->
+-                     let mf = fromSingleton $ MIR.parse mirVersion mir
+-                         mc = maximumCost mirVersion fact cf
+-                         mx = map (\g -> mc g (mir, mf) target code) gl
+-                     in if strictlyBetter then decrementLast mx else mx
+-                 Nothing -> replicate (length gl) maxInt
++                  (Just mir) ->
++                    let mf = fromSingleton $ MIR.parse mirVersion mir
++                        mc = maximumCost mirVersion fact cf
++                        mx = map (\g -> mc g (mir, mf) target code) gl
++                    in if strictlyBetter then decrementLast mx else mx
++                  Nothing -> replicate (length gl) maxInt
+         maxf  = if unsatisfiable then replicate (length gl) 0 else maxf0
+     in
+       [
+-- 
+2.7.4
+

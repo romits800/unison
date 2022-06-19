@@ -1,0 +1,77 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            get_last_player
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: rgpr }
+  - { id: 1, class: gpr }
+  - { id: 2, class: gpr }
+  - { id: 3, class: gpr }
+  - { id: 4, class: rgpr }
+  - { id: 5, class: rgpr }
+  - { id: 6, class: rgpr }
+  - { id: 7, class: gprnopc }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        false
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 21):
+    successors: %bb.3(37), %bb.1(62)
+  
+    %4 = t2MOVi32imm @move_history_pointer
+    %0 = t2LDRi12 killed %4, 0, 14, _, <0x3907ec0> = !{!"unison-memory-partition", i32 0} :: (load 4 from @move_history_pointer)
+    t2CMPri %0, 0, 14, _, implicit-def %cpsr
+    t2Bcc %bb.1, 1, %cpsr
+  
+  bb.3 (freq 8):
+    successors: %bb.2(100)
+  
+    %5 = t2MOVi 0, 14, _, _
+    %3 = COPY %5
+    t2B %bb.2, 14, _
+  
+  bb.1 (%ir-block.3, freq 13):
+    successors: %bb.2(100)
+  
+    %6 = t2MOVi32imm @move_history_color
+    %7 = t2ADDrs killed %6, %0, 18, 14, _, _
+    %1 = t2LDRi8 killed %7, -4, 14, _, <0x3907ec0> = !{!"unison-memory-partition", i32 0} :: (load 4 from %ir.5)
+  
+  bb.2 (%ir-block.7, freq 21):
+    liveouts: %r0
+  
+    %2 = PHI %3, %bb.3, %1, %bb.1
+    %r0 = COPY %2
+    tBX_RET 14, _, implicit %r0
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- speed
+unison-test-expected-cost:
+- 194
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

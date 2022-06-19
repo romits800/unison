@@ -1,0 +1,71 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            xexit
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gprnopc }
+  - { id: 1, class: gpr }
+  - { id: 2, class: rgpr }
+liveins:         
+  - { reg: '%r0', virtual-reg: '%1' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 16):
+    successors: %bb.2(50), %bb.1(50)
+    liveins: %r0
+  
+    %1 = COPY %r0
+    %2 = t2MOVi32imm @_xexit_cleanup
+    %0 = t2LDRi12 killed %2, 0, 14, _, <0x3a06790> = !{!"unison-memory-partition", i32 0} :: (load 4 from @_xexit_cleanup)
+    t2CMPri %0, 0, 14, _, implicit-def %cpsr
+    t2Bcc %bb.2, 0, %cpsr
+    t2B %bb.1, 14, _
+  
+  bb.1 (%ir-block.3, freq 8):
+    successors: %bb.2(100)
+  
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    tBLXr 14, _, %0, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit-def %sp
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+  
+  bb.2 (%ir-block.4, freq 16):
+    exit
+  
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    %r0 = COPY %1
+    tBL 14, _, @exit, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit-def %sp
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- speed
+unison-test-expected-cost:
+- 17
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: true
+...

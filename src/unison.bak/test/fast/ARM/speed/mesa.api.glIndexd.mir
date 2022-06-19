@@ -1,0 +1,67 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            glIndexd
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gpr }
+  - { id: 1, class: gpr }
+  - { id: 2, class: dpr }
+  - { id: 3, class: spr }
+  - { id: 4, class: gpr }
+  - { id: 5, class: rgpr }
+  - { id: 6, class: gpr }
+  - { id: 7, class: tcgpr }
+liveins:         
+  - { reg: '%r0', virtual-reg: '%0' }
+  - { reg: '%r1', virtual-reg: '%1' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        false
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8):
+    liveins: %r0, %r1
+    liveouts: %sp, %r0, %r1
+  
+    %1 = COPY %r1
+    %0 = COPY %r0
+    %2 = VMOVDRR %0, %1, 14, _
+    %3 = VCVTSD killed %2, 14, _
+    %4 = VMOVRS killed %3, 14, _
+    %5 = t2MOVi32imm @CC
+    %6 = t2LDRi12 killed %5, 0, 14, _, <0x34982c0> = !{!"unison-memory-partition", i32 0} :: (load 4 from @CC, !tbaa !3)
+    %7 = t2LDRi12 %6, 380, 14, _, <0x34982f0> = !{!"unison-memory-partition", i32 1} :: (load 4 from %ir.2, !tbaa !7)
+    %r0 = COPY %6
+    %r1 = COPY %4
+    TCRETURNri killed %7, implicit %sp, implicit %r0, implicit %r1
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- speed
+unison-test-expected-cost:
+- 8
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

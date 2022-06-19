@@ -1,0 +1,71 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            AllocFancyAli
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: rgpr }
+  - { id: 1, class: rgpr }
+  - { id: 2, class: rgpr }
+  - { id: 3, class: gpr }
+  - { id: 4, class: rgpr }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8):
+    liveouts: %r0
+  
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    %0 = t2MOVi32imm @.str
+    %1 = t2MOVi 117, 14, _, _
+    %2 = t2MOVi 40, 14, _, _
+    %r0 = COPY %0
+    %r1 = COPY %1
+    %r2 = COPY %2
+    tBL 14, _, @sre_malloc, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit %r1, implicit %r2, implicit-def %sp, implicit-def %r0
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+    %3 = COPY %r0
+    %4 = t2MOVi 0, 14, _, _
+    t2STRi12 %4, %3, 16, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.1 + 16)
+    t2STRi12 %4, %3, 12, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.1 + 12)
+    t2STRi12 %4, %3, 8, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.1 + 8)
+    t2STRi12 %4, %3, 4, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.1 + 4)
+    t2STRi12 %4, %3, 0, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.1)
+    t2STRi12 %4, %3, 24, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.3)
+    t2STRi12 %4, %3, 28, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.3 + 4)
+    t2STRi12 %4, %3, 32, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.3 + 8)
+    t2STRi12 %4, %3, 36, 14, _, <0x200c1e0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.3 + 12)
+    %r0 = COPY %3
+    tBX_RET 14, _, implicit %r0
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- size
+unison-test-expected-cost:
+- 21
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

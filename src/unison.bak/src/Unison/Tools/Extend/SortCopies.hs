@@ -1,0 +1,31 @@
+{-|
+Copyright   :  Copyright (c) 2016, RISE SICS AB
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  roberto.castaneda@ri.se
+-}
+{-
+Main authors:
+  Roberto Castaneda Lozano <roberto.castaneda@ri.se>
+
+This file is part of Unison, see http://unison-code.github.io
+-}
+module Unison.Tools.Extend.SortCopies (sortCopies) where
+
+import Data.Ord
+import Data.List
+import Data.List.Split
+
+import Unison
+
+sortCopies f @ Function {fCode = code} _target =
+    let sortedCode = map sortCopiesInBB code
+    in f {fCode = sortedCode}
+
+sortCopiesInBB b @ Block {bCode = code} =
+  let sCode = split (dropBlanks $ whenElt (not . isCopy)) code
+      code' = concatMap sortCopyList sCode
+  in b {bCode = code'}
+
+sortCopyList is
+  | any (not . isCopy) is = is
+  | otherwise = sortBy (comparing copySource) is

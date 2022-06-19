@@ -1,0 +1,82 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            UpdateRandomAccess
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gpr }
+  - { id: 1, class: gpr }
+  - { id: 2, class: rgpr }
+  - { id: 3, class: gpr }
+  - { id: 4, class: gprnopc }
+  - { id: 5, class: rgpr }
+  - { id: 6, class: gpr }
+  - { id: 7, class: rgpr }
+  - { id: 8, class: rgpr }
+  - { id: 9, class: rgpr }
+  - { id: 10, class: rgpr }
+  - { id: 11, class: rgpr }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        false
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 16):
+    successors: %bb.1(50), %bb.2(50)
+  
+    %2 = t2MOVi32imm @img
+    %3 = t2LDRi12 killed %2, 0, 14, _, <0x36e6790> = !{!"unison-memory-partition", i32 0} :: (load 4 from @img)
+    %4 = t2LDRi12 killed %3, 24, 14, _, <0x36e67c0> = !{!"unison-memory-partition", i32 1} :: (load 4 from %ir.2, align 8)
+    %5 = t2MOVi 0, 14, _, _
+    %1 = COPY %5
+    t2CMPri killed %4, 2, 14, _, implicit-def %cpsr
+    t2Bcc %bb.2, 1, %cpsr
+    t2B %bb.1, 14, _
+  
+  bb.1 (%ir-block.5, freq 8):
+    successors: %bb.2(100)
+  
+    %7 = t2MOVi32imm @seiRandomAccess
+    %8 = t2MOVi 256, 14, _, _
+    t2STRHi12 killed %8, %7, 0, 14, _, <0x36e6790> = !{!"unison-memory-partition", i32 0} :: (store 2 into `i8* getelementptr inbounds (%struct.randomaccess_information_struct.1391, %struct.randomaccess_information_struct.1391* @seiRandomAccess, i32 0, i32 0)`, align 4)
+    t2STRBi12 %5, %7, 2, 14, _, <0x36e67c0> = !{!"unison-memory-partition", i32 1} :: (store 1 into `i8* getelementptr inbounds (%struct.randomaccess_information_struct.1391, %struct.randomaccess_information_struct.1391* @seiRandomAccess, i32 0, i32 2)`, align 2)
+    %10 = t2MOVi 1, 14, _, _
+    %6 = COPY %10
+  
+  bb.2 (%ir-block.6, freq 16):
+    liveouts:
+  
+    %0 = PHI %1, %bb.0, %6, %bb.1
+    %11 = t2MOVi32imm @seiHasRandomAccess_info
+    t2STRi12 %0, killed %11, 0, 14, _, <0x36e6790> = !{!"unison-memory-partition", i32 0} :: (store 4 into @seiHasRandomAccess_info)
+    tBX_RET 14, _
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- size
+unison-test-expected-cost:
+- 25
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

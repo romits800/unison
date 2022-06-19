@@ -1,0 +1,74 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            symbol2uvlc
+alignment:       2
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gpr32 }
+  - { id: 1, class: gpr32 }
+  - { id: 2, class: gpr32 }
+  - { id: 3, class: gpr32 }
+  - { id: 4, class: gpr32 }
+  - { id: 5, class: gpr32 }
+  - { id: 6, class: gpr32 }
+  - { id: 7, class: gpr32 }
+  - { id: 8, class: gpr32 }
+  - { id: 9, class: gpr32 }
+  - { id: 10, class: gpr32 }
+  - { id: 11, class: gpr32 }
+liveins:         
+  - { reg: '%a0', virtual-reg: '%0' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8):
+    liveins: %a0
+    liveouts: %v0
+  
+    %0 = COPY %a0
+    %1 = LW %0, 12, <0x37413b0> = !{!"unison-memory-partition", i32 0} :: (load 4 from %ir.1)
+    %2 = SRL %1, 31
+    %3 = ADDu %1, killed %2
+    %4 = SRA killed %3, 1
+    %5 = ADDiu %zero, 1
+    %6 = SLLV killed %5, killed %4
+    %7 = LW %0, 16, <0x37413b0> = !{!"unison-memory-partition", i32 0} :: (load 4 from %ir.5)
+    %8 = ADDiu %zero, 0
+    %9 = ADDiu %6, -1
+    %10 = AND killed %9, killed %7
+    %11 = OR killed %10, %6
+    SW killed %11, %0, 20, <0x37413b0> = !{!"unison-memory-partition", i32 0} :: (store 4 into %ir.10)
+    %v0 = COPY %8
+    RetRA implicit %v0
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: Mips
+unison-test-goal:
+- size
+unison-test-expected-cost:
+- 13
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

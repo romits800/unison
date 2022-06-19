@@ -1,0 +1,81 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            unsigned_condition
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: rgpr }
+  - { id: 1, class: gprnopc }
+  - { id: 2, class: rgpr }
+  - { id: 3, class: rgpr }
+  - { id: 4, class: rgpr }
+  - { id: 5, class: rgpr }
+  - { id: 6, class: rgpr }
+  - { id: 7, class: gpr }
+liveins:         
+  - { reg: '%r0', virtual-reg: '%1' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8388608):
+    successors: %bb.2.switch.lookup(99), %bb.1(0)
+    liveins: %r0
+  
+    %1 = COPY %r0
+    %2 = t2SUBri %1, 102, 14, _, _
+    t2CMPri %2, 10, 14, _, implicit-def %cpsr
+    t2Bcc %bb.2.switch.lookup, 3, %cpsr
+    t2B %bb.1, 14, _
+  
+  bb.1 (%ir-block.2, freq 8):
+    exit
+  
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    %3 = t2MOVi32imm @.str
+    %4 = t2MOVi32imm @__FUNCTION__.unsigned_condition
+    %5 = t2MOVi16 951, 14, _
+    %r0 = COPY %3
+    %r1 = COPY %5
+    %r2 = COPY %4
+    tBL 14, _, @fancy_abort, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit %r1, implicit %r2, implicit-def %sp
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+  
+  bb.2.switch.lookup (freq 8388600):
+    liveouts: %r0
+  
+    %6 = t2MOVi32imm @switch.table.4
+    %7 = t2LDRs killed %6, %2, 2, 14, _, <0x2b4e580> = !{!"unison-memory-partition", i32 0} :: (load 4 from %ir.switch.gep)
+    %r0 = COPY %7
+    tBX_RET 14, _, implicit %r0
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- speed
+unison-test-expected-cost:
+- 8388613
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

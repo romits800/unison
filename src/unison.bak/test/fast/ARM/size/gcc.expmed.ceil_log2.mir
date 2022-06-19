@@ -1,0 +1,61 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            ceil_log2
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gprnopc }
+  - { id: 1, class: gprnopc }
+  - { id: 2, class: gprnopc }
+  - { id: 3, class: gprnopc }
+liveins:         
+  - { reg: '%r0', virtual-reg: '%0' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8):
+    liveins: %r0
+    liveouts: %r0
+  
+    %0 = COPY %r0
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    %1 = t2SUBri %0, 1, 14, _, _
+    %r0 = COPY %1
+    tBL 14, _, @floor_log2_wide, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit-def %sp, implicit-def %r0
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+    %2 = COPY %r0
+    %3 = t2ADDri %2, 1, 14, _, _
+    %r0 = COPY %3
+    tBX_RET 14, _, implicit %r0
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- size
+unison-test-expected-cost:
+- 7
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

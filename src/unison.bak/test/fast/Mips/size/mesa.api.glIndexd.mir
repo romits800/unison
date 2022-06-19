@@ -1,0 +1,72 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            glIndexd
+alignment:       2
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: afgr64 }
+  - { id: 1, class: gpr32 }
+  - { id: 2, class: gpr32 }
+  - { id: 3, class: gpr32 }
+  - { id: 4, class: gpr32 }
+  - { id: 5, class: fgr32 }
+  - { id: 6, class: gpr32 }
+  - { id: 7, class: gpr32 }
+  - { id: 8, class: gpr32 }
+liveins:         
+  - { reg: '%d6', virtual-reg: '%0' }
+  - { reg: '%t9' }
+  - { reg: '%v0' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8):
+    liveins: %d6, %t9, %v0
+    liveouts:
+  
+    %1 = ADDu %v0, %t9
+    %0 = COPY %d6
+    %2 = LW %1, target-flags(<unknown>) @CC, <0x25cc9c0> = !{!"unison-memory-partition", i32 0} :: (load 4 from got)
+    %3 = LW killed %2, 0, <0x25ccd50> = !{!"unison-memory-partition", i32 1} :: (load 4 from @CC, !tbaa !1)
+    %4 = LW %3, 380, <0x25cf4b0> = !{!"unison-memory-partition", i32 2} :: (load 4 from %ir.2, !tbaa !5)
+    %5 = CVT_S_D32 %0
+    ADJCALLSTACKDOWN 16, implicit-def dead %sp, implicit %sp
+    %6 = MFC1 killed %5
+    %a0 = COPY %3
+    %a1 = COPY %6
+    %t9 = COPY %4
+    JALRPseudo killed %t9, csr_o32, implicit-def dead %ra, implicit %a0, implicit %a1, implicit-def %sp
+    ADJCALLSTACKUP 16, 0, implicit-def dead %sp, implicit %sp
+    RetRA
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: Mips
+unison-test-goal:
+- size
+unison-test-expected-cost:
+- 14
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

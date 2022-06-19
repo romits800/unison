@@ -1,0 +1,85 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            glVertex2i
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gpr }
+  - { id: 1, class: gpr }
+  - { id: 2, class: spr }
+  - { id: 3, class: spr }
+  - { id: 4, class: spr }
+  - { id: 5, class: spr }
+  - { id: 6, class: rgpr }
+  - { id: 7, class: gpr }
+  - { id: 8, class: gpr }
+  - { id: 9, class: gpr }
+  - { id: 10, class: gpr }
+  - { id: 11, class: rgpr }
+  - { id: 12, class: gpr }
+  - { id: 13, class: rgpr }
+liveins:         
+  - { reg: '%r0', virtual-reg: '%0' }
+  - { reg: '%r1', virtual-reg: '%1' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    4
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 8):
+    liveins: %r0, %r1
+    liveouts:
+  
+    %1 = COPY %r1
+    %0 = COPY %r0
+    %2 = COPY %0
+    %3 = VSITOS killed %2, 14, _
+    %4 = COPY %1
+    %5 = VSITOS killed %4, 14, _
+    %6 = t2MOVi32imm @CC
+    %7 = t2LDRi12 killed %6, 0, 14, _, <0x1ef9330> = !{!"unison-memory-partition", i32 0} :: (load 4 from @CC, !tbaa !3)
+    %8 = VMOVRS killed %3, 14, _
+    %9 = VMOVRS killed %5, 14, _
+    %10 = t2LDRi12 %7, 656, 14, _, <0x1ef9330> = !{!"unison-memory-partition", i32 0} :: (load 4 from %ir.2, !tbaa !7)
+    ADJCALLSTACKDOWN 4, 14, _, implicit-def dead %sp, implicit %sp
+    %11 = t2MOVi 1065353216, 14, _, _
+    %12 = COPY %sp
+    t2STRi12 killed %11, %12, 0, 14, _, <0x1ef9330> = !{!"unison-memory-partition", i32 0} :: (store 4 into stack)
+    %13 = t2MOVi 0, 14, _, _
+    %r0 = COPY %7
+    %r1 = COPY %8
+    %r2 = COPY %9
+    %r3 = COPY %13
+    tBLXr 14, _, killed %10, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit %r1, implicit %r2, implicit %r3, implicit-def %sp
+    ADJCALLSTACKUP 4, 0, 14, _, implicit-def dead %sp, implicit %sp
+    tBX_RET 14, _
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- size
+unison-test-expected-cost:
+- 29
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: false
+...

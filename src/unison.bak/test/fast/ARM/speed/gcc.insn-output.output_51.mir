@@ -1,0 +1,94 @@
+--- |
+  ; ModuleID = 'dummy.ll'
+...
+---
+name:            output_51
+alignment:       1
+exposesReturnsTwice: false
+hasInlineAsm:    false
+isSSA:           true
+tracksRegLiveness: true
+tracksSubRegLiveness: false
+registers:       
+  - { id: 0, class: gpr }
+  - { id: 1, class: gpr }
+  - { id: 2, class: gpr }
+  - { id: 3, class: gpr }
+  - { id: 4, class: gpr }
+  - { id: 5, class: gprnopc }
+  - { id: 6, class: rgpr }
+  - { id: 7, class: gprnopc }
+  - { id: 8, class: rgpr }
+  - { id: 9, class: rgpr }
+  - { id: 10, class: rgpr }
+liveins:         
+  - { reg: '%r1', virtual-reg: '%3' }
+frameInfo:       
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    0
+  adjustsStack:    false
+  hasCalls:        true
+  maxCallFrameSize: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+body:             |
+  bb.0 (%ir-block.0, freq 16):
+    successors: %bb.3(50), %bb.1(50)
+    liveins: %r1
+  
+    %3 = COPY %r1
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    %r0 = COPY %3
+    tBL 14, _, @get_attr_type, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit-def %sp, implicit-def %r0
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+    %5 = COPY %r0
+    t2CMPri %5, 8, 14, _, implicit-def %cpsr
+    t2Bcc %bb.1, 1, %cpsr
+  
+  bb.3 (freq 8):
+    successors: %bb.2(100)
+  
+    %6 = t2MOVi32imm @.str.2014
+    %4 = COPY %6
+    t2B %bb.2, 14, _
+  
+  bb.1 (%ir-block.2, freq 8):
+    successors: %bb.2(100)
+  
+    ADJCALLSTACKDOWN 0, 14, _, implicit-def dead %sp, implicit %sp
+    %r0 = COPY %3
+    tBL 14, _, @get_attr_mode, csr_aapcs, implicit-def dead %lr, implicit %sp, implicit %r0, implicit-def %sp, implicit-def %r0
+    ADJCALLSTACKUP 0, 0, 14, _, implicit-def dead %sp, implicit %sp
+    %7 = COPY %r0
+    %8 = t2MOVi32imm @.str.2015
+    %9 = t2MOVi32imm @.str.75
+    t2CMPri %7, 4, 14, _, implicit-def %cpsr
+    %10 = t2MOVCCr %9, killed %8, 0, %cpsr
+    %0 = COPY %10
+  
+  bb.2 (%ir-block.5, freq 16):
+    liveouts: %r0
+  
+    %1 = PHI %4, %bb.3, %0, %bb.1
+    %r0 = COPY %1
+    tBX_RET 14, _, implicit %r0
+
+...
+---
+unison-test-mir-version: null
+unison-test-target: ARM
+unison-test-goal:
+- speed
+unison-test-expected-cost:
+- 38
+unison-test-function: null
+unison-test-expected-proven: true
+unison-test-strictly-better: null
+unison-test-expected-has-solution: true
+...
