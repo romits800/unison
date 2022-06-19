@@ -112,6 +112,9 @@ inferSecurityTypesI target t f =
     types @ StateTuple {fFlag = FlagsType { hasPhis = True }} -> 
       let types' =  types {fFlag = FlagsType { isFixedPoint = True, hasPhis = False }}
       in inferSecurityTypesI target types' f
+    types @ StateTuple {fFlag = FlagsType { isFixedPoint = False }} -> 
+      let types' =  types {fFlag = FlagsType { isFixedPoint = True, hasPhis = False }}
+      in inferSecurityTypesI target types' f
     types -> types
 
 
@@ -764,8 +767,11 @@ updateNewTemps p2t p2p types (oid, tmps) =
       in types''
   in case adj of
        Just [a] -> 
-         let oldtmps = fJust $ Map.lookup a p2t
-         in f2 oldtmps tmps
+         case Map.lookup a p2t of
+            Nothing -> 
+                let types' = f2 [] tmps
+                in types' {fFlag = (fFlag types) {isFixedPoint = False}}
+            Just oldtmps -> f2 oldtmps tmps
        Just as -> 
          let
            -- contain nothing if the definition is ahead
@@ -1367,6 +1373,13 @@ splitOps tbs = splitOps_i tbs ([],[])
 
 fJust (Just v) = v
 fJust Nothing = error "fJust: SecurityTypeInference.hs: This should not be Nothing."
+
+--fJust1 (Just v) = v
+--fJust1 Nothing = error "fJust1: SecurityTypeInference.hs: This should not be Nothing."
+
+--fJust2 (Just v) = v
+--fJust2 Nothing = error "fJust2: SecurityTypeInference.hs: This should not be Nothing."
+
 
 -- fpmap types = fPmap types
 -- fm2o types = fM2o types
