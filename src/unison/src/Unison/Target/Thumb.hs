@@ -732,7 +732,7 @@ reorderImplicitOperandsInInstr
   mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
                       msOperands = MachineReg {mrName = CPSR} : _}
   | i `elem` [T2TSTri_cpsr, T2CMNri_cpsr, T2CMPrr_cpsr, T2TSTrr_cpsr,
-              T2SUBrr_cpsr, TCMPi8_cpsr, FMSTAT_cpsr] =
+              T2SUBrr_cpsr, TCMPi8_cpsr, FMSTAT_cpsr, TTST_cpsr] =
       mi {msOpcode = mkMachineTargetOpc $ fromExplicitCpsrDef i}
 
 reorderImplicitOperandsInInstr
