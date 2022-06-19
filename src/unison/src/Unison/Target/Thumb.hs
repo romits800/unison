@@ -298,7 +298,7 @@ fromCopyInstr MOVE_ALL (s, d)
 --  | isSPR s && isGPR d = VMOVRS
 --  | isSPR s && isSPR d = VMOVS
 fromCopyInstr TPUSH2_r4_7 _  = TPUSH
-fromCopyInstr TPUSH2_r4_11 _ = T2STMDB_UPD
+fromCopyInstr TPUSH2_r4_11 _ = TPUSH --T2STMDB_UPD
 fromCopyInstr VSTMDDB_UPD_d8_15 _ = VSTMDDB_UPD
 fromCopyInstr TPOP2_r4_7 _      = TPOP
 fromCopyInstr TPOP2_r4_7_RET _  = TPOP_RET
@@ -899,7 +899,7 @@ transforms ImportPostLift = [peephole handlePromotedOperands,
                              defineFP]
 -- Romy: Extend operations that are not symmetric
 -- transforms ImportPostCC   = [peephole extendNonSymmetricOperands]
-transforms AugmentPreRW = [peephole combinePushPops,
+transforms AugmentPreRW = [peephole combinePushTPops,
                            peephole expandRets,
                            fixpoint (peephole normalizeLoadStores),
                            peephole combineLoadStores,
