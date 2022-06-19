@@ -297,13 +297,19 @@ fromCopyInstr MOVE_ALL (s, d)
 --  | isGPR s && isSPR d = VMOVSR
 --  | isSPR s && isGPR d = VMOVRS
 --  | isSPR s && isSPR d = VMOVS
+fromCopyInstr TPUSH_r4_7 _  = TPUSH
+fromCopyInstr TPUSH_r8_11 _  = TPUSH
+fromCopyInstr TPOP_r4_7 _  = TPOP
+-- fromCopyInstr TPOP_r4_7_RET _  = TPOP_RET
+fromCopyInstr TPOP_r8_11 _  = TPOP
+-- fromCopyInstr TPOP_r8_11_RET _  = TPOP_RET
 fromCopyInstr TPUSH2_r4_7 _  = TPUSH
-fromCopyInstr TPUSH2_r4_11 _ = TPUSH --T2STMDB_UPD
+fromCopyInstr TPUSH2_r4_11 _ = T2STMDB_UPD
 fromCopyInstr VSTMDDB_UPD_d8_15 _ = VSTMDDB_UPD
 fromCopyInstr TPOP2_r4_7 _      = TPOP
 fromCopyInstr TPOP2_r4_7_RET _  = TPOP_RET
-fromCopyInstr TPOP2_r4_11 _     = TPOP --T2LDMIA_UPD
-fromCopyInstr TPOP2_r4_11_RET _ = TPOP_RET --T2LDMIA_RET
+fromCopyInstr TPOP2_r4_11 _     = T2LDMIA_UPD
+fromCopyInstr TPOP2_r4_11_RET _ = T2LDMIA_RET
 fromCopyInstr VLDMDIA_UPD_d8_15 _ = VLDMDIA_UPD
 
 --isSPR r = rTargetReg (regId r) `elem` registers (RegisterClass SPR)
@@ -899,8 +905,8 @@ transforms ImportPostLift = [peephole handlePromotedOperands,
                              defineFP]
 -- Romy: Extend operations that are not symmetric
 -- transforms ImportPostCC   = [peephole extendNonSymmetricOperands]
-transforms AugmentPreRW = [peephole combinePushPops,
-                           peephole expandRets,
+transforms AugmentPreRW = [--peephole combinePushPops,
+                           --peephole expandRets,
                            fixpoint (peephole normalizeLoadStores),
                            peephole combineLoadStores,
                            reorderCalleeSavedSpills,
