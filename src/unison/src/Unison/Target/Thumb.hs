@@ -621,7 +621,9 @@ isCSRegisterObject _ = False
 
 -- | Target dependent post-processing functions
 
-postProcess to = [expandPseudos to, if keepNops to then replaceNops to else removeAllNops,
+postProcess to = [expandPseudos to,
+                  removeTrailingNops to,
+                  if keepNops to then replaceNops to else removeAllNops,
                   removeFrameIndex,
                   reverseInstruction,
                   cleanLoadMerges,
@@ -706,10 +708,35 @@ pushRegs i
 pushRegs i = error ("unmatched: pushRegs " ++ show i)
 
 
+-- mapToMachineBlock f mf @ MachineFunction {mfBlocks = mbs} =
+--   mf {mfBlocks = map f mbs}
+getLast = getLastI [] 
+
+
+getLastI _ [] = error "GetLast empty set" 
+getLastI acc [l] = (reverse acc, l)
+getLastI acc (l:ls) = getLastI (l:acc) ls 
+
+-- reverse l = reverseI [] l
+
+-- reverseI acc [] = acc
+-- reverseI acc (l:ls) = reverse (l:acc) ls
+removeTrailingNops to mf @ MachineFunction {mfBlocks = mbs} =
+  let
+    (first, last @ MachineBlock {mbInstructions = mis}) = getLast mbs
+    last' = last {mbInstructions = removeLastNops to $ reverse mis}
+    mbs' = first ++ [last']
+  in mf {mfBlocks = mbs'}
+
+removeLastNops to (mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} : rest) =
+  removeLastNops to rest
+removeLastNops to mis = reverse mis
+
+  
 -- Replace NOP operations (llc doesn't recognize them) with
 --   movr %r8 %r8
 replaceNops to = mapToMachineBlock (expandBlockPseudos (replaceNop to))
-                   
+
 replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} | cortex_m0 to =
        let r8 = mkMachineReg R8
            mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
