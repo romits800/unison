@@ -57,20 +57,6 @@ data FlagsType = FlagsType {
   hasPhis :: Bool
   } deriving (Eq, Ord)
 
--- type StateTuple r = (Map String (Policy String),          -- pmap
---                      Map String (Policy String),
---                      Map String (Map String String),
---                      Map String (Map String String),
---                      Map String (Map String String),
---                      Map String Bool,                     -- xor
---                      Map String (Map Integer [String]),   -- m2o
---                      Map String (Map Integer [String]),   -- c2o
---                      Map Integer [Integer],               -- p2p
---                      Map Integer [Operand r],
---                      Map String (KnownOperations, [String], [String]),
---                      Map (Integer, Integer) (Policy String),
---                      FlagsType)
-
 
 inferSecurityTypes target f @ Function {fCode = _} ipolicies =
   let --inpol           = showPolicies ([],[],[]) policies
