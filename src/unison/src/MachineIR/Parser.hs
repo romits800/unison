@@ -208,8 +208,8 @@ mirBlockAttribute =
 mirBlockAttributeAlign =
   do string "align"
      whiteSpace
-     decimal
-     return Nothing
+     f <- decimal
+     return (Just (mkMachineBlockPropertyAlign f))
 
 mirBlockAttributeAddressTaken =
   do string "address-taken"

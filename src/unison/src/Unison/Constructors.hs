@@ -169,11 +169,11 @@ mkAttributes reads writes call mem acts vcopy remat jtblocks btaken pres rorig
 
 mkNullAttributes = mkAttributes [] [] Nothing Nothing [] False False [] Nothing Nothing Nothing False
 
-mkBlockAttributes entry exit return freq split =
+mkBlockAttributes entry exit return freq split align =
     BlockAttributes {aEntry = entry, aExit = exit, aReturn = return,
-                     aFreq = freq, aSplit = split}
+                     aFreq = freq, aSplit = split, aAlign = align}
 
-mkNullBlockAttributes = mkBlockAttributes False False False Nothing False
+mkNullBlockAttributes = mkBlockAttributes False False False Nothing False Nothing
 
 mkFrameObject = FrameObject
 

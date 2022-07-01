@@ -224,10 +224,10 @@ showDs = show . oOprDefs
 
 instance Show BlockAttributes where
     show (BlockAttributes {aEntry = entry, aExit = exit, aReturn = return,
-                           aFreq = freq, aSplit = split}) =
+                           aFreq = freq, aSplit = split, aAlign = align}) =
         let attrs = mapMaybe blockAttrToMaybe
                     ([(entry, "entry"), (exit, "exit"), (return, "return")] ++
-                     freqToTuple freq ++ [(split, "split")])
+                     freqToTuple freq ++ alignToTuple align ++ [(split, "split")])
         in (if null attrs then ""
             else " (" ++ render (cs id attrs) ++ ")")
 
@@ -236,6 +236,10 @@ blockAttrToMaybe (False, _)   = Nothing
 
 freqToTuple (Just f) = [(True, "freq: " ++ show f)]
 freqToTuple Nothing  = []
+
+alignToTuple (Just a) = [(True, "align: " ++ show a)]
+alignToTuple Nothing  = []
+
 
 instance (Show i, Show r) => Show (Attributes i r) where
     show (Attributes {aReads = reads, aWrites = writes, aCall = call,

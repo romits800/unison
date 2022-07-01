@@ -31,6 +31,7 @@ module MachineIR.Constructors
          -- * MachineBlock constructors
          mkMachineBlock,
          -- * MachineBlockProperty constructors
+         mkMachineBlockPropertyAlign,
          mkMachineBlockPropertyFreq,
          mkMachineBlockPropertySuccs,
          mkMachineBlockPropertySplit,
@@ -106,6 +107,7 @@ mkMachineJumpTableEntry = MachineJumpTableEntry
 
 mkMachineBlock = MachineBlock
 
+mkMachineBlockPropertyAlign = MachineBlockPropertyAlign
 mkMachineBlockPropertyFreq = MachineBlockPropertyFreq
 mkMachineBlockPropertySuccs = MachineBlockPropertySuccs
 mkMachineBlockPropertySplit = MachineBlockPropertySplit

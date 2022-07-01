@@ -130,7 +130,11 @@ data MachineBlockProperty =
     mbPropertySuccs :: [MachineSuccessor]
     } |
   -- | Whether the block has been split
-  MachineBlockPropertySplit {}
+  MachineBlockPropertySplit {} |
+  -- | Block's alignment
+  MachineBlockPropertyAlign {
+    mbPropertyAlign :: Integer
+    } 
   deriving (Eq, Ord)
 
 -- | Machine IR instruction corresponding to LLVM's @MachineInstr@.

@@ -99,6 +99,7 @@ data LsBlockAttribute =
   LsExit |
   LsReturn |
   LsFreq Frequency |
+  LsAlign Alignment |
   LsSplit
   deriving (Eq, Show)
 
@@ -249,7 +250,8 @@ blockAttributes =
      string ")"
      return (LsBlockAttributes attrs)
 
-blockAttribute = boolBlockAttribute <|> integerAttribute "freq" LsFreq
+blockAttribute = boolBlockAttribute <|> integerAttribute "freq" LsFreq <|>
+                 integerAttribute "align" LsAlign
 
 boolBlockAttribute = try (simpleAttribute "exit" LsExit) <|>
                      simpleAttribute "entry" LsEntry <|>
@@ -652,12 +654,18 @@ toBB target (LsBlock l as : code) =
 toBlockAttributes (LsBlockAttributes attrs) =
   mkBlockAttributes (LsEntry `elem` attrs) (LsExit `elem` attrs)
                     (LsReturn `elem` attrs) (fmap lsFreq $ find isLsFreq attrs)
-                    (LsSplit `elem` attrs)
+                    (LsSplit `elem` attrs) (fmap lsAlign $ find isLsAlign attrs)
 
 isLsFreq (LsFreq _) = True
 isLsFreq _ = False
 
 lsFreq (LsFreq f) = f
+
+
+isLsAlign (LsAlign _) = True
+isLsAlign _ = False
+
+lsAlign (LsAlign a) = a
 
 isLsNull LsNullInstruction = True
 isLsNull _ = False

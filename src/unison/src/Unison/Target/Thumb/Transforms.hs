@@ -726,9 +726,10 @@ isInstr i o = (TargetInstruction i) `elem` oInstructions o
 
 isTerm o = isBranch o || isTailCall o
 
--- mkNewExitBlock
-mkNewBlock :: (Integer, [BlockOperation i r]) -> Block i r
-mkNewBlock (bid, code) = mkBlock bid (mkBlockAttributes False True False Nothing False) code
+-- mkNewExitBlock with ConstantPoolVariables - required
+mkNewBlock :: (Integer, Alignment, [BlockOperation i r]) -> Block i r
+mkNewBlock (bid, align, code) = mkBlock bid (mkBlockAttributes False True False
+                                              Nothing False (Just align)) code
 
 mkLinearNaturalOperation id ops us ds = mkLinear id ops us ds
 
@@ -742,13 +743,12 @@ mkConstants ((id, v, align):consts) oid acc =
     nf  = mkLinearNaturalOperation oid ins [u1,u2,u3] []
   in mkConstants consts (oid+1) (nf:acc)
 
---       fConstants :: [(Integer, String, Integer)],
 addConstantPullBlock f @ Function {fCode = code, fConstants = []} = f
 addConstantPullBlock f @ Function {fCode = code, fConstants = consts} =
   let last  = toInteger $ length code + 1 --- No idea why taken from SplitBlocks
       (_, oid, _) = newIndexes $ flatten code
       code' = mkConstants consts oid []
-      nblock = mkNewBlock (last, code')
+      nblock = mkNewBlock (last, 2, code') -- Not sure how much the alignement should be
   in f { fCode = code ++ [nblock] }
 
 -- activate the SP adjustment operations if there are non-fixed stack objects or

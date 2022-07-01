@@ -140,12 +140,15 @@ showMachineBasicBlocks v (mb : mbs) =
 showMachineBasicBlock v
   MachineBlock {mbId = bid, mbProperties = mps, mbInstructions = mis} =
   let freq  = find isMachineBlockPropertyFreq mps
+      align = find isMachineBlockPropertyAlign mps
       succs = find isMachineBlockPropertySuccs mps
       split = find isMachineBlockPropertySplit mps
   in "bb." ++ show bid ++
-         (case freq of
-            (Just (MachineBlockPropertyFreq f)) -> " (freq " ++ show f ++ ")"
-            Nothing -> "") ++ ":" ++ newLine ++
+         (case (freq, align) of
+            ((Just (MachineBlockPropertyFreq f)), Nothing) -> " (freq " ++ show f ++ ")"
+            (Nothing, (Just (MachineBlockPropertyAlign a))) -> " (align " ++ show a ++ ")"
+            ((Just (MachineBlockPropertyFreq f)), (Just (MachineBlockPropertyAlign a))) -> " (freq " ++ show f ++ ", align " ++ show a ++ ")"
+            (Nothing, Nothing) -> "") ++ ":" ++ newLine ++
          (case succs of
              (Just (MachineBlockPropertySuccs s)) | not (null s) ->
                nest' 2 ("successors: " ++ (showCS showSuccessor s) ++ newLine)
@@ -202,6 +205,7 @@ instance Show r => Show (MachineFunctionProperty r) where
 
 instance Show MachineBlockProperty where
   show (MachineBlockPropertyFreq freq) = inBraces ["freq", show freq]
+  show (MachineBlockPropertyAlign align) = inBraces ["align", show align]
   show (MachineBlockPropertySuccs succs) =
       inBraces ["succs", inBraces (map showBlockId succs)]
 

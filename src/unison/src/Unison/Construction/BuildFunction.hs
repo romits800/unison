@@ -54,7 +54,8 @@ zipId (id, icode) i =
 
 buildBlockAttributes mps =
   let f = fmap mbPropertyFreq $ find isMachineBlockPropertyFreq mps
-  in mkNullBlockAttributes {aFreq = f}
+      a = fmap mbPropertyAlign $ find isMachineBlockPropertyAlign mps
+  in mkNullBlockAttributes {aFreq = f, aAlign = a}
 
 buildFixedStackFrame =
     map toStackFrameObject . fromMaybe [] . fmap mfPropertyFixedFrame .

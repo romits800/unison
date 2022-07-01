@@ -23,6 +23,7 @@ module MachineIR.Predicates
          isMachineFunctionPropertyRemovedFreqs,
          isMachineFunctionPropertyVersion,
          -- * MachineBlockProperty predicates
+         isMachineBlockPropertyAlign,
          isMachineBlockPropertyFreq,
          isMachineBlockPropertySuccs,
          isMachineBlockPropertySplit,
@@ -93,6 +94,9 @@ isMachineFunctionPropertyRemovedFreqs _ = False
 
 isMachineFunctionPropertyVersion MachineFunctionPropertyVersion {} = True
 isMachineFunctionPropertyVersion _ = False
+
+isMachineBlockPropertyAlign MachineBlockPropertyAlign {} = True
+isMachineBlockPropertyAlign _ = False
 
 isMachineBlockPropertyFreq MachineBlockPropertyFreq {} = True
 isMachineBlockPropertyFreq _ = False
