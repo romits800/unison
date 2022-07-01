@@ -22,7 +22,8 @@ module Unison.Target.Thumb.Transforms
      reorderCalleeSavedSpills,
      enforceStackFrame,
      extendNonSymmetricOperands,
-     isNonSymmetric) where
+     isNonSymmetric,
+     addConstantPullBlock) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -725,7 +726,32 @@ isInstr i o = (TargetInstruction i) `elem` oInstructions o
 
 isTerm o = isBranch o || isTailCall o
 
--- Activate the SP adjustment operations if there are non-fixed stack objects or
+-- mkNewExitBlock
+mkNewBlock :: (Integer, [BlockOperation i r]) -> Block i r
+mkNewBlock (bid, code) = mkBlock bid (mkBlockAttributes False True False Nothing False) code
+
+mkLinearNaturalOperation id ops us ds = mkLinear id ops us ds
+
+mkConstants [] _ acc = acc
+mkConstants ((id, v, align):consts) oid acc =
+  let
+    ins = [TargetInstruction { oTargetInstr = CONSTPOOL_ENTRY } ]
+    u1  = mkBound (mkMachineImm id)
+    u2  = mkBound (mkMachineConstantPoolIndex (show id))
+    u3  = mkBound (mkMachineImm align)
+    nf  = mkLinearNaturalOperation oid ins [u1,u2,u3] []
+  in mkConstants consts (oid+1) (nf:acc)
+
+--       fConstants :: [(Integer, String, Integer)],
+addConstantPullBlock f @ Function {fCode = code, fConstants = []} = f
+addConstantPullBlock f @ Function {fCode = code, fConstants = consts} =
+  let last  = toInteger $ length code + 1 --- No idea why taken from SplitBlocks
+      (_, oid, _) = newIndexes $ flatten code
+      code' = mkConstants consts oid []
+      nblock = mkNewBlock (last, code')
+  in f { fCode = code ++ [nblock] }
+
+-- activate the SP adjustment operations if there are non-fixed stack objects or
 --  SP-relative stores (typically to store function call arguments).
 enforceStackFrame f @ Function {fCode = code, fStackFrame = frame} =
   let fcode = flatten code

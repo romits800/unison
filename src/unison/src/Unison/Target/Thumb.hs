@@ -936,6 +936,8 @@ transforms AugmentPreRW = [peephole combinePushPops,
 
 transforms AugmentPostRW = [enforceStackFrame]
 
+transforms ExportPreLow = [addConstantPullBlock]
+
 transforms _ = []
 
 mapToOperationWithGoals t f @ Function {fCode = code, fGoal = gs} =
