@@ -936,7 +936,7 @@ transforms AugmentPreRW = [peephole combinePushPops,
 
 transforms AugmentPostRW = [enforceStackFrame]
 
-transforms ExportPreLow = [addConstantPullBlock]
+transforms ExportPreLow = [addConstantPoolBlock]
 
 transforms _ = []
 

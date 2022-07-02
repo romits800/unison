@@ -23,7 +23,7 @@ module Unison.Target.Thumb.Transforms
      enforceStackFrame,
      extendNonSymmetricOperands,
      isNonSymmetric,
-     addConstantPullBlock) where
+     addConstantPoolBlock) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -743,8 +743,8 @@ mkConstants ((id, v, align):consts) oid acc =
     nf  = mkLinearNaturalOperation oid ins [u1,u2,u3] []
   in mkConstants consts (oid+1) (nf:acc)
 
-addConstantPullBlock f @ Function {fCode = code, fConstants = []} = f
-addConstantPullBlock f @ Function {fCode = code, fConstants = consts} =
+addConstantPoolBlock f @ Function {fCode = code, fConstants = []} = f
+addConstantPoolBlock f @ Function {fCode = code, fConstants = consts} =
   let last  = toInteger $ length code + 1 --- No idea why taken from SplitBlocks
       (_, oid, _) = newIndexes $ flatten code
       code' = mkConstants consts oid []
