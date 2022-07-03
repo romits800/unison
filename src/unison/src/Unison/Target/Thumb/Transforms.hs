@@ -405,7 +405,6 @@ defineFP f @ Function {fCode = code} =
     o1: [p2{t2},p3{t3}] <- {tEOR, tEOR_r} [p0{t0},p1{t1},14,_] (reads: [control])
 -}
 
-
 extendNonSymmetricOperands _ (
   SingleOperation {
       oOpr = Natural {
@@ -413,13 +412,13 @@ extendNonSymmetricOperands _ (
               oIs = [ TargetInstruction i ],
                 -- oUs = p1:p2:roUs,
                 -- oDs = [p3, p4]
-              oUs = ous @ ((MOperand {altTemps = ts1}):
-                         (MOperand {altTemps = ts2}):roUs),
-              oDs = ods@ [(MOperand {altTemps = [ts3 @ Temporary {tReg = treg3} ]}),
-                          (MOperand {altTemps = [ts4 @ Temporary {tReg = treg4} ]})]
+              oUs = ous @ ((MOperand {altTemps = _ts1}):
+                         (MOperand {altTemps = _ts2}):_roUs),
+              oDs = ods @ [(MOperand {altTemps = [_ts3 @ Temporary {tReg = _treg3} ]}),
+                          (MOperand {altTemps = [_ts4 @ Temporary {tReg = _treg4} ]})]
               }
           }
-      }:rest)  (tid, oid, pid) | isNonSymmetric i =
+      }:rest)  (_tid, oid, _pid) | isNonSymmetric i =
                                  let
                                    is = [TargetInstruction i,
                                          TargetInstruction (getEquivalentInstruction i) ]
@@ -428,9 +427,9 @@ extendNonSymmetricOperands _ (
 
 extendNonSymmetricOperands _ (o : code) _ = (code, [o])
 
-replaceTemp t ts p @ MOperand {altTemps = ats} =
-  let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
-  in p {altTemps = ats'}
+-- replaceTemp t ts p @ MOperand {altTemps = ats} =
+--   let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
+--   in p {altTemps = ats'}
 
 -- TODO(Romy): Add more instructions similar to tEOR
 isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBIC, TMUL]
@@ -734,7 +733,7 @@ mkNewBlock (bid, align, code) = mkBlock bid (mkBlockAttributes False True False
 mkLinearNaturalOperation id ops us ds = mkLinear id ops us ds
 
 mkConstants [] _ acc = acc
-mkConstants ((id, v, align):consts) oid acc =
+mkConstants ((id, _, align):consts) oid acc =
   let
     ins = [TargetInstruction { oTargetInstr = CONSTPOOL_ENTRY } ]
     u1  = mkBound (mkMachineImm id)
@@ -743,7 +742,7 @@ mkConstants ((id, v, align):consts) oid acc =
     nf  = mkLinearNaturalOperation oid ins [u1,u2,u3] []
   in mkConstants consts (oid+1) (nf:acc)
 
-addConstantPoolBlock f @ Function {fCode = code, fConstants = []} = f
+addConstantPoolBlock f @ Function {fConstants = []} = f
 addConstantPoolBlock f @ Function {fCode = code, fConstants = consts} =
   let last  = newBlockIndex code
       oid = newId code -- new operation id
