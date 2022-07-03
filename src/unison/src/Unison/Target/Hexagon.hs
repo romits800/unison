@@ -82,7 +82,8 @@ target =
       API.tIsXor            = const isXor,
       API.tIsGMul            = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
-      API.tAddSecurityCopy  = const addSecurityCopy
+      API.tAddSecurityCopy  = const addSecurityCopy,
+      API.tBranchInstruction= const branchInstruction
     }
 
 -- | Gives the type of natural operation according to the instruction
@@ -741,6 +742,11 @@ isXor i = error "isXor not implemented for this target."
 isGMul i = error "isGMul not implemented for this target."
 
 addSecurityCopy f _ = f
+
+branchInstruction bid oid =
+  let ins = [TargetInstruction { oTargetInstr = J2_jump }] 
+      ops = [BlockRef { blockRefId = bid } ]
+  in mkBranch oid ins ops
 
 -- | Custom processor constraints
 

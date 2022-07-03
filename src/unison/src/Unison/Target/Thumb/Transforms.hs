@@ -745,8 +745,8 @@ mkConstants ((id, v, align):consts) oid acc =
 
 addConstantPoolBlock f @ Function {fCode = code, fConstants = []} = f
 addConstantPoolBlock f @ Function {fCode = code, fConstants = consts} =
-  let last  = toInteger $ length code + 1 --- No idea why taken from SplitBlocks
-      (_, oid, _) = newIndexes $ flatten code
+  let last  = newBlockIndex code
+      oid = newId code -- new operation id
       code' = mkConstants consts oid []
       nblock = mkNewBlock (last, 2, code') -- Not sure how much the alignement should be
   in f { fCode = code ++ [nblock] }

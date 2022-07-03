@@ -67,7 +67,8 @@ target =
       API.tIsXor            = const isXor,
       API.tIsGMul            = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
-      API.tAddSecurityCopy  = const addSecurityCopy
+      API.tAddSecurityCopy  = const addSecurityCopy,
+      API.tBranchInstruction= const branchInstruction
     }
 
 instance Read MinimalInstruction where
@@ -271,3 +272,9 @@ spillOverhead _ = Nothing
 
 -- | Hardware registers
 hardwareRegisters = [R0, R1, R2, R3, R4, R5, R6, R7]
+
+
+branchInstruction bid oid =
+  let ins = [TargetInstruction { oTargetInstr = B }] --[General { oGeneralInstr = NullInstruction } ]
+      ops = [BlockRef { blockRefId = bid } ]
+  in mkBranch oid ins ops

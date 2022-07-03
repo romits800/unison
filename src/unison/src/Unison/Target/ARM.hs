@@ -81,7 +81,8 @@ target =
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
-      API.tAddSecurityCopy=const addSecurityCopy
+      API.tAddSecurityCopy  = const addSecurityCopy,
+      API.tBranchInstruction= const branchInstruction
     }
 
 instance Read ARMInstruction where
@@ -849,6 +850,12 @@ isXor i = error "isXor not implemented for this target."
 isGMul i = error "isGMul not implemented for this target."
 
 addSecurityCopy f _ = f
+
+
+branchInstruction bid oid =
+  let ins = [TargetInstruction { oTargetInstr = TB }] 
+      ops = BlockRef { blockRefId = bid } : defaultUniPred
+  in mkBranch oid ins ops
 
 -- | Custom processor constraints
 

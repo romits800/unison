@@ -81,7 +81,8 @@ target =
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
-      API.tAddSecurityCopy  = const addSecurityCopy
+      API.tAddSecurityCopy  = const addSecurityCopy,
+      API.tBranchInstruction= const branchInstruction
     }
 
 instance Read ThumbInstruction where
@@ -1044,7 +1045,10 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
   let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
   in p {altTemps = ats'}
 
-  
+branchInstruction bid oid =
+  let ins = [TargetInstruction { oTargetInstr = TB }] 
+      ops = BlockRef { blockRefId = bid }: defaultUniPred
+  in mkBranch oid ins ops
 
 -- | Custom processor constraints
 

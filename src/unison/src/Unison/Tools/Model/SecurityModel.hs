@@ -69,7 +69,7 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
       -- ("adj25",     toJSON adjacent), -- secret memory - operations
       -- ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
       ("HR",        toJSON hregs),
-      ("bbs",        toJSON $ map snd $ Map.toList bbs)
+      ("bbs",       toJSON $ map snd $ Map.toList bbs)
     ]
 
 

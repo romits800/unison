@@ -239,7 +239,7 @@ inferTypesOperation target f bid types (
                                             oBranchUs = tbs }}}:codes) =
   let d = "brtemp"
   in case splitOps tbs of
-      (t1:t2:[], [BlockRef {blockRefId=blid}]) ->
+      (t1:t2:[], [BlockRef {blockRefId = _blid}]) ->
         let isxor = False
             isgmul= False
             ts1 = getTids [t1] []
@@ -260,7 +260,7 @@ inferTypesOperation target f bid types (
                else fBbs types
             types'' = types {fBbs = bbs'} 
         in inferTypesOperation target f bid types'' codes
-      (t1:[], [BlockRef {blockRefId=blid}])    ->
+      (t1:[], [BlockRef {blockRefId = _blid}])    ->
         let ts1 = getTids [t1] []
             supp' = updateSuppsD (fSupp types) ts1 [d]
             unq'  = updateUnqsD (fUnq types) ts1 [d]
@@ -506,7 +506,7 @@ inferTypesOperation target f bid types (SingleOperation
 -- Special case for CM0 - Machine ConstantPoolIndex (cpi)
 inferTypesOperation target f bid types (SingleOperation
   {
-    oId  = oid, 
+    oId  = _oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
                       oUs = (Bound (MachineConstantPoolIndex {})) : _,
@@ -525,7 +525,7 @@ inferTypesOperation target f bid types (SingleOperation
   in inferTypesOperation target f bid types'' codes
 inferTypesOperation target f bid types (SingleOperation
   {
-    oId  = oid, 
+    oId  = _oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
                       oUs = (Bound (MachineConstantPoolIndex {})) : _,
@@ -693,14 +693,17 @@ foundTerm bid ((bid':_):rest) | bid == bid' = foundTerm bid rest
 foundTerm _ _ = False
 
 filterLast [] acc = acc
-filterLast ((bid:rest):restall) acc = filterLast restall (rest:acc) 
+filterLast ((_bid:rest):restall) acc = filterLast restall (rest:acc) 
 
 findPaths bid types =
   let bcfg = fBcfg types
-      bids = map (\x -> [x]) $ map BCFG.fromNode $ BCFG.immediateSuccessors bcfg bid
-      paths = findPathsI bcfg bids []
+      --bids = map (\x -> [x]) $ map BCFG.fromNode $ BCFG.immediateSuccessors bcfg bid
+      paths = findPathsI bcfg [[bid]] []
+      -- filter last
       paths'= filterLast paths []
-  in paths'
+      -- filter first
+      paths''= filterLast (map reverse paths') []
+  in paths''
     
 findPathsI _ [] acc = acc
 findPathsI bcfg ((bid:rest):allrest) acc =
@@ -710,19 +713,29 @@ findPathsI bcfg ((bid:rest):allrest) acc =
   in
     case bids of
       [] -> findPathsI bcfg allrest ((bid:rest):acc)
-      --[bid'] | bid' `elem` (bid:rest)-> error "lala"
       [bid'] | bid' `elem` (bid:rest)-> error ("Cycle Detected! bid:" ++ show bid' ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
       [bid1,bid2] | bid1 `elem` (bid:rest) || bid2 `elem` (bid:rest) -> error ("Cycle Detected! bid:" ++ show bid1 ++ " bid2:" ++ show bid2 ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
       [bid'] ->
         let extpath = bid':bid:rest
-            paths = allrest ++ [extpath]
+            paths = insertPath extpath allrest [] --allrest ++ [extpath]
         in if foundTerm bid' (paths ++ acc) then (paths ++ acc)
            else findPathsI bcfg paths acc
       [bid1,bid2] ->
-        let newpaths = [bid1:bid:rest, bid2:bid:rest]
-        in findPathsI bcfg (allrest ++ newpaths) acc
+        let newpath1 = bid1:bid:rest
+            newpath2 = bid2:bid:rest
+            paths = insertPath newpath2 (insertPath newpath1 allrest []) []
+        in findPathsI bcfg paths acc
       _ -> error "findPathsI: Unexpected number of immediateSuccessors"
 
+
+insertPath npath [] acc = reverse acc ++ [npath]
+insertPath (n:npath) ((t:tpath):paths) acc | n < t = reverse acc ++ ((n:npath):(t:tpath):paths)
+insertPath npath ([]:paths) acc = error ("insertPath: This should not happen." ++ show npath ++ show paths ++ show acc)
+insertPath npath (tpath:paths) acc = insertPath npath paths (tpath:acc)
+
+
+
+                                     
 updateNewTemps :: Show r => Map Integer [Operand r] -> Map Integer [Integer] -> StateTuple i r -> (Integer, [Operand r]) -> StateTuple i r
 updateNewTemps p2t p2p types (oid, tmps) =
   let 
@@ -1322,8 +1335,8 @@ intersectSec2 ds m2 =
 isMaybeSecret (Just (Secret _)) = True
 isMaybeSecret _ = False
 
-fromJustSecret (Just (a @ (Secret _))) = a
-fromJustSecret _ = error "FromJustSecret: This should not happen"
+-- fromJustSecret (Just (a @ (Secret _))) = a
+-- fromJustSecret _ = error "FromJustSecret: This should not happen"
 
 
 intersectRand2 ds m2 =

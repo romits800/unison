@@ -76,6 +76,7 @@ Library
                    Unison.Transformations.AddPragmas
                    Unison.Transformations.RunTargetTransforms
                    Unison.Transformations.SecurityTypeInference
+                   Unison.Transformations.BalanceBlocks
 
                    Unison.Analysis.FrequencyEstimation
                    Unison.Analysis.TemporaryType

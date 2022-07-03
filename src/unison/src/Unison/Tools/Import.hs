@@ -81,9 +81,13 @@ import Unison.Tools.Import.SplitBlocks
 import Unison.Tools.Import.RepairCSSA
 import Unison.Tools.Import.AdvancePhis
 import Unison.Tools.Import.TagRemats
+
 import Unison.Tools.Import.ReorderXorOperations
+import Unison.Transformations.BalanceBlocks
+-- import Unison.Transformations.SecurityTypeInference
 
 import qualified Unison.ParseSecurityPolicies as PSP
+
 
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
@@ -103,6 +107,7 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
                                  explicitCallRegs))
             target mf
         ff = buildFunction target mf'
+        --types = inferSecurityTypes target f policy
         (f, partialFs) =
             applyTransformations
             (uniTransformations (goal, noCC, noReserved, maxBlockSize,
@@ -146,6 +151,7 @@ mirTransformations (estimateFreq, simplifyControlFlow, explicitCallRegs) =
 uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
                     implementFrames, rematType, lintPragma, explicitCallRegs,
                     policy) =
+  --let types = inferSecurityTypes target f policy in
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
      (connectCalls, "connectClass", explicitCallRegs),
@@ -173,6 +179,8 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (foldCopies, "foldCopies", True),
      (splitBlocks (fromJust maxBlockSize), "splitBlocks", isJust maxBlockSize),
      (renameBlocks, "renameBlocks", True),
+     (balanceBlocks policy, "balanceBlocks", True), --- Sec stuff
+     (renameBlocks, "renameBlocks", True), -- sec stuff
      (repairCSSA, "repairCSSA", True),
      (advancePhis, "advancePhis", True),
      (postponeBranches, "postponeBranches", True),

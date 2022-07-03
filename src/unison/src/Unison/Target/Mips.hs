@@ -77,7 +77,8 @@ target =
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
       API.tHardwareRegs     = const hardwareRegisters,
-      API.tAddSecurityCopy  = const addSecurityCopy
+      API.tAddSecurityCopy  = const addSecurityCopy,
+      API.tBranchInstruction= const branchInstruction
     }
 
 instance Read MipsInstruction where
@@ -529,6 +530,11 @@ isGMul (TargetInstruction i) | i `elem` [MUL, MULT, MULU] = True
 isGMul _ = False
 
 addSecurityCopy f _ = f
+
+branchInstruction bid oid =
+  let ins = [TargetInstruction { oTargetInstr = B }, TargetInstruction { oTargetInstr = B_NOP}] 
+      ops = [BlockRef { blockRefId = bid } ]
+  in mkBranch oid ins ops
 
 -- | Custom processor constraints
 

@@ -66,7 +66,8 @@ module Unison.Target.API (
   isXor,
   isGMul,
   hardwareRegisters,
-  addSecurityCopy
+  addSecurityCopy,
+  branchInstruction,
   ) where
 
 import Data.List
@@ -233,6 +234,7 @@ isXor (ti, to) = tIsXor ti to
 isGMul (ti, to) = tIsGMul ti to
 hardwareRegisters (ti, to) = tHardwareRegs ti to
 addSecurityCopy (ti, to) = tAddSecurityCopy ti to
+branchInstruction (ti, to) = tBranchInstruction ti to
 
 -- | Container with information about a 'Function' along with the
 -- function itself.
@@ -418,8 +420,10 @@ data TargetDescription i r rc s = TargetDescription {
       tHardwareRegs     :: TargetOptions -> [r],
       -- | Expand with copies of random input values
       tAddSecurityCopy  :: TargetOptions -> Function i r -> Integer ->
-                           Function i r
-}
+                           Function i r,
+      -- | Expand with copies of random input values
+      tBranchInstruction :: TargetOptions -> BlockId -> OperationId -> BlockOperation i r
+ }
 
 -- | Any 'TargetDescription'. Used to support multiple targets without
 -- need to re-compile.
