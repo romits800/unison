@@ -224,10 +224,11 @@ showDs = show . oOprDefs
 
 instance Show BlockAttributes where
     show (BlockAttributes {aEntry = entry, aExit = exit, aReturn = return,
-                           aFreq = freq, aSplit = split, aAlign = align}) =
+                           aFreq = freq, aSplit = split, aAlign = align, aBalanc = balance}) =
         let attrs = mapMaybe blockAttrToMaybe
                     ([(entry, "entry"), (exit, "exit"), (return, "return")] ++
-                     freqToTuple freq ++ alignToTuple align ++ [(split, "split")])
+                     freqToTuple freq ++ alignToTuple align ++ [(split, "split"),
+                                                                (balance, "balance")])
         in (if null attrs then ""
             else " (" ++ render (cs id attrs) ++ ")")
 

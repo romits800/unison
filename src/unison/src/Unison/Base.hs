@@ -467,6 +467,8 @@ data BlockAttributes = BlockAttributes {
   aFreq   :: Maybe Frequency,
   -- | Whether the block has been split
   aSplit  :: Bool,
+  -- | Whether the block has been added to balance
+  aBalanc :: Bool,
   -- | Possibly the block's alignment
   aAlign   :: Maybe Alignment
 } deriving (Eq)

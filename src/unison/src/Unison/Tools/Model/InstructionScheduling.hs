@@ -57,6 +57,7 @@ parameters scaleFreq (_, _, deps, _, ra, _) f @ Function {fCode = code} target =
       instructions  = map (oIInstructions im) fCode
       activators    = map (activatorIInstructions im) fCode
       maxc          = map (computeMaxC (rm, oif)) (zip code deps)
+      maxc'         = map (updateMaxC (sum maxc)) (zip code maxc)
       itype         = map ((M.!) typeNumbers . oType) fCode
       insname       = map (show . ioInstruction) i
       preschedule   = map (\o -> (oId o, (aPrescheduled (oAs o)))) $
@@ -149,7 +150,7 @@ parameters scaleFreq (_, _, deps, _, ra, _) f @ Function {fCode = code} target =
 
       -- maximum issue cycle in each block
       -- example: maxc[5]: maximum issue cycle of b5
-      ("maxc", toJSON maxc),
+      ("maxc", toJSON maxc'),
 
       -- type of each operation
       -- 0:  linear

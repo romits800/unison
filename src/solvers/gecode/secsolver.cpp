@@ -890,6 +890,11 @@ int main(int argc, char* argv[]) {
       iteration_failed += gs.failures;
       iteration_nodes += gs.nodes;
 
+      // std::cout << "Deactivation" << deactivation << std::endl;
+      // if (deactivation) {
+      // 	std::cout << "Solution " << results.back().solution -> v_ry[101] << std::endl;
+      // 	std::cout << "Base " << base -> v_ry[101] << std::endl;
+      // }
       if (gs.result == SOME_SOLUTION) {
 
         if (options.verbose()) {
@@ -916,18 +921,23 @@ int main(int argc, char* argv[]) {
 	shuffle(bs.begin(), bs.end(), rng);
 
 	for (block b: bs) {
-	  //std::cout << "Block " << b << std::endl;
+	  // std::cout << "Block " << b << std::endl;
 	  Solution<SecLocalModel> ls = local_problem(gs.solution, b);
 	  if (ls.result != UNSATISFIABLE) {
 	    SecLocalModel * base_local = ls.solution;
 	    Gecode::SpaceStatus lss = base_local->status();
 	    assert(lss != SS_FAILED);
 	    bool single_block = base_local->input->B.size() == 1;
-	    ls = solved(base_local, local_solutions[b]) && !single_block ?
+	    bool solbool = solved(base_local, local_solutions[b]);
+
+	    solbool = solbool && !single_block;
+
+	    ls = solbool ?
 	      // if the local problem is already solved, fetch the cached solution
 	      fetch_solution(base_local, local_solutions[b]) :
 	      // otherwise solve
 	      solve_local_portfolio(base_local, lo, iteration);
+
 	    delete base_local;
 	  }
 	  if (ls.solution->options->verbose()) {

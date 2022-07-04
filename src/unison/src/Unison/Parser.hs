@@ -100,7 +100,8 @@ data LsBlockAttribute =
   LsReturn |
   LsFreq Frequency |
   LsAlign Alignment |
-  LsSplit
+  LsSplit |
+  LsBalanc
   deriving (Eq, Show)
 
 data LsHighLevelGoal =
@@ -256,7 +257,8 @@ blockAttribute = boolBlockAttribute <|> integerAttribute "freq" LsFreq <|>
 boolBlockAttribute = try (simpleAttribute "exit" LsExit) <|>
                      simpleAttribute "entry" LsEntry <|>
                      simpleAttribute "return" LsReturn <|>
-                     simpleAttribute "split" LsSplit
+                     simpleAttribute "split" LsSplit <|>
+                     simpleAttribute "balance" LsBalanc
 
 simpleAttribute n t =
   do string n
@@ -655,6 +657,7 @@ toBlockAttributes (LsBlockAttributes attrs) =
   mkBlockAttributes (LsEntry `elem` attrs) (LsExit `elem` attrs)
                     (LsReturn `elem` attrs) (fmap lsFreq $ find isLsFreq attrs)
                     (LsSplit `elem` attrs) (fmap lsAlign $ find isLsAlign attrs)
+                    (LsBalanc `elem` attrs)
 
 isLsFreq (LsFreq _) = True
 isLsFreq _ = False

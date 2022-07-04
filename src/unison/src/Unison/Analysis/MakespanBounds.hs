@@ -13,7 +13,7 @@ Main authors:
 This file is part of Unison, see http://unison-code.github.io
 -}
 module Unison.Analysis.MakespanBounds
-    (computeMaxC, maxCost, maxInt, scaleFactor, scaleDown, minLiveOfDef) where
+    (computeMaxC, maxCost, maxInt, scaleFactor, scaleDown, minLiveOfDef, updateMaxC) where
 
 import Data.Maybe
 import Data.Int
@@ -22,8 +22,17 @@ import Data.List
 import Unison
 import Unison.Target.Query
 
+-- TODO(Romy): This is the balancing block that should have any number of
+--             cycles possible. Just multiplying with 8 for now.
+-- computeMaxC (rm, oif) (Block {bAs = BlockAttributes {aBalanc = True}, bCode = code}, deps) = 
+--   8 * (sum $ map (maxInstructionLatency (rm, oif, deps)) code)
 computeMaxC (rm, oif) (Block {bCode = code}, deps) =
   sum $ map (maxInstructionLatency (rm, oif, deps)) code
+
+
+updateMaxC sumc (Block {bAs = BlockAttributes {aBalanc = True}}, _) = sumc
+updateMaxC _ (_, oldmc) = oldmc
+
 
 maxInstructionLatency targetFs o
     | isVirtual o = 1

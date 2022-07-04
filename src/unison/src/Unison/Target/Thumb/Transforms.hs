@@ -728,7 +728,7 @@ isTerm o = isBranch o || isTailCall o
 -- mkNewExitBlock with ConstantPoolVariables - required
 mkNewBlock :: (Integer, Alignment, [BlockOperation i r]) -> Block i r
 mkNewBlock (bid, align, code) = mkBlock bid (mkBlockAttributes False True False
-                                              Nothing False (Just align)) code
+                                              Nothing False (Just align) False) code
 
 mkLinearNaturalOperation id ops us ds = mkLinear id ops us ds
 

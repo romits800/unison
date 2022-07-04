@@ -167,13 +167,15 @@ mkAttributes reads writes call mem acts vcopy remat jtblocks btaken pres rorig
                 aPrescheduled = pres, aRematOrigin = rorig,
                 aSplitBarrier = splitBar}
 
-mkNullAttributes = mkAttributes [] [] Nothing Nothing [] False False [] Nothing Nothing Nothing False
+mkNullAttributes = mkAttributes [] [] Nothing Nothing [] False False [] Nothing
+                   Nothing Nothing False
 
-mkBlockAttributes entry exit return freq split align =
+mkBlockAttributes entry exit return freq split align balanced =
     BlockAttributes {aEntry = entry, aExit = exit, aReturn = return,
-                     aFreq = freq, aSplit = split, aAlign = align}
+                     aFreq = freq, aSplit = split, aAlign = align,
+                     aBalanc = balanced}
 
-mkNullBlockAttributes = mkBlockAttributes False False False Nothing False Nothing
+mkNullBlockAttributes = mkBlockAttributes False False False Nothing False Nothing False
 
 mkFrameObject = FrameObject
 

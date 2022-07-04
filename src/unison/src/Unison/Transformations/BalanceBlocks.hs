@@ -20,6 +20,7 @@ import Unison.Base
 import Unison.Util
 import Unison.Target.API
 import Unison.Constructors
+import Unison.Predicates
 
 balanceBlocks policies f @ Function {fCode = _} target =
   let
@@ -47,14 +48,14 @@ balanceOneBlock target f @ Function {fCode = code} bid =
 
 mkNewBlock :: Frequency -> BlockId -> [BlockOperation i r] -> Block i r
 mkNewBlock freq bid blcode = mkBlock bid (mkBlockAttributes False False False
-                                        (Just freq) False Nothing) blcode
+                                        (Just freq) False Nothing True) blcode
 
 mkBranchInstruction oid bid target = branchInstruction target bid oid
 
 -- bblock refers to the block before - That block should jump to the new block and
 --                                     the new block should jump to the destination of
 --                                     the previous block
-addBalancingBlock target bblock @ Block {bLab = _obid, bCode = bcode} f @ Function {fCode = code} =
+addBalancingBlock target bblock @ Block {bLab = obid, bCode = bcode} f @ Function {fCode = code} =
   let bid  = newBlockIndex code -- new index for block
       freq = blockFreq bblock
       oid  = newId code
@@ -68,7 +69,8 @@ addBalancingBlock target bblock @ Block {bLab = _obid, bCode = bcode} f @ Functi
       o2   = mkBranchInstruction (oid+3) label target
       nbl  = mkNewBlock freq bid [oin, o, oout]
       code'' = insertBlock code' nbl (label-1) o2 []
-  in f {fCode = code''}
+      code''' = mapToOperationInBlocks (applyToPhiOps obid bid) code''
+  in f {fCode = code'''}
 
 
 getBranch [] = error "getBranch: There should be a branch here."
@@ -119,3 +121,11 @@ insertBlock (b @ Block {bLab = obid, bCode = bcode}:rest) nbl label o acc
       let bcode' = take ((length bcode) - 1) bcode ++ [o, last bcode] 
       in reverse acc ++ [b {bCode = bcode'}, nbl] ++ rest
 insertBlock (b:rest) nbl label o acc = insertBlock rest nbl label o (b:acc)
+
+
+applyToPhiOps oldl newl o
+    | isPhi o = mapToOperandIf isBlockRef (replaceBlockRef oldl newl) o
+    | otherwise = o
+
+replaceBlockRef oldl newl (BlockRef l) | l == oldl = mkBlockRef newl
+replaceBlockRef _oldl _newl b = b
