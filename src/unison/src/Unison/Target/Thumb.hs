@@ -709,19 +709,7 @@ pushRegs i
 pushRegs i = error ("unmatched: pushRegs " ++ show i)
 
 
--- mapToMachineBlock f mf @ MachineFunction {mfBlocks = mbs} =
---   mf {mfBlocks = map f mbs}
-getLast = getLastI [] 
-
-
-getLastI _ [] = error "GetLast empty set" 
-getLastI acc [l] = (reverse acc, l)
-getLastI acc (l:ls) = getLastI (l:acc) ls 
-
--- reverse l = reverseI [] l
-
--- reverseI acc [] = acc
--- reverseI acc (l:ls) = reverse (l:acc) ls
+--removeTrailingNops
 removeTrailingNops to mf @ MachineFunction {mfBlocks = mbs} =
   let
     (first, last @ MachineBlock {mbInstructions = mis}) = getLast mbs
@@ -732,6 +720,12 @@ removeTrailingNops to mf @ MachineFunction {mfBlocks = mbs} =
 removeLastNops to (MachineSingle {msOpcode = MachineTargetOpc NOP} : rest) =
   removeLastNops to rest
 removeLastNops _ mis = reverse mis
+
+getLast = getLastI [] 
+
+getLastI _ [] = error "GetLast empty set" 
+getLastI acc [l] = (reverse acc, l)
+getLastI acc (l:ls) = getLastI (l:acc) ls 
 
   
 -- Replace NOP operations (llc doesn't recognize them) with
