@@ -98,8 +98,8 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
 SecModel::SecModel(SecModel& cg) :
   GlobalModel(cg),
   memops(cg.memops),
-  tbts(cg.tbts),
-  tats(cg.tats)
+  tats(cg.tats),
+  tbts(cg.tbts)
 {
   v_gb.update(*this, cg.v_gb);
   v_lgs.update(*this, cg.v_lgs);
@@ -471,7 +471,7 @@ void SecModel::post_implied_constraints(void) {
   IntVarArgs rs;
   IntVarArgs lss;
   int size = T().size();
-  bool arr[size];
+  //  bool arr[size];
   
   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
     temporary t1 = tp.first;
@@ -626,7 +626,7 @@ void SecModel::post_connecting_constraints(void) {
   }
 }
 
-
+// Constant resource constraints
 void SecModel::post_ct_constraints(void) {
   // The paths that should be ct time
   // for every constraint that consists of many paths
@@ -638,7 +638,7 @@ void SecModel::post_ct_constraints(void) {
 	IntVarArgs path;
 	for (block bi: pi) {
 	  // std::cout << "Bi" << bi;
-	  path << var(f(bi,n));
+	  path << var(f(bi,n) - 1);
 	}
 	// std::cout << std::endl;
 	cs << var (sum(path));
