@@ -342,9 +342,14 @@ liftToTOpc f = mkMachineTargetOpc . f . mopcTarget
 
 -- | Target dependent post-processing functions
 
-postProcess to = [expandPseudosEarly to, if keepNops to then id else cleanNops,
-                  expandPseudos, unbundleSingletons, removeFrameIndex,
-                  normalizeDelaySlots to]
+postProcess to = [expandPseudosEarly to,
+                  if keepNops to then id else cleanNops,
+                  expandPseudos,
+                  unbundleSingletons,
+                  removeFrameIndex,
+                  normalizeDelaySlots to,
+                  removeTrailingNops to
+                 ]
 
 expandPseudosEarly to = mapToMachineBlock (expandBlockPseudos
                                            (expandPseudoEarly to))
@@ -431,6 +436,23 @@ cleanNops = filterMachineInstructions (not . isSingleNop)
 
 isSingleNop MachineSingle {msOpcode = MachineTargetOpc NOP} = True
 isSingleNop _ = False
+
+
+--
+-- RemoveTrailingNops
+removeTrailingNops to mf @ MachineFunction {mfBlocks = mbs} =
+  let
+    -- (first, last @ MachineBlock {mbInstructions = mis}) = getLast mbs
+    removeLast last @ MachineBlock {mbInstructions = mis} =
+      last {mbInstructions = removeLastNops to $ reverse mis}
+    mbs' = map (removeLast) mbs
+    -- mbs' = first ++ [last']
+  in mf {mfBlocks = mbs'}
+
+removeLastNops to (MachineSingle {msOpcode = MachineTargetOpc NOP} : h @ MachineBundle {} : rest) =
+  removeLastNops to (h:rest)
+removeLastNops _ mis = reverse mis
+
 
 -- Unbundle singleton bundles created during pseudo expansion.
 unbundleSingletons = mapToMachineBlock unbundleSingletonsInBlock

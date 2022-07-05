@@ -32,7 +32,9 @@ itineraryUsage' to i it =
   in us2
 
 itineraryUsage i _
-  | isDelaySlotInstr i = [mkUsage LongDuration 1 1]
+  | isDelaySlotInstr i = [mkUsage ALU 1 2, mkUsage LongDuration 1 1]
+-- itineraryUsage i _
+--   | isDelaySlotInstr i = [mkUsage LongDuration 1 1]
 itineraryUsage LoadGPDisp IIPseudo =
   [mkUsage ALU 1 2, Usage LongDuration 1 1 1]
 itineraryUsage PseudoCVT_S_W II_CVT =
