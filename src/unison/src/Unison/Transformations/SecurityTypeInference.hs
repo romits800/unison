@@ -715,6 +715,9 @@ findPathsI bcfg ((bid:rest):allrest) acc =
       [] -> findPathsI bcfg allrest ((bid:rest):acc)
       [bid'] | bid' `elem` (bid:rest)-> error ("Cycle Detected! bid:" ++ show bid' ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
       [bid1,bid2] | bid1 `elem` (bid:rest) || bid2 `elem` (bid:rest) -> error ("Cycle Detected! bid:" ++ show bid1 ++ " bid2:" ++ show bid2 ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
+      [bid'] | bid' <= bid ->
+        let extpath = bid':bid:rest
+        in findPathsI bcfg allrest (extpath:acc)
       [bid'] ->
         let extpath = bid':bid:rest
             paths = insertPath extpath allrest [] --allrest ++ [extpath]
@@ -1337,7 +1340,6 @@ isMaybeSecret _ = False
 
 -- fromJustSecret (Just (a @ (Secret _))) = a
 -- fromJustSecret _ = error "FromJustSecret: This should not happen"
-
 
 intersectRand2 ds m2 =
   any (\di -> isMaybeRandom $ Map.lookup di m2 ) (map fst $ Map.toList ds)
