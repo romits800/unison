@@ -536,9 +536,9 @@ string emit_dzn(const vector<vector<vector<int>>> xsss, int opt) {
 	s << x;
       }
     }
-    s << "])";
-    return s.str();
   }
+  s << "])";
+  return s.str();
 }
 
 
