@@ -57,7 +57,7 @@ mkBranchInstruction oid bid target = branchInstruction target bid oid
 --                                     the previous block
 addBalancingBlock target bblock @ Block {bLab = obid, bCode = bcode} f @ Function {fCode = code} =
   let bid  = newBlockIndex code -- new index for block
-      freq = blockFreq bblock
+      freq = blockFreq bblock `div` 2  -- TODO(Romy): This need to be fixed
       oid  = newId code
       label = getBranch bcode
       bcode' = replaceBranch bcode bid []

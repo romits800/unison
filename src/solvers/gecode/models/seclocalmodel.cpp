@@ -450,9 +450,9 @@ void SecLocalModel::post_random_register_constraints(void) {
 
 
 void SecLocalModel::apply_sec_solution(const SecModel * gs) {
-  for (operation o : input->ops[b]) {
-    // copy_domain(*this, gs->v_ok[o], v_ok[instr(o)]);
-  }
+  // for (operation o : input->ops[b]) {
+  //   // copy_domain(*this, gs->v_ok[o], v_ok[instr(o)]);
+  // }
 
   for (temporary t : input->tmp[b]) {
     // copy_domain(*this, gs->v_lk[t], v_lk[temp(t)]);

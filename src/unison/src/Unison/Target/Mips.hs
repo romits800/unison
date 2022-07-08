@@ -347,8 +347,8 @@ postProcess to = [expandPseudosEarly to,
                   expandPseudos,
                   unbundleSingletons,
                   removeFrameIndex,
-                  normalizeDelaySlots to,
-                  removeTrailingNops to
+                  normalizeDelaySlots to --,
+                  --removeTrailingNops to
                  ]
 
 expandPseudosEarly to = mapToMachineBlock (expandBlockPseudos

@@ -626,6 +626,22 @@ void SecModel::post_connecting_constraints(void) {
   }
 }
 
+IntVar SecModel::branch_cost(block b, int n) {
+  int fq = 1; // Don't care about the freq
+  //std::cout << b << ": " << input-> freq[b] << std::endl;
+  IntVar fb = var (f(b,n) - 1);
+  int brcount = 0;
+  // This is only for MIPS delay slots - temporary solution
+  if (options -> extra_branch_cost()) {
+    for (operation o: input -> ops[b]) {
+      if (input -> type [o] == BRANCH || input -> type [o] == CALL)
+	brcount ++;
+    }
+  }
+  return var(fq * (fb + brcount));
+}
+
+
 // Constant resource constraints
 void SecModel::post_ct_constraints(void) {
   // The paths that should be ct time
@@ -638,7 +654,7 @@ void SecModel::post_ct_constraints(void) {
 	IntVarArgs path;
 	for (block bi: pi) {
 	  // std::cout << "Bi" << bi;
-	  path << var(f(bi,n) - 1);
+	  path << branch_cost(bi, n);
 	}
 	// std::cout << std::endl;
 	cs << var (sum(path));

@@ -143,7 +143,8 @@ ModelOptions::ModelOptions(void)
     _disable_sec_secret_constraints("disable-sec-secret-constraints", "Disable the secret register preceeded by random register constraints.", false),
     _disable_sec_mem_constraints("disable-sec-mem-constraints", "Disable memory constraints.", false),
     _enable_power_constraints("enable-power-constraints", "Disable power constraints.", false),
-    _enable_ct_constraints("enable-ct-constraints", "Disable constant-resource constraints.", false)
+    _enable_ct_constraints("enable-ct-constraints", "Disable constant-resource constraints.", false),
+    _extra_branch_cost("extra-branch-cost", "Enable extra branch cost for MIPS.", false)
 {
   add(_output_file);
   add(_dzn_file);
@@ -287,4 +288,6 @@ ModelOptions::ModelOptions(void)
 
   add(_enable_power_constraints);
   add(_enable_ct_constraints);
+
+  add(_extra_branch_cost);
 }

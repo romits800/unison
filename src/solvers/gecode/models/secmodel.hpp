@@ -134,6 +134,7 @@ public:
   IntVar lge(block b) const {return v_lge[b]; }
   block bot (temporary t);
 
+  IntVar branch_cost(block b, int n);
   // int select_value_tt(IntVar x, unsigned int i);
   // void next(const SecModel& l);
 

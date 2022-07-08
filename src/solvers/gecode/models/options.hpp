@@ -170,6 +170,7 @@ protected:
 
   Driver::BoolOption _enable_power_constraints;
   Driver::BoolOption _enable_ct_constraints;
+  Driver::BoolOption _extra_branch_cost; // extra cycle for MIPS delay slots
   
 public:
 
@@ -285,5 +286,7 @@ public:
   
   bool enable_power_constraints(void) const {return _enable_power_constraints.value();}
   bool enable_ct_constraints(void) const {return _enable_ct_constraints.value();}
+
+  bool extra_branch_cost(void) const {return _extra_branch_cost.value();}
 };
 #endif
