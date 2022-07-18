@@ -1,6 +1,7 @@
 # Getting Started with SecConCG
 
 SecConCG is tool to generate code that is secure against power side-channel attacks. 
+
 SecConCG is based on [Unison](https://unison-code.github.io/), a software tool that
 performs register allocation and instruction scheduling in integration using
 combinatorial optimization.
