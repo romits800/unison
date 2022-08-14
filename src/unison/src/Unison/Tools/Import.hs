@@ -78,6 +78,7 @@ import Unison.Tools.Import.ReserveRegs
 import Unison.Tools.Import.ImplementFrameOperations
 import Unison.Tools.Import.FoldCopies
 import Unison.Tools.Import.SplitBlocks
+import Unison.Tools.Import.ClusterBlocks
 import Unison.Tools.Import.RepairCSSA
 import Unison.Tools.Import.AdvancePhis
 import Unison.Tools.Import.TagRemats
@@ -92,7 +93,7 @@ import qualified Unison.ParseSecurityPolicies as PSP
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
      explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile,
-     policy)
+     policy, clusterNumber)
     mir target =
   do
     secPolicy <- maybeStrictReadFile policy
@@ -112,7 +113,8 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
             applyTransformations
             (uniTransformations (goal, noCC, noReserved, maxBlockSize,
                                  estimateFreq, implementFrames, rematType,
-                                 lintPragma, explicitCallRegs, policies))
+                                 lintPragma, explicitCallRegs, policies,
+                                 clusterNumber))
             target ff
         baseName = takeBaseName mirFile
       in case selected function mfs of
@@ -150,7 +152,7 @@ mirTransformations (estimateFreq, simplifyControlFlow, explicitCallRegs) =
 
 uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
                     implementFrames, rematType, lintPragma, explicitCallRegs,
-                    policy) =
+                    policy, clusterNumber) =
   --let types = inferSecurityTypes target f policy in
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
@@ -177,6 +179,8 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (killUnusedTemps, "killUnusedTemps", True),
      (extractRegs, "extractRegs", True), --here
      (foldCopies, "foldCopies", True),
+     (renameOperations, "renameOperations", True),
+     (clusterBlocks (fromJust clusterNumber), "clusterBlocks", isJust clusterNumber), -- TODO(Romy): add new flag for this
      (splitBlocks (fromJust maxBlockSize), "splitBlocks", isJust maxBlockSize),
      (renameBlocks, "renameBlocks", True),
      (balanceBlocks policy, "balanceBlocks", True), --- Sec stuff

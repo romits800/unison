@@ -32,11 +32,24 @@ resolver:
 packages:
 - unison
 - unison-specsgen
+
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
 #
-# extra-deps:
+
+extra-deps:
+    - git: https://github.com/guaraqe/harpack.git
+      commit: f7c4ab6b7ee429c0dd49b94b164713b4c8992011
+    - clustering-0.4.1@sha256:78d8e077f27526ff03b3879d951e09e040ca7dc23dd0e6044970be9d40ea37e2,2066
+    # - fgl-5.7.0.3@sha256:a5970bb2d6835e2479380ca822ac43436ffef050770391f21802ed4610e1d5b8,3648
+    - matrices-0.5.0@sha256:b2761813f6a61c84224559619cc60a16a858ac671c8436bbac8ec89e85473058,1656
+    - fgl-5.5.3.1@sha256:4c73d43ce20d669f54c10a50e2d13184542f686f445773812fc43a321dfa0f73,3736
+
+# - git: https://github.com/kaizhang/clustering.git
+    #   commit: 38f5f0fe0f4158b5af456a4299cd5a45f4d5edd3
+    # - git: https://github.com/kaizhang/matrices.git
+    #   commit: 4d85abd72aecce03284c597497fbe6154d8919bd
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a

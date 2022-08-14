@@ -29,7 +29,7 @@ data Uni =
                rematType :: RematType, function :: Maybe String,
                goal :: Maybe String, mirVersion :: MachineIRVersion,
                sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool,
-               policy :: Maybe FilePath} |
+               policy :: Maybe FilePath, clusterNumber :: Maybe Integer} |
     Linearize {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
                lint :: Bool, lintPragma :: Bool} |
@@ -137,7 +137,8 @@ import' = Import {
   goal            = Nothing &= help "Optimization goal (one of {speed, size})",
   sizeThreshold   = Nothing &= help "Function size over which solving is skipped",
   explicitCallRegs = False &= help "Extract call uses and definitions explicitly from their operands",
-  policy          = Nothing &= help "Security Policy"}
+  policy          = Nothing &= help "Security Policy",
+  clusterNumber   = Nothing &= help "Number of clusters for block spliting"}
   &= help "Import a MachineIR function into Unison"
 
 linearize' = Linearize {} &= help "Transform a Unison function into Linear SSA form"

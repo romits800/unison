@@ -179,6 +179,7 @@ Library
                   Unison.Tools.Import.ReserveRegs
                   Unison.Tools.Import.SimplifyCombinations
                   Unison.Tools.Import.SplitBlocks
+                  Unison.Tools.Import.ClusterBlocks
                   Unison.Tools.Import.TagRemats
                   Unison.Tools.Import.ReorderXorOperations                  
                   Unison.Tools.Linearize.SinkLiveOuts
@@ -338,8 +339,8 @@ Library
                    yaml >= 0.8,
                    parsec >= 3.1
 
-  Build-Depends: base >= 4.0,
-                 fgl >= 5.6.0,
+  Build-Depends: base >= 4.8 && < 5.0,
+                 fgl >= 5.5.0,
                  pretty >= 1.0,
                  graphviz >= 2999.17,
                  split >= 0.1,
@@ -353,6 +354,11 @@ Library
                  unordered-containers >= 0.2,
                  directory >= 1.2,
                  process >= 1.2,
+                 vector >= 0.11,
+                 matrices >= 0.5.0,
+                 clustering >= 0.4.1,
+                 harpack,
+                 -- ghc-prim,
                  HUnit
 
   Ghc-options: -fwarn-dodgy-exports -fwarn-dodgy-imports -fwarn-unused-matches

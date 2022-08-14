@@ -3,7 +3,39 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    name: harpack
+    version: 0.1.0
+    git: https://github.com/guaraqe/harpack.git
+    pantry-tree:
+      size: 621
+      sha256: b6b48ea3216d119fd6f1fed145717442944f0d0d4fdc93e6b44eaae4e1c1332d
+    commit: f7c4ab6b7ee429c0dd49b94b164713b4c8992011
+  original:
+    git: https://github.com/guaraqe/harpack.git
+    commit: f7c4ab6b7ee429c0dd49b94b164713b4c8992011
+- completed:
+    hackage: clustering-0.4.1@sha256:78d8e077f27526ff03b3879d951e09e040ca7dc23dd0e6044970be9d40ea37e2,2066
+    pantry-tree:
+      size: 1180
+      sha256: d9bc3fe969d648977c10310784700eb88966b14a3088c4cdfd4178f297c17678
+  original:
+    hackage: clustering-0.4.1@sha256:78d8e077f27526ff03b3879d951e09e040ca7dc23dd0e6044970be9d40ea37e2,2066
+- completed:
+    hackage: matrices-0.5.0@sha256:b2761813f6a61c84224559619cc60a16a858ac671c8436bbac8ec89e85473058,1656
+    pantry-tree:
+      size: 1202
+      sha256: f5f030a2c4641dfbee6e403590493a30d7de7bca15d1c304616ff186f64860c8
+  original:
+    hackage: matrices-0.5.0@sha256:b2761813f6a61c84224559619cc60a16a858ac671c8436bbac8ec89e85473058,1656
+- completed:
+    hackage: fgl-5.5.3.1@sha256:4c73d43ce20d669f54c10a50e2d13184542f686f445773812fc43a321dfa0f73,3736
+    pantry-tree:
+      size: 2747
+      sha256: 924688ab41e1e606bc36a80f5861dac7ec357d48e6868ae2f4c76f28971e2204
+  original:
+    hackage: fgl-5.5.3.1@sha256:4c73d43ce20d669f54c10a50e2d13184542f686f445773812fc43a321dfa0f73,3736
 snapshots:
 - completed:
     size: 428787

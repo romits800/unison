@@ -217,18 +217,18 @@ getPoliciesO _ accpol _ = accpol
 addPrefix True = "F"
 addPrefix False = "S"
 
-inferTypes:: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> StateTuple i r -> Function i r -> StateTuple i r 
+inferTypes:: Show r => Show i => TargetWithOptions i r rc s -> StateTuple i r -> Function i r -> StateTuple i r 
 inferTypes target types f @ Function {fCode = code} =
   foldl (inferTypesBlock target f) types code
   
 
 
-inferTypesBlock:: Show r => Show i => (TargetDescription i r0 rc0 s0, TargetOptions) -> Function i r -> StateTuple i r -> Block i r -> StateTuple i r
+inferTypesBlock:: Show r => Show i => TargetWithOptions i r rc s -> Function i r -> StateTuple i r -> Block i r -> StateTuple i r
 inferTypesBlock target f types Block {bLab= bid, bCode = code} =
   inferTypesOperation target f bid types code
 
     
-inferTypesOperation :: Show r => Show i => Integral a => (TargetDescription i r0 rc0 s0, TargetOptions) -> Function i r -> BlockId -> StateTuple i r -> [BlockOperation i r] -> StateTuple i r
+inferTypesOperation :: Show r => Show i => Integral a => TargetWithOptions i r rc s -> Function i r -> BlockId -> StateTuple i r -> [BlockOperation i r] -> StateTuple i r
 inferTypesOperation _ _ _ types [] = types
 inferTypesOperation target f bid types (Bundle {bundleOs = bs}:codes) =
   inferTypesOperation target f bid types (bs ++ codes)

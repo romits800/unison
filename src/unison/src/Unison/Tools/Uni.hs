@@ -50,7 +50,7 @@ mainWithTargets targets = do
                           maxBlockSize, implementFrames, rematType, function,
                           goal, mirVersion, sizeThreshold, explicitCallRegs,
                           inFile, debug, intermediate, lint, lintPragma,
-                          outFile, policy)
+                          outFile, policy, clusterNumber)
                          input (target, targetOption)
                     return ()
     Linearize{..} ->
