@@ -55,8 +55,8 @@ fromBlock rwlf rm oif Block {bCode = code} =
                    -- TODO: boundary edges are just a type of "readWrite" edges,
                    -- that would also possibly make the extended edges
                    -- unnecessary
-                   --boundaryEdges lfs,
-                   --extendedEdges lfs,
+                   boundaryEdges lfs,
+                   extendedEdges lfs,
                    callFunctionEdges
                   ]
   in edg
