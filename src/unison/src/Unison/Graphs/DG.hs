@@ -296,7 +296,7 @@ fromBlockCl :: Show i => Eq i => Ord i => Show r => Ord r =>
              ReadWriteLatencyFunction i r -> ResourceManager i s ->
              OperandInfoFunction i rc -> Block i r -> DGraph i r
 fromBlockCl rwlf rm oif Block {bCode = code} =
-  let --lfs      = latencies rm
+  let lfs      = latencies rm
       t2ls     = tempLatencies oif
       dg       = mkGraph (map toLNode code) []
       edg      = foldl (insertEdges code) dg
@@ -306,8 +306,8 @@ fromBlockCl rwlf rm oif Block {bCode = code} =
                    -- TODO: boundary edges are just a type of "readWrite" edges,
                    -- that would also possibly make the extended edges
                    -- unnecessary
-                   --boundaryEdges lfs,
-                   --extendedEdges lfs,
+                   boundaryEdges lfs,
+                   extendedEdges lfs,
                    callFunctionEdges
                   ]
   in edg
