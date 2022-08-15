@@ -17,6 +17,8 @@ module Unison.Tools.UniArgs (Uni(..), RematType(..), uniArgs) where
 import MachineIR
 import System.Console.CmdArgs
 
+import Data.Word(Word32)
+
 data RematType = GeneralRemat | CopyRemat | NoRemat
                deriving (Data, Typeable, Show, Eq)
 
@@ -29,7 +31,8 @@ data Uni =
                rematType :: RematType, function :: Maybe String,
                goal :: Maybe String, mirVersion :: MachineIRVersion,
                sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool,
-               policy :: Maybe FilePath, clusterNumber :: Maybe Integer} |
+               policy :: Maybe FilePath, clusterNumber :: Maybe Integer,
+               kmeansIterations :: Maybe Word32, numberEigenvectors :: Maybe Integer} |
     Linearize {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
                lint :: Bool, lintPragma :: Bool} |
@@ -138,7 +141,9 @@ import' = Import {
   sizeThreshold   = Nothing &= help "Function size over which solving is skipped",
   explicitCallRegs = False &= help "Extract call uses and definitions explicitly from their operands",
   policy          = Nothing &= help "Security Policy",
-  clusterNumber   = Nothing &= help "Number of clusters for block spliting"}
+  clusterNumber   = Nothing &= help "Number of clusters for block spliting",
+  kmeansIterations= Nothing &= help "Number of iterations to improve clustering",
+  numberEigenvectors= Nothing &= help "Number of eigenvectors for clustering"}
   &= help "Import a MachineIR function into Unison"
 
 linearize' = Linearize {} &= help "Transform a Unison function into Linear SSA form"

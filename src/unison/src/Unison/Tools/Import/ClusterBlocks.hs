@@ -51,30 +51,33 @@ import qualified Data.List as List
 type AccType = (Integer, Integer, Map Integer Integer)
 
 clusterBlocks:: Show i => Show r => Ord s => Ord r => Ord i =>
-                Integer -> Function i r -> TargetWithOptions i r rc s -> Function i r
-clusterBlocks k f @ Function {fCode = code} target =
+                Integer -> Maybe Word32 -> Maybe Integer -> Function i r ->
+                TargetWithOptions i r rc s -> Function i r
+clusterBlocks k iter neigens f @ Function {fCode = code} target =
   let
     -- TODO(Convert to fold)
     bid     = newBlockIndex code  
     oid     = newId code
-    ((_, _, lastB), bs) = mapAccumL (clusterBlock k target) (bid, oid, Map.empty) code
+    ((_, _, lastB), bs) = mapAccumL (clusterBlock k iter neigens target)
+                          (bid, oid, Map.empty) code
     code'   = mapToOperationInBlocks (applyToPhiOps (applyMap lastB)) (concat bs)
   in f{ fCode = code'}
 
 
 clusterBlock:: Show i => Show r => Ord s => Ord r => Ord i =>
-               Integer -> TargetWithOptions i r rc s -> AccType ->
+               Integer -> Maybe Word32 -> Maybe Integer ->
+               TargetWithOptions i r rc s -> AccType ->
                Block i r -> (AccType, [Block i r])
-clusterBlock k target acc code =
+clusterBlock k iter neigens target acc code =
   let
     -- Generate Dependency Graph
     (dg,dg')      = genDgs code target
     -- Number of clusters
     ki            = fromIntegral k
     -- Generate eigenvalues from adjacency matrix
-    eigvs         = genEigenValues ki dg
+    eigvs         = genEigenValues ki dg neigens
     -- Run KMeans on the eigenvalues
-    (_err, km)   = runKMeansMany 100 ki eigvs
+    (_err, km)    = runKMeansMany iter ki eigvs
     -- Sort clusters so that they are in accending order
     km'           = sortClusterNumbers (-1) km Map.empty []
     -- Correct the clustering
@@ -130,8 +133,8 @@ genDgs f target =
 -- maximum :: Ord a => [a] -> a
 -- maximum = foldr1 (\x y ->if x >= y then x else y)
 genEigenValues:: Show i => Show r => Ord r => Ord i =>
-                 Int ->  DGraph i r -> MU.Matrix Double --[[Double]] --[V.Vector Double]
-genEigenValues k dg =
+                 Int -> DGraph i r -> Maybe Integer -> MU.Matrix Double --[[Double]] --[V.Vector Double]
+genEigenValues k dg neigens =
   let 
     dim = (maximum $ nodes dg) + 1
     eds = edges dg
@@ -139,7 +142,9 @@ genEigenValues k dg =
     sm  = SparseMatrix { dim = dim, indexes = edsv } -- sparse matrix
     -- taken from lineageflow that uses harpack
     -- TODO: Don't know why this is better when using more than k
-    RReal m = eigs sm (Symmetric SLA) (k + 2)
+    RReal m = case neigens of
+      Just n -> eigs sm (Symmetric SLA) (fromIntegral n)
+      Nothing -> eigs sm (Symmetric SLA) (k + 2)
     vectors = map snd . sortBy (compare `on` (\x -> - (fst x))) $ m
   in MU.tr $ MU.fromLists $ map V.toList vectors
 
@@ -170,7 +175,7 @@ isInMap h m = case Map.lookup h m of
 
 
 
-runKMeansMany :: Word32 -> Int -> MU.Matrix Double -> (Double,[Int]) --KMeans (U.Vector Double)
+runKMeansMany :: Maybe Word32 -> Int -> MU.Matrix Double -> (Double,[Int]) --KMeans (U.Vector Double)
 runKMeansMany num k eigs =
   let
     opts = defaultKMeansOpts {
@@ -180,8 +185,11 @@ runKMeansMany num k eigs =
     res     = kmeans k eigs opts
     err     = sse res
     members = U.toList $ membership res
+    num'    = case num of
+                Just n -> n
+                Nothing -> 100
   in
-    runKMeansManyI (num-1) k (err, members) eigs
+    runKMeansManyI (num'-1) k (err, members) eigs
 
 runKMeansManyI :: Word32 -> Int -> (Double,[Int]) -> MU.Matrix Double -> (Double,[Int]) 
 runKMeansManyI num _ best _ | num <= 0 = best
