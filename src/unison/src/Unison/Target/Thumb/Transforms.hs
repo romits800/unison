@@ -21,7 +21,8 @@ module Unison.Target.Thumb.Transforms
      combineLoadStores,
      reorderCalleeSavedSpills,
      enforceStackFrame,
-     extendNonSymmetricOperands) where
+     extendNonSymmetricOperands,
+     isNonSymmetric) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -400,8 +401,7 @@ defineFP f @ Function {fCode = code} =
  Transforms:
     o1: [p2{t2},p3{t3}] <- tEOR [p0{t0},p1{t1},14,_] (reads: [control])
  into:
-    o2: [p2{ -, t2},p3{ -, t3}] <- { -, tEOR_r} [p0{ -, t0},p1{ -, t1},14,_] (reads: [control])
-    o3: [p6{ -, t4},p7{ -, t5}] <- { -, tEOR_l} [p4{ -, t1},p5{ -, t0},14,_] (reads: [control])
+    o1: [p2{t2},p3{t3}] <- {tEOR, tEOR_r} [p0{t0},p1{t1},14,_] (reads: [control])
 -}
 
 
@@ -412,37 +412,18 @@ extendNonSymmetricOperands _ (
               oIs = [ TargetInstruction i ],
                 -- oUs = p1:p2:roUs,
                 -- oDs = [p3, p4]
-                oUs = (MOperand {altTemps = ts1}):
-                      (MOperand {altTemps = ts2}):roUs,
-                oDs = [(MOperand {altTemps = [ts3 @ Temporary {tReg = treg3} ]}),
-                       (MOperand {altTemps = [ts4 @ Temporary {tReg = treg4} ]})]
+              oUs = ous @ ((MOperand {altTemps = ts1}):
+                         (MOperand {altTemps = ts2}):roUs),
+              oDs = ods@ [(MOperand {altTemps = [ts3 @ Temporary {tReg = treg3} ]}),
+                          (MOperand {altTemps = [ts4 @ Temporary {tReg = treg4} ]})]
               }
           }
       }:rest)  (tid, oid, pid) | isNonSymmetric i =
                                  let
-                                   mkOper = mkOperand pid
-                                   mkCompleteTemp t r = Temporary (toInteger t) r
-                                   -- use the same instruction
-                                   is1 = [TargetInstruction i]
-                                   is2 = [TargetInstruction i]
-                                   -- use original order for i_r
-                                   oU1 = mkOper 0 ts1 : mkOper 1 ts2 : roUs
-                                   -- use opposite order for i_l
-                                   oU2 = mkOper 2 ts2 : mkOper 3 ts1 : roUs
-                                   -- use current temps and new operands for the new i_r
-                                   oD1 = [mkOper 4 [ts3], mkOper 5 [ts4]]
-                                   -- create new temps and operands for the new i_l
-                                   ts3' = mkCompleteTemp tid treg3
-                                   ts4' = mkCompleteTemp (tid + 1) treg4
-                                   oD2 = [mkOper 6 [ts3'], mkOper 7 [ts4']]
-                                   -- The new instruction i_1, i_2 are optional, so 
-                                   -- that only one is implemented
-                                   o1 = makeOptional $ mkLinear oid is1 oU1 oD1
-                                   o2 = makeOptional $ mkLinear (oid + 1) is2 oU2 oD2
-                                   -- Update the uses of t2 to [t2,t4], and t3 to [t3,t5]
-                                   rest' = map (mapToModelOperand (replaceTemp ts3 [ts3,ts3'])) rest
-                                   rest'' = map (mapToModelOperand (replaceTemp ts4 [ts4,ts4'])) rest'
-                                 in  (rest'', [o1,o2])
+                                   is = [TargetInstruction i,
+                                         TargetInstruction (getEquivalentInstruction i) ]
+                                   o' = mkLinear oid is ous ods
+                                 in  (rest, [o'])
 
 extendNonSymmetricOperands _ (o : code) _ = (code, [o])
 
@@ -451,7 +432,15 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
   in p {altTemps = ats'}
 
 -- TODO(Romy): Add more instructions similar to tEOR
-isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBICs]
+isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBIC, TMUL]
+
+getEquivalentInstruction i = case i of
+  TEOR -> TEOR_r
+  TAND -> TAND_r
+  TORR -> TORR_r
+  TBIC -> TBIC_r
+  TMUL -> TMUL_r
+  _ -> error $ "This is not a non-symmetric instruction: " ++ show i
 
 
 

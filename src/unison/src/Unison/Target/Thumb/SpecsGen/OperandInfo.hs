@@ -2734,8 +2734,8 @@ operandInfo i
       TemporaryInfo (RegisterClass CCR) 0 False],
      [TemporaryInfo (RegisterClass TGPR) 1 False])
   | i `elem`
-      [TADDrr, TAND, TASRrr, TBIC, TEOR, TLSLrr, TLSRrr, TMUL, TORR,
-       TROR, TSUBrr]
+      [TADDrr, TAND, TAND_r, TASRrr, TBIC, TBIC_r, TEOR, TEOR_r, TLSLrr,
+       TLSRrr, TMUL, TMUL_r, TORR, TORR_r, TROR, TSUBrr]
     =
     ([TemporaryInfo (RegisterClass TGPR) 0 False,
       TemporaryInfo (RegisterClass TGPR) 0 False, BoundInfo,
@@ -2939,7 +2939,8 @@ operandInfo i
   | i `elem` [TADDframe_cpsr] =
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass TGPR) 1 False,
-      TemporaryInfo (RegisterClass CCR) 1 False])
+      TemporaryInfo (RegisterClass CCR) 1 False,
+      TemporaryInfo (AbstractRegisterClass Unknown) 1 False])
   | i `elem` [TADDframe] =
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass TGPR) 1 False,

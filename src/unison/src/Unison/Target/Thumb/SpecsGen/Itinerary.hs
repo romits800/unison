@@ -653,8 +653,8 @@ itinerary i
     = IIC_iBITi
   | i `elem`
       [ANDrr, BICrr, EORrr, ORRrr, T2ANDrr, T2BICrr, T2EORrr, T2ORNrr,
-       T2ORRrr, T2ORRrr_cpsr, TAND, TANDs, TBIC, TBICs, TEOR, TEORs, TORR,
-       TORRs]
+       T2ORRrr, T2ORRrr_cpsr, TAND, TAND_r, TANDs, TBIC, TBIC_r, TBICs,
+       TEOR, TEOR_r, TEORs, TORR, TORR_r, TORRs]
     = IIC_iBITr
   | i `elem`
       [PKHTB, T2ANDrs, T2BICrs, T2EORrs, T2ORNrs, T2ORRrs, T2PKHBT,
@@ -784,7 +784,8 @@ itinerary i
        T2SMULBT, T2SMULTB, T2SMULTT, T2SMULWB, T2SMULWT]
     = IIC_iMUL16
   | i `elem`
-      [MUL, MULv5, SMMUL, SMMULR, T2MUL, T2SMMUL, T2SMMULR, TMUL, TMULz]
+      [MUL, MULv5, SMMUL, SMMULR, T2MUL, T2SMMUL, T2SMMULR, TMUL, TMUL_r,
+       TMULz]
     = IIC_iMUL32
   | i `elem` [SMULL, SMULLv5, UMULL, UMULLv5, T2SMULL, T2UMULL] =
     IIC_iMUL64
