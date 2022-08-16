@@ -9,7 +9,9 @@ Main authors:
 
 This file is part of Unison, see http://unison-code.github.io
 -}
-module Unison.Tools.Import.SplitBlocks (splitBlocks) where
+module Unison.Tools.Import.SplitBlocks (splitBlocks,
+                                        applyToPhiOps,
+                                        splitIntoBlocks) where
 
 import Data.List
 import Data.List.Split

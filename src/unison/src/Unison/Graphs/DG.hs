@@ -14,7 +14,7 @@ This file is part of Unison, see http://unison-code.github.io
 -}
 module Unison.Graphs.DG
        (fromFunction, fromBlock, dependencies, precede, inDistances, toNodeId,
-        toDot) where
+        toDot, fromBlockCl, precs, toIstr) where
 
 import Data.List
 import Data.List.Split
@@ -285,3 +285,30 @@ showLatency Nothing  = "-"
 
 showTemps [t] = show t
 showTemps ts  = renderStyle (st 20) (cs show ts)
+
+
+--- for clustering (ROMY)
+
+fromBlockCl :: Show i => Eq i => Ord i => Show r => Ord r =>
+             ReadWriteLatencyFunction i r -> ResourceManager i s ->
+             OperandInfoFunction i rc -> Block i r -> DGraph i r
+fromBlockCl rwlf rm oif Block {bCode = code} =
+  let lfs      = latencies rm
+      t2ls     = tempLatencies oif
+      dg       = mkGraph (map toLNode code) []
+      edg      = foldl (insertEdges code) dg
+                  [
+                   dataEdges t2ls,
+                   readWriteEdges rwlf,
+                   -- TODO: boundary edges are just a type of "readWrite" edges,
+                   -- that would also possibly make the extended edges
+                   -- unnecessary
+                   boundaryEdges lfs,
+                   extendedEdges lfs,
+                   callFunctionEdges
+                  ]
+  in edg
+
+
+precs :: DGraph i r -> Int -> [Int]
+precs dg nd = pre dg nd

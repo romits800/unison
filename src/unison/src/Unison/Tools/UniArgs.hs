@@ -17,6 +17,8 @@ module Unison.Tools.UniArgs (Uni(..), RematType(..), uniArgs) where
 import MachineIR
 import System.Console.CmdArgs
 
+import Data.Word(Word32)
+
 data RematType = GeneralRemat | CopyRemat | NoRemat
                deriving (Data, Typeable, Show, Eq)
 
@@ -28,7 +30,9 @@ data Uni =
                noCC :: Bool, noReserved :: Bool, maxBlockSize :: Maybe Integer,
                rematType :: RematType, function :: Maybe String,
                goal :: Maybe String, mirVersion :: MachineIRVersion,
-               sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool} |
+               sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool,
+               clusterNumber :: Maybe Integer,
+               kmeansIterations :: Maybe Word32, numberEigenvectors :: Maybe Integer} |
     Linearize {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
                lint :: Bool, lintPragma :: Bool} |
@@ -132,7 +136,10 @@ import' = Import {
   function        = Nothing &= help "Name of the function to import from the input MachineIR",
   goal            = Nothing &= help "Optimization goal (one of {speed, size})",
   sizeThreshold   = Nothing &= help "Function size over which solving is skipped",
-  explicitCallRegs = False &= help "Extract call uses and definitions explicitly from their operands"}
+  explicitCallRegs = False &= help "Extract call uses and definitions explicitly from their operands",
+  clusterNumber   = Nothing &= help "Number of clusters for block spliting",
+  kmeansIterations= Nothing &= help "Number of iterations to improve clustering",
+  numberEigenvectors= Nothing &= help "Number of eigenvectors for clustering"}
   &= help "Import a MachineIR function into Unison"
 
 linearize' = Linearize {} &= help "Transform a Unison function into Linear SSA form"
@@ -145,13 +152,15 @@ augment' = Augment {
   expandCopies = True &= help "Expand copies in a target-dependent manner"}
   &= help "Augment a Unison function with alternative temporaries"
 
+
 model' = Model {
   baseFile           = Nothing &= help "Base assembly solution" &= typFile,
   scaleFreq          = True  &= help "Scale down block frequencies if there is a potential cost function overflow",
   applyBaseFile      = True &= help "Apply base file to limit the maximum cost of the function",
   tightPressureBound = False &= help "Compute a tight bound of the register atoms contained in an infinite register space (incompatible with presolver's infinite register dominance constraints)",
   strictlyBetter     = True &= help "Require the solver to find a strictly better solution than the base (as opposed to better or equal)",
-  unsatisfiable      = False &= help "Make the constraint problem trivially unsatisfiable"}
+  unsatisfiable      = False &= help "Make the constraint problem trivially unsatisfiable"
+  }
   &= help "Generate a code generation problem for a Unison function"
 
 export' = Export {

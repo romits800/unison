@@ -22,6 +22,8 @@ import Unison.Driver
 import Unison.Tools.UniArgs
 import Unison.Tools.Lint (invokeLint)
 
+import Common.Util
+
 import qualified MachineIR as MachineIR
 
 import Unison.Construction.AddDelimiters
@@ -76,14 +78,18 @@ import Unison.Tools.Import.ReserveRegs
 import Unison.Tools.Import.ImplementFrameOperations
 import Unison.Tools.Import.FoldCopies
 import Unison.Tools.Import.SplitBlocks
+import Unison.Tools.Import.ClusterBlocks
 import Unison.Tools.Import.RepairCSSA
 import Unison.Tools.Import.AdvancePhis
 import Unison.Tools.Import.TagRemats
 
+
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
-     explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile)
+     explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile,
+     clusterNumber, kmeansIterations, numberEigenvectors)
     mir target =
+  do
     let mfs = MachineIR.parse mirVersion mir
         mf  = selectFunction function mfs
         (mf', partialMfs) =
@@ -96,10 +102,11 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
             applyTransformations
             (uniTransformations (goal, noCC, noReserved, maxBlockSize,
                                  estimateFreq, implementFrames, rematType,
-                                 lintPragma, explicitCallRegs))
+                                 lintPragma, explicitCallRegs,
+                                 clusterNumber, kmeansIterations, numberEigenvectors))
             target ff
         baseName = takeBaseName mirFile
-    in case selected function mfs of
+      in case selected function mfs of
         False -> do return (Left NotSelected)
         True  -> case overThreshold sizeThreshold mf of
             True  -> do return (Left OverSizeThreshold)
@@ -133,7 +140,8 @@ mirTransformations (estimateFreq, simplifyControlFlow, explicitCallRegs) =
      (runPreProcess, "runPreProcess", True)]
 
 uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
-                    implementFrames, rematType, lintPragma, explicitCallRegs) =
+                    implementFrames, rematType, lintPragma, explicitCallRegs,
+                    clusterNumber, kmeansIterations, numberEigenvectors) =
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
      (connectCalls, "connectClass", explicitCallRegs),
@@ -146,8 +154,8 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (simplifyCombinations, "simplifyCombinations", True),
      (removeUselessVirtuals, "removeUselessVirtuals", True),
      (relocateDefines, "relocateDefines", True),
-     (runTargetTransforms ImportPreLift, "runTargetTransforms", True),
-     (extractCallRegs, "extractCallRegs", not explicitCallRegs),
+     (runTargetTransforms ImportPreLift, "runTargetTransforms", True), --here
+     (extractCallRegs, "extractCallRegs", not explicitCallRegs), -- here
      (liftRegs, "liftRegs", True),
      (runTargetTransforms ImportPostLift, "runTargetTransforms", True),
      (enforceCallerSaved, "enforceCallerSaved", not noCC),
@@ -157,8 +165,11 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (implementFrameOperations implementFrames, "implementFrameOperations", True),
      (liftUndefRegs, "liftUndefRegs", True),
      (killUnusedTemps, "killUnusedTemps", True),
-     (extractRegs, "extractRegs", True),
+     (extractRegs, "extractRegs", True), --here
      (foldCopies, "foldCopies", True),
+     (renameOperations, "renameOperations", True),
+     (clusterBlocks (fromJust clusterNumber) kmeansIterations numberEigenvectors,
+      "clusterBlocks", isJust clusterNumber), -- TODO(Romy): add new flag for this
      (splitBlocks (fromJust maxBlockSize), "splitBlocks", isJust maxBlockSize),
      (renameBlocks, "renameBlocks", True),
      (repairCSSA, "repairCSSA", True),

@@ -33,7 +33,6 @@ Library
                    Unison.Target.Query
                    Unison.Target.Hexagon
                    Unison.Target.ARM
-                   Unison.Target.Thumb
                    Unison.Target.Mips
                    Unison.Target.Minimal
 
@@ -129,6 +128,22 @@ Library
 
                    Common.Util
 
+                   Unison.Target.Minimal.MinimalRegisterDecl
+                   Unison.Target.Minimal.SpecsGen
+                   Unison.Target.Minimal.SpecsGen.AlignedPairs
+                   Unison.Target.Minimal.SpecsGen.AllInstructions
+                   Unison.Target.Minimal.SpecsGen.InstructionType
+                   Unison.Target.Minimal.SpecsGen.Itinerary
+                   Unison.Target.Minimal.SpecsGen.MinimalInstructionDecl
+                   Unison.Target.Minimal.SpecsGen.MinimalItineraryDecl
+                   Unison.Target.Minimal.SpecsGen.MinimalRegisterClassDecl
+                   Unison.Target.Minimal.SpecsGen.OperandInfo
+                   Unison.Target.Minimal.SpecsGen.Parent
+                   Unison.Target.Minimal.SpecsGen.ReadOp
+                   Unison.Target.Minimal.SpecsGen.ReadWriteInfo
+                   Unison.Target.Minimal.SpecsGen.ShowInstance
+                   Unison.Target.Minimal.SpecsGen.Size
+
   Other-modules:  Unison.Tools.Import.ConnectCalls
                   Unison.Tools.Import.AdjustPhiLabels
                   Unison.Tools.Import.MovePhiUndefs
@@ -159,6 +174,7 @@ Library
                   Unison.Tools.Import.ReserveRegs
                   Unison.Tools.Import.SimplifyCombinations
                   Unison.Tools.Import.SplitBlocks
+                  Unison.Tools.Import.ClusterBlocks
                   Unison.Tools.Import.TagRemats
                   Unison.Tools.Linearize.SinkLiveOuts
                   Unison.Tools.Linearize.SourceLiveIns
@@ -241,27 +257,28 @@ Library
                   Unison.Target.ARM.SpecsGen.Size
                   Unison.Target.ARM.SpecsGen.Parent
 
+
+                  Unison.Target.Thumb
                   Unison.Target.Thumb.Common
-                  Unison.Target.Thumb.Registers
                   Unison.Target.Thumb.OperandInfo
-                  Unison.Target.Thumb.Transforms
-                  Unison.Target.Thumb.Usages
-                  Unison.Target.Thumb.ThumbRegisterDecl
-                  Unison.Target.Thumb.ThumbResourceDecl
+                  Unison.Target.Thumb.Registers
                   Unison.Target.Thumb.SpecsGen
+                  Unison.Target.Thumb.SpecsGen.AlignedPairs
+                  Unison.Target.Thumb.SpecsGen.InstructionType
+                  Unison.Target.Thumb.SpecsGen.Itinerary
+                  Unison.Target.Thumb.SpecsGen.OperandInfo
+                  Unison.Target.Thumb.SpecsGen.Parent
+                  Unison.Target.Thumb.SpecsGen.ReadOp
+                  Unison.Target.Thumb.SpecsGen.ReadWriteInfo
+                  Unison.Target.Thumb.SpecsGen.ShowInstance
+                  Unison.Target.Thumb.SpecsGen.Size
                   Unison.Target.Thumb.SpecsGen.ThumbInstructionDecl
                   Unison.Target.Thumb.SpecsGen.ThumbItineraryDecl
                   Unison.Target.Thumb.SpecsGen.ThumbRegisterClassDecl
-                  Unison.Target.Thumb.SpecsGen.ReadWriteInfo
-                  Unison.Target.Thumb.SpecsGen.OperandInfo
-                  Unison.Target.Thumb.SpecsGen.ReadOp
-                  Unison.Target.Thumb.SpecsGen.ShowInstance
-                  Unison.Target.Thumb.SpecsGen.Itinerary
-                  Unison.Target.Thumb.SpecsGen.InstructionType
-                  Unison.Target.Thumb.SpecsGen.AlignedPairs
-                  Unison.Target.Thumb.SpecsGen.Size
-                  Unison.Target.Thumb.SpecsGen.Parent
-
+                  Unison.Target.Thumb.ThumbRegisterDecl
+                  Unison.Target.Thumb.ThumbResourceDecl
+                  Unison.Target.Thumb.Transforms
+                  Unison.Target.Thumb.Usages
 
                   Unison.Target.Mips.Common
                   Unison.Target.Mips.Registers
@@ -284,22 +301,27 @@ Library
                   Unison.Target.Mips.SpecsGen.AllInstructions
                   Unison.Target.Mips.SpecsGen.Parent
 
-                  Unison.Target.Minimal.MinimalRegisterDecl
-                  Unison.Target.Minimal.SpecsGen
-                  Unison.Target.Minimal.SpecsGen.MinimalInstructionDecl
-                  Unison.Target.Minimal.SpecsGen.MinimalItineraryDecl
-                  Unison.Target.Minimal.SpecsGen.MinimalRegisterClassDecl
-                  Unison.Target.Minimal.SpecsGen.ReadWriteInfo
-                  Unison.Target.Minimal.SpecsGen.OperandInfo
-                  Unison.Target.Minimal.SpecsGen.ReadOp
-                  Unison.Target.Minimal.SpecsGen.ShowInstance
-                  Unison.Target.Minimal.SpecsGen.Itinerary
-                  Unison.Target.Minimal.SpecsGen.InstructionType
-                  Unison.Target.Minimal.SpecsGen.AlignedPairs
-                  Unison.Target.Minimal.SpecsGen.Size
-                  Unison.Target.Minimal.SpecsGen.AllInstructions
-                  Unison.Target.Minimal.SpecsGen.Parent
-
+--   if impl(ghc >= 8.0.2)
+--     Build-Depends: cmdargs,
+--                    yaml,
+--                    parsec,
+--                    base,
+--                    fgl ,
+--                    pretty,
+--                    graphviz,
+--                    split,
+--                    containers ,
+--                    hoopl,
+--                    filepath,
+--                    text,
+--                    aeson,
+--                    aeson-pretty,
+--                    bytestring,
+--                    unordered-containers,
+--                    directory,
+--                    process,
+--                    HUnit
+--   else
   if impl(ghc <= 7.4.2)
     Build-Depends: transformers-compat == 0.5.*,
                    cmdargs == 0.10.14,
@@ -310,7 +332,7 @@ Library
                    yaml >= 0.8,
                    parsec >= 3.1
 
-  Build-Depends: base >= 4.0,
+  Build-Depends: base >= 4.8 && < 5.0,
                  fgl >= 5.5.0,
                  pretty >= 1.0,
                  graphviz >= 2999.17,
@@ -325,6 +347,10 @@ Library
                  unordered-containers >= 0.2,
                  directory >= 1.2,
                  process >= 1.2,
+                 vector >= 0.11,
+                 matrices >= 0.5.0,
+                 clustering >= 0.4.1,
+                 harpack,
                  HUnit
 
   Ghc-options: -fwarn-dodgy-exports -fwarn-dodgy-imports -fwarn-unused-matches
