@@ -49,7 +49,8 @@ mainWithTargets targets = do
                           maxBlockSize, implementFrames, rematType, function,
                           goal, mirVersion, sizeThreshold, explicitCallRegs,
                           inFile, debug, intermediate, lint, lintPragma,
-                          outFile)
+                          outFile, clusterNumber, kmeansIterations,
+                          numberEigenvectors)
                          input (target, targetOption)
                     return ()
     Linearize{..} ->
