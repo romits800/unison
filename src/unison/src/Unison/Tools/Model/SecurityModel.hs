@@ -33,7 +33,13 @@ allNotInmap ts inmap =
 
 parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
   let
-    nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _,_) = inferSecurityTypes target f policies
+    types' = inferSecurityTypes target f policies
+    pmap' = fPmap types'
+    inmap = fInmap types'
+    m2o'  = fM2o types'
+    c2o'  = fC2o types'
+    bbs   = fBbs types'
+    -- nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _,_, bbs, _) = inferSecurityTypes target f policies
     (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
     ran'            = filter (\x -> head x == 't') ran
     pub'            = filter (\x -> head x == 't') pub
@@ -42,11 +48,11 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
     ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') ran  -- memory randoms
     pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') pub
     -- Parameters
-    pairs           = findPairs (ran' ++ pub') nt []
-    secdom          = findRandSec sec' ran' nt []
+    pairs           = findPairs (ran' ++ pub') types' []
+    secdom          = findRandSec sec' ran' types' []
     p2o             = Map.union c2o' m2o'   --- Not the same key
-    mpairs          = findPairsMC (ran'' ++ pub'') nt p2o []
-    secdommem       = findRandSecMC sec'' ran'' nt p2o inmap [] 
+    mpairs          = findPairsMC (ran'' ++ pub'') types' p2o []
+    secdommem       = findRandSecMC sec'' ran'' types' p2o inmap [] 
     hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
     hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
   in
@@ -62,7 +68,8 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
       -- ("adj2",      toJSON $ Map.toList p2p), -- secret memory - operations
       -- ("adj25",     toJSON adjacent), -- secret memory - operations
       -- ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
-      ("HR",        toJSON hregs)
+      ("HR",        toJSON hregs),
+      ("bbs",       toJSON $ map snd $ Map.toList bbs)
     ]
 
 
@@ -101,7 +108,11 @@ toInt1 t       = error $ "SecTypeInf: toInt cannot convert to integer: " ++ t
 findPairs [] _ res = res
 findPairs (p:ps) types res = 
   let
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res p2 =
+    supp = fSupp types
+    unq  = fUnq types
+    dom  = fDom types
+    xor  = fXor types
+    f types res p2 =
       let
         s1   = Map.findWithDefault Map.empty p supp
         s2   = Map.findWithDefault Map.empty p2 supp
@@ -125,7 +136,9 @@ findPairs (p:ps) types res =
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
         xor' = Map.insert "tmp" x12 xor
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [p] [p2] "tmp"
+        types' = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'} 
+        pmap' = updatePmapID True False types' [p] [p2] "tmp"
+        -- pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args, bbs, flag) [p] [p2] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in
         -- if (p == "t26" && p2 == "t12") || (p == "t12" && p2 == "t26") then
@@ -140,14 +153,23 @@ findPairs (p:ps) types res =
 
 
 findRandSec [] _ _ res = res
-findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _, _) res = 
+findRandSec (s:ss) rs types res = 
   let
+    supp = fSupp types
+    unq  = fUnq types
+    dom  = fDom types
+    xor  = fXor types
     s1   = Map.findWithDefault Map.empty s supp
     u1   = Map.findWithDefault Map.empty s unq
     d1   = Map.findWithDefault Map.empty s dom
     x1   = Map.findWithDefault False s xor
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res r = 
+    f types res r = 
       let
+        supp = fSupp types
+        unq  = fUnq types
+        dom  = fDom types
+        xor  = fXor types
+        
         s2   = Map.findWithDefault Map.empty r supp
         u2   = Map.findWithDefault Map.empty r unq
         d2   = Map.findWithDefault Map.empty r dom
@@ -158,7 +180,7 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _, _) res =
         is12 = Map.intersection s1 s2
         u12  = Map.difference (Map.union u1 u2) is12
         d12  = Map.intersection (Map.union d1 d2) u12 
-        supp' = Map.insert "tmp" s12 supp
+        supp'= Map.insert "tmp" s12 supp
         unq' = Map.insert "tmp" u12 unq
         dom' = Map.insert "tmp" d12 dom
 
@@ -167,7 +189,8 @@ findRandSec (s:ss) rs types @ (_, _, supp, unq, dom, xor, _, _, _, _, _) res =
         -- dom' = updateBDoms (dom, unq') [r] s ["tmp"]
 
         xor' = Map.insert "tmp" x12 xor
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [s] [r] "tmp"
+        types' = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'} 
+        pmap' = updatePmapID True False types' [s] [r] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if not $ isMaybeSecret typ
          then r:res
@@ -182,18 +205,27 @@ filterInmap ((op1, ts):rest) inmap res =
   then filterInmap rest inmap (op1:res)
   else filterInmap rest inmap res 
 
-
 findRandSecMC [] _ _ _ _ res = res
-findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o inmap res = 
+findRandSecMC (s:ss) rs types t2o inmap res = 
   let
+    supp = fSupp types
+    unq  = fUnq types
+    dom  = fDom types
+    xor  = fXor types
+    m2o  = fM2o types
     s1   = Map.findWithDefault Map.empty s supp
     u1   = Map.findWithDefault Map.empty s unq
     d1   = Map.findWithDefault Map.empty s dom
     x1   = Map.findWithDefault False s xor
     ops  = Map.toList $ Map.findWithDefault Map.empty s m2o
     ops1 = filterInmap ops inmap []
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res r = 
+    f types res r = 
       let
+        supp = fSupp types
+        unq  = fUnq types
+        dom  = fDom types
+        xor  = fXor types
+        -- m2o  = fM2o types
         s2   = Map.findWithDefault Map.empty r supp
         u2   = Map.findWithDefault Map.empty r unq
         d2   = Map.findWithDefault Map.empty r dom
@@ -215,7 +247,8 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o
 
         xor' = Map.insert "tmp" x12 xor
         ops2 = Map.findWithDefault Map.empty r t2o
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [s] [r] "tmp"
+        types' = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'} 
+        pmap' = updatePmapID True False types' [s] [r] "tmp"
         typ  = Map.lookup "tmp" pmap'
       in if not $ isMaybeSecret typ
          then Map.union ops2 res
@@ -231,8 +264,13 @@ findRandSecMC (s:ss) rs types @ (_, _, supp, unq, dom, xor, m2o, _, _, _, _) t2o
 findPairsMC [] _ _ res = res
 findPairsMC (p:ps) types t2o res = 
   let
-    f (pmap, inmap, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) res p2 =
+    f types res p2 =
       let
+        supp = fSupp types
+        unq  = fUnq types
+        dom  = fDom types
+        xor  = fXor types
+        
         s1   = Map.findWithDefault Map.empty p supp
         s2   = Map.findWithDefault Map.empty p2 supp
         u1   = Map.findWithDefault Map.empty p unq
@@ -259,7 +297,10 @@ findPairsMC (p:ps) types t2o res =
         -- get operations that correspond to p and p2
         ops1 = map fst $ Map.toList $ Map.findWithDefault Map.empty p t2o
         ops2 = map fst $ Map.toList $ Map.findWithDefault Map.empty p2 t2o
-        pmap' = updatePmapID True False (pmap, inmap, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args) [p] [p2] "tmp"
+        
+        types' = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'} 
+
+        pmap' = updatePmapID True False types' [p] [p2] "tmp"
         typ  = Map.lookup "tmp" pmap'
         pairs = [ (i,j) | i <- ops1, j <- ops2]
       in

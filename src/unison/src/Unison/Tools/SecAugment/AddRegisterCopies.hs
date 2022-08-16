@@ -18,14 +18,13 @@ import qualified Data.Map as Map
 -- import Data.Maybe
 
 import Unison.Base
-import Unison.Util
+-- import Unison.Util
 import Unison.Target.API
 
-addRegisterCopies policies f @ Function {fCode = code} target =
+addRegisterCopies types f @ Function {fCode = _} target =
   let
-    (pmap, _, _, _, _, _, _, _, _, _, _) = inferSecurityTypes target f policies
     escf = addSecurityCopy target
-    rands = map getT $ filter isRandomT $ map snd $ Map.toList pmap
+    rands = map getT $ filter isRandomT $ map snd $ Map.toList $ fPmap types
     f' = foldl escf f rands
   in f'
 
