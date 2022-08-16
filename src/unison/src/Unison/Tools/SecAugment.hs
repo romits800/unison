@@ -22,12 +22,15 @@ import Unison.Tools.Lint (invokeLint)
 
 --import Unison.Transformations.RunTargetTransforms
 import Unison.Tools.SecAugment.AddRegisterCopies
+-- import Unison.Transformations.BalanceBlocks
 import Unison.Transformations.RenameTemps
+-- import Unison.Transformations.RenameBlocks
 import Unison.Transformations.RenameOperations
 import Unison.Transformations.RenameMOperands
 import Unison.Transformations.ReorderInstructions
 import Common.Util
 import qualified Unison.ParseSecurityPolicies as PSP
+import Unison.Transformations.SecurityTypeInference
 
 run (uniFile, debug, intermediate, lint, lintPragma, altUniFile, policy) uni target =
   do
@@ -36,8 +39,9 @@ run (uniFile, debug, intermediate, lint, lintPragma, altUniFile, policy) uni tar
         policies =  case secPolicy of
                       (Just pfile) -> PSP.parse pfile
                       Nothing -> []
+        types = inferSecurityTypes target f policies
         (altF, partialAltFs) = applyTransformations
-                               (secAugmenterTransformations policies)
+                               (secAugmenterTransformations types)
                                target f
         baseName = takeBaseName uniFile
     when debug $
@@ -49,8 +53,10 @@ run (uniFile, debug, intermediate, lint, lintPragma, altUniFile, policy) uni tar
       invokeLint altF target
       
 
-secAugmenterTransformations policy =
-    [(addRegisterCopies policy, "addRegisterCopies", True),
+secAugmenterTransformations types =
+    [(addRegisterCopies types, "addRegisterCopies", True),
+     -- (balanceBlocks types, "balanceBlocks", True),
+     -- (renameBlocks, "renameBlocks", True),
      (renameTemps, "renameTemps", True),
      (renameMOperands, "renameMOperands", True),
      (renameOperations, "renameOperations", True),
