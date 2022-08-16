@@ -13,9 +13,6 @@ module Unison.Tools.Import.ClusterBlocks (clusterBlocks) where
 import Data.List     -- for `sortBy`
 import Data.Function -- for `on`
 import Data.Word(Word32)
--- import Data.List.Split
--- import Data.Ord
--- import qualified Data.Map as M
 
 {-
 procedure:
@@ -207,20 +204,6 @@ runKMeansManyI num k (berr, bmembers) eigs =
      else runKMeansManyI (num-1) k (berr, bmembers) eigs
 
 
--- runKMeans :: Int -> MU.Matrix Double -> (Double,[Int]) --KMeans (U.Vector Double)
--- runKMeans k eigs =
---   let
---     opts = defaultKMeansOpts {
---       kmeansClusters = False,
---       kmeansSeed = U.fromList [1..200]
---       }
---     res     = kmeans k eigs opts
---     err     = sse res
---     members = U.toList $ membership res
---   in
---     (err, members)
-
-
 correctClustering :: Show i => Show r => DGraph i r -> [Int] -> [Int]
 correctClustering dg cls =
   let
@@ -248,10 +231,6 @@ checkClusters dg ((h,cl):t) m mx =
       let maxdep = maximum clprecs
           m' = Map.insert h maxdep m
       in checkClusters dg t m' mx
-      -- error "This is a kill instruction"
-      -- let m' = Map.insert h mx m
-      -- in checkClusters dg t m' mx
-         --error ("operation" ++ show op)
     (True,_) -> checkClusters dg t m mx
     (False,_) -> let maxdep = maximum clprecs
                      m' = Map.insert h maxdep m
