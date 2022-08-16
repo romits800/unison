@@ -1,6 +1,8 @@
-# Getting Started with DivCon
+# Getting Started with SecConCG
 
-DivCon is based on [Unison](https://unison-code.github.io/), a software tool that
+SecConCG is tool to generate code that is secure against power side-channel attacks. 
+
+SecConCG is based on [Unison](https://unison-code.github.io/), a software tool that
 performs register allocation and instruction scheduling in integration using
 combinatorial optimization.
 
@@ -79,7 +81,7 @@ make install PREFIX=$DIR
 
 ## Running
 
-If you have a .mir file you can run DivCon as follows:
+If you have a .mir file you can run SecConCG as follows:
 ```bash
 uni import --target=mips factorial.mir -o factorial.uni --function=factorial --maxblocksize=50 --goal=speed
 uni linearize --target=mips factorial.uni -o factorial.lssa.uni
@@ -95,10 +97,10 @@ gecode-solver  -o factorial.out.json --verbose factorial.ext.json
 or the portfolio solver (requires installing [MiniZincIDE-2.2.3-bundle-linux](https://github.com/MiniZinc/MiniZincIDE/releases/tag/2.2.3)):
 
 ```bash
-export DIVCON_PATH=/path/to/divCon
+export SECCON_PATH=/path/to/divCon
 export MINIZINC_PATH=/path/to/minizincIDE/bin
-export PATH=${PATH}:${DIVCON_PATH}/src/solvers/gecode:${DIVCON_PATH}/src/solvers/multi_backend/minizinc/:${DIVCON_PATH}/src/solvers/multi_backend/:${MINIZINC_PATH}:${DIVCON_PATH}/src/solvers/multi_backend/common/ UNISON_DIR=${DIVCON_PATH}
-${DIVCON_PATH}/src/solvers/multi_backend/portfolio-solver -o factorial.out.json --verbose factorial.ext.json
+export PATH=${PATH}:${SECCON_PATH}/src/solvers/gecode:${SECCON_PATH}/src/solvers/multi_backend/minizinc/:${SECCON_PATH}/src/solvers/multi_backend/:${MINIZINC_PATH}:${SECCON_PATH}/src/solvers/multi_backend/common/ UNISON_DIR=${SECCON_PATH}
+${SECCON_PATH}/src/solvers/multi_backend/portfolio-solver -o factorial.out.json --verbose factorial.ext.json
 ```
 
 And run the diversifier for:
@@ -136,13 +138,13 @@ make doc
 
 ## Contact
 
-For any questions or issues on DivCon contact:
+For any questions or issues on SecConCG contact:
 [Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/) [<tsoupidi@kth.se>]
 
 
 ## License
 
-DivCon is licensed under the BSD3 license, see the [LICENSE.md](LICENSE.md) file
+SecConCG is licensed under the BSD3 license, see the [LICENSE.md](LICENSE.md) file
 for details.
 
 
