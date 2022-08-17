@@ -134,7 +134,7 @@ genEigenValues k dg neigens =
   let 
     dim = (maximum $ nodes dg) + 1
     eds = edges dg
-    edsv = concatMap (\(i,j) -> [((i,j), 1.0)]) eds
+    edsv = concatMap (\(i,j) -> [((i,j), 1.0), ((j,i), 1.0)]) eds
     sm  = SparseMatrix { dim = dim, indexes = edsv } -- sparse matrix
     -- taken from lineageflow that uses harpack
     -- TODO: Don't know why this is better when using more than k
