@@ -14,7 +14,7 @@ This file is part of Unison, see http://unison-code.github.io
 -}
 module Unison.Graphs.DG
        (fromFunction, fromBlock, dependencies, precede, inDistances, toNodeId,
-        toDot, fromBlockCl, precs, toIstr) where
+        toDot, fromBlockCl, precs, sucs, toIstr) where
 
 import Data.List
 import Data.List.Split
@@ -288,9 +288,6 @@ showTemps ts  = renderStyle (st 20) (cs show ts)
 
 
 --- for clustering (ROMY)
--- fromFunctionCl rwlf rm oif Function {fCode = code} =
---   let dgs = map (fromBlockCl rwlf rm oif) code
---   in concatGraphs dgs
 
 fromBlockCl :: Show i => Eq i => Ord i => Show r => Ord r =>
              ReadWriteLatencyFunction i r -> ResourceManager i s ->
@@ -315,3 +312,7 @@ fromBlockCl rwlf rm oif Block {bCode = code} =
 
 precs :: DGraph i r -> Int -> [Int]
 precs dg nd = pre dg nd
+
+
+sucs :: DGraph i r -> Int -> [Int]
+sucs dg nd = suc dg nd
