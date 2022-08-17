@@ -2954,6 +2954,7 @@ instance Show ThumbInstruction where
         show VLDRD_cpi = "VLDRD_cpi"
         show VLDRS_cpi = "VLDRS_cpi"
         show T2LEApcrel_cpi = "t2LEApcrel_cpi"
+        show TLDRpci_cpi = "tLDRpci_cpi"
         show MOVE = "MOVE"
         show MOVE_ALL = "MOVE_ALL"
         show MOVE_D = "MOVE_D"

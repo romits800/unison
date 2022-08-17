@@ -2989,7 +2989,7 @@ operandInfo i
     =
     ([BoundInfo, BoundInfo, TemporaryInfo (RegisterClass CCR) 0 False],
      [TemporaryInfo (RegisterClass RGPR) 1 False])
-  | i `elem` [TADR, TLDRpci, TLEApcrel, TLEApcrelJT] =
+  | i `elem` [TADR, TLDRpci, TLDRpci_cpi, TLEApcrel, TLEApcrelJT] =
     ([BoundInfo, BoundInfo, TemporaryInfo (RegisterClass CCR) 0 False],
      [TemporaryInfo (RegisterClass TGPR) 1 False])
   | i `elem` [TMOVi8] =

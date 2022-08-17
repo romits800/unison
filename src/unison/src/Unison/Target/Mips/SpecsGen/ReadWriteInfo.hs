@@ -479,7 +479,7 @@ readWriteInfo i
     ([OtherSideEffect SP], [Memory "mem", OtherSideEffect SP])
   | i `elem`
       [ADDiu_negsp, ADDiu_sp, ADJCALLSTACKDOWN, ADJCALLSTACKUP,
-       AddiuSpImm16, AddiuSpImmX16]
+       AddiuSpImm16, AddiuSpImmX16, SUBu_sp]
     = ([OtherSideEffect SP], [OtherSideEffect SP])
   | i `elem` [Bteqz16, BteqzX16, Btnez16, BtnezX16] =
     ([OtherSideEffect T8], [])
