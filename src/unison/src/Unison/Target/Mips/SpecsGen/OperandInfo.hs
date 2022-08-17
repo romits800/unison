@@ -581,7 +581,7 @@ operandInfo i
       [JALR16_MM, JALRC16_MMR6, JALRPseudo, JALRPseudo_NOP, JALRS16_MM,
        JR, JR16_MM, JRC16_MM, JRC16_MMR6, JR_HB, JR_HB_R6, JR_MM,
        JalOneReg, MTHI, MTHI_MM, MTLO, MTLO_MM, PseudoIndirectBranch,
-       PseudoIndirectBranch_NOP, PseudoReturn, PseudoReturn_NOP,
+       PseudoIndirectBranch_NOP, PseudoReturn, PseudoReturn_NOP, SUBu_sp,
        TAILCALL_R]
     = ([TemporaryInfo (RegisterClass GPR32Opnd) 0 False], [])
   | i `elem` [PseudoCVT_D32_W] =
