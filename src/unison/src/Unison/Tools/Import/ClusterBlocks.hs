@@ -74,9 +74,9 @@ clusterBlock k iter neigens target acc code =
     -- Generate eigenvalues from adjacency matrix
     eigvs         = genEigenValues ki dg neigens
     -- Run KMeans on the eigenvalues
-    (_err, km)    = runKMeansMany iter ki eigvs
+    (_err, _kin:km)    = runKMeansMany iter ki eigvs
     -- Sort clusters so that they are in accending order
-    km'           = sortClusterNumbers (-1) km Map.empty []
+    km'           = 0:sortClusterNumbers (-1) km Map.empty []
     -- Correct the clustering
     km''          = correctClustering dg' km'
     -- Reoder instructions in block based on clustering
@@ -89,7 +89,7 @@ clusterBlock k iter neigens target acc code =
     -- test  = map show $ head dgs
     -- adj   = adjMatrix dgs
     -- deps  = map DG.dependencies dgs
-  in nb -- error $ show (km, km', km'', zip km'' blcode, code', nb, err)
+  in nb --error $ show (km, km', km'', code', nb)
 
 
 splitBlock :: [Int] -> AccType -> Block i r -> (AccType, [Block i r])
@@ -134,7 +134,7 @@ genEigenValues k dg neigens =
   let 
     dim = (maximum $ nodes dg) + 1
     eds = edges dg
-    edsv = concatMap (\(i,j) -> [((i,j), 1.0), ((j,i), 1.0)]) eds
+    edsv = concatMap (\(i,j) -> [((i,j), 1.0)]) eds
     sm  = SparseMatrix { dim = dim, indexes = edsv } -- sparse matrix
     -- taken from lineageflow that uses harpack
     -- TODO: Don't know why this is better when using more than k
