@@ -89,7 +89,7 @@ clusterBlock k iter neigens target acc code =
     -- test  = map show $ head dgs
     -- adj   = adjMatrix dgs
     -- deps  = map DG.dependencies dgs
-  in nb --error $ show (km, km', km'', code', nb)
+  in error $ show (km, km', km'', code', nb)
 
 
 splitBlock :: [Int] -> AccType -> Block i r -> (AccType, [Block i r])
@@ -219,22 +219,31 @@ checkClusters _ [] m _ = map snd $ Map.toList m
 checkClusters dg ((h,cl):t) m mx =
   let op = DG.toIstr dg h
       hprecs = DG.precs dg h --- nodes that have dependency with current node
+      hsucs  = DG.sucs dg h --- nodes that have dependency with current node
       clprecs = map (\n -> myFromJust $ Map.lookup n m) hprecs
       allprecs = all (\pr -> pr <= cl) clprecs
-  in case (allprecs, op) of
+      clsucs = map (\n -> myFromJust $ Map.lookup n m) hsucs
+      allsucs = all (\su -> su >= cl) clsucs
+  in case (allprecs, allsucs, op) of
     -- Returns don't seem to have branches
     -- TODO(Fix this for only returns)
-    (_, SingleOperation {oOpr = Natural { oNatural = Branch {}}}) -> 
+    (_, _, SingleOperation {oOpr = Natural { oNatural = Branch {}}}) -> 
       let m' = Map.insert h mx m
       in checkClusters dg t m' mx
-    (_, SingleOperation {oOpr = Virtual (Kill {})}) ->
+    (_, _, SingleOperation {oOpr = Virtual (Kill {})}) ->
       let maxdep = maximum clprecs
           m' = Map.insert h maxdep m
       in checkClusters dg t m' mx
-    (True,_) -> checkClusters dg t m mx
-    (False,_) -> let maxdep = maximum clprecs
-                     m' = Map.insert h maxdep m
-                 in checkClusters dg t m' mx
+    (True, True, _) -> checkClusters dg t m mx
+    (True, False, _) -> let mindep = minimum clsucs
+                            maxdep = maximum clprecs
+                            mv     = maximum [mindep, maxdep]
+                            m' = Map.insert h mv m
+                        in checkClusters dg t m' mx
+    (False, _, _) -> let maxdep = maximum clprecs
+                         m' = Map.insert h maxdep m
+                     in checkClusters dg t m' mx
+
 
 myFromJust (Just j) = j
 myFromJust _ = error "MyFromJust: This should not happen."
