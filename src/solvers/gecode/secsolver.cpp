@@ -993,6 +993,27 @@ int main(int argc, char* argv[]) {
 
         }
 
+	{
+	  // 100 is the seed
+	  gs.solution -> post_complete_branchers(100);
+	  DFS<SecModel> e(gs.solution);
+	  SecModel *ggg = e.next();
+	  SpaceStatus status = ggg->status();
+
+	  if (status == Gecode::SS_FAILED) {
+	    found_all_local = false;
+	    unsat = true;
+	    if (options.verbose()) {
+	      cerr << global()
+		   << "could not find full global solution" << endl;
+	    }
+	  } else {
+	    cerr << global()
+		 << "didn't fail.." << endl;
+
+	  }
+	}
+	
 	if (t.stop() > options.timeout())
           timeout_exit(base, results, gd, go, t.stop());
 
