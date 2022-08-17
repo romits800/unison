@@ -14,7 +14,7 @@ This file is part of Unison, see http://unison-code.github.io
 -}
 module Unison.Graphs.DG
        (fromFunction, fromBlock, dependencies, precede, inDistances, toNodeId,
-        toDot, fromBlockCl, precs, toIstr) where
+        toDot, fromBlockCl, precs, sucs, toIstr) where
 
 import Data.List
 import Data.List.Split
@@ -315,3 +315,7 @@ fromBlockCl rwlf rm oif Block {bCode = code} =
 
 precs :: DGraph i r -> Int -> [Int]
 precs dg nd = pre dg nd
+
+
+sucs :: DGraph i r -> Int -> [Int]
+sucs dg nd = suc dg nd
