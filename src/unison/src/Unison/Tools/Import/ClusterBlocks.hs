@@ -89,7 +89,7 @@ clusterBlock k iter neigens target acc code =
     -- test  = map show $ head dgs
     -- adj   = adjMatrix dgs
     -- deps  = map DG.dependencies dgs
-  in error $ show (km, km', km'', code', nb)
+  in nb -- error $ show (km, km', km'', code', nb)
 
 
 splitBlock :: [Int] -> AccType -> Block i r -> (AccType, [Block i r])
