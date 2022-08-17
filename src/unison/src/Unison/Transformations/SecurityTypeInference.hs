@@ -227,7 +227,7 @@ inferTypesBlock:: Show r => Show i => TargetWithOptions i r rc s -> Function i r
 inferTypesBlock target f types Block {bLab= bid, bCode = code} =
   inferTypesOperation target f bid types code
 
-    
+   
 inferTypesOperation :: Show r => Show i => Integral a => TargetWithOptions i r rc s -> Function i r -> BlockId -> StateTuple i r -> [BlockOperation i r] -> StateTuple i r
 inferTypesOperation _ _ _ types [] = types
 inferTypesOperation target f bid types (Bundle {bundleOs = bs}:codes) =
@@ -507,10 +507,10 @@ inferTypesOperation _ _ _ _ (SingleOperation
          foldl (\s -> \op -> s ++ " " ++ (show op)) "Use Operands: " ous ++ "\n" ++
          foldl (\s -> \op -> s ++ " " ++ (show op)) "Def Operands: " defops ++ "\n" ++
          foldl (\s -> \i  -> s ++ " " ++ (show i))  "Instructions: " ins ++ "\n")
--- inferTypesOperation target f bid types (SingleOperation
---   {oOpr = Natural {oNatural = Branch {
---                       oBranchIs = _, -- instruction i
---                       oBranchUs = _ }}}:codes) = inferTypesOperation target f bid types codes
+inferTypesOperation target f bid types (SingleOperation
+  {oOpr = Natural {oNatural = Branch {
+                      oBranchIs = _, -- instruction i
+                      oBranchUs = _ }}}:codes) = inferTypesOperation target f bid types codes
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Call {
                       oCallIs = _, -- Instruction i
