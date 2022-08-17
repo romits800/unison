@@ -470,7 +470,7 @@ void SecModel::post_implied_constraints(void) {
   IntVarArgs rs;
   IntVarArgs lss;
   int size = T().size();
-  bool arr[size];
+  // bool arr[size];
   
   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
     temporary t1 = tp.first;
@@ -684,4 +684,52 @@ block SecModel::bot (temporary t) {
   operand p = input -> definer[t];
   operation o = input -> oper[p];
   return (input -> oblock[o]);
+}
+
+
+void SecModel::apply_solution(SecLocalModel * ls) {
+
+  block b = ls->b;
+
+  // Not assign border solutions
+  // Map for the cycle of every register
+  map <int, int> mp;
+  map <int, int> extemps;
+  set <temporary> extmps;
+  for (temporary t1 : input->tmp[b]) {
+    if (!ls->is_dead(t1)) {
+      int val = ls -> r(t1).val();
+      operation o = input -> def_opr[t1];
+      if (ls -> is_inactive(o)) continue;
+      int cyc = ls -> c(o).val();
+      if (mp[val] < cyc) {
+	mp[val] = cyc;
+	extemps[val] = t1;
+      }
+    }
+  }
+  for (std::map<int,int>::iterator it = extemps.begin(); it != extemps.end(); ++it)
+    extmps.insert(it -> second);
+
+
+  for (temporary t1 : input->tmp[b]) {
+    if (extmps.count(t1)) continue;
+    if (!ls->is_dead(t1)) {
+      constraint(r(t1) == ls->r(t1));
+    }
+  }
+
+  // The following is exactly the same as globalmodal
+  for (operation o : input->ops[b]) {
+    constraint(i(o) == ls->i(o));
+  }
+  
+  for (operation o : input->ops[b])
+    if (!ls->is_inactive(o)) {
+      constraint(c(o) == ls->c(o));
+    }
+  for (operand p : input->ope[b]) {
+    constraint(y(p) == ls->y(p));
+  }
+
 }

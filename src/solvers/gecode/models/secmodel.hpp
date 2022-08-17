@@ -37,10 +37,13 @@
 
 #include "completemodel.hpp"
 #include "globalmodel.hpp"
+#include "seclocalmodel.hpp"
 #include "branchers/sec_value.hpp"
 
 using namespace Gecode;
 using namespace std;
+
+class SecLocalModel;
 
 class SecModel : public GlobalModel {
 
@@ -133,6 +136,7 @@ public:
   IntVar lge(block b) const {return v_lge[b]; }
   block bot (temporary t);
 
+  void apply_solution(SecLocalModel * ls);
   // int select_value_tt(IntVar x, unsigned int i);
   // void next(const SecModel& l);
 
