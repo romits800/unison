@@ -718,7 +718,7 @@ itinerary i
   | i `elem`
       [LDRLIT_ga_abs, LOAD, LOAD_T, T2LDRT, T2LDRi12, T2LDRi12_fi,
        T2LDRi12_fi_remat_fi, T2LDRi8, T2LDRpci, TLDRLIT_ga_abs, TLDRi,
-       TLDRpci, TLDRspi, TLDRspi_fi]
+       TLDRpci, TLDRpci_cpi, TLDRspi, TLDRspi_fi]
     = IIC_iLoad_i
   | i `elem` [LDR_POST_IMM, LDR_PRE_IMM, T2LDR_POST, T2LDR_PRE] =
     IIC_iLoad_iu

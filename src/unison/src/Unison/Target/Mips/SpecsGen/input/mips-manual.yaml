@@ -130,6 +130,19 @@ instruction-set:
         - id:                 LWC1_fi
           parent:             LWC1
 
+
+        - id:                 SUBu_sp
+          parent:             SUBu
+          operands:
+           - rs:              [register, use, GPR32Opnd]
+          uses:               [rs]
+          defines:            []
+          affects:
+           - SP:              register
+          affected-by:
+           - SP:              register
+
+
         - id:                 ADDiu_sp
           parent:             ADDiu
           operands:

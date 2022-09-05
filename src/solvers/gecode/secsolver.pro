@@ -51,6 +51,8 @@ HEADERS += common/definitions.hpp \
            branchers/printers.hpp \
            branchers/pressureschedulingbrancher.hpp \
            branchers/routingbrancher.hpp \
+           branchers/solutionbrancher.hpp \
+           branchers/boolsolutionbrancher.hpp \
            procedures/commonprocedures.hpp \
            procedures/secprocedures.hpp \
            procedures/seclocalprocedures.hpp
@@ -78,6 +80,8 @@ SOURCES += third-party/jsoncpp/json_reader.cpp \
            branchers/sec_value.cpp \
            branchers/printers.cpp \
            branchers/pressureschedulingbrancher.cpp \
+           branchers/solutionbrancher.cpp \
+           branchers/boolsolutionbrancher.cpp \
            branchers/routingbrancher.cpp \
            procedures/commonprocedures.cpp \
            procedures/secprocedures.cpp \

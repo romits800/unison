@@ -694,6 +694,7 @@ parent i
   | i `elem` [TLDRHrz] = Just TLDRHr
   | i `elem` [TLDRSBz] = Just TLDRSB
   | i `elem` [TLDRSHz] = Just TLDRSH
+  | i `elem` [TLDRpci_cpi] = Just TLDRpci
   | i `elem` [TLDRrz] = Just TLDRr
   | i `elem` [TLSRrrs] = Just TLSRrr
   | i `elem` [TMOVi8s_demat, TMOVi8s_remat, TMOVi8s_source] =

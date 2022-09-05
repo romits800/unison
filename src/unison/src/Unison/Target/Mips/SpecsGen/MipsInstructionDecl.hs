@@ -2252,6 +2252,7 @@ data MipsInstruction = ABSQ_S_PH
                      | LH_fi
                      | SWC1_fi
                      | LWC1_fi
+                     | SUBu_sp
                      | ADDiu_sp
                      | ADDiu_negsp
                      | SW_sp

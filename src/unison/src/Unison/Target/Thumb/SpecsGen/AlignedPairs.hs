@@ -792,7 +792,7 @@ alignedPairs i ([_, _, _], [_])
       [LDA, LDAB, LDAEX, LDAEXB, LDAEXD, LDAEXH, LDAH, LDREX, LDREXB,
        LDREXD, LDREXH, T2LDA, T2LDAB, T2LDAEX, T2LDAEXB, T2LDAEXH, T2LDAH,
        T2LDRBpci, T2LDREXB, T2LDREXH, T2LDRHpci, T2LDRSBpci, T2LDRSHpci,
-       T2LDRpci, TLDRpci]
+       T2LDRpci, TLDRpci, TLDRpci_cpi]
     = []
 alignedPairs i ([_, _, _], [_, _])
   | i `elem` [T2LDAEXD, T2LDREXD] = []

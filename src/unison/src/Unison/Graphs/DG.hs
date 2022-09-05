@@ -1,4 +1,5 @@
-{-|
+{-|utomatic merge failed; fix conflicts and then commit the result.
+
 Copyright   :  Copyright (c) 2016, RISE SICS AB
 License     :  BSD3 (see the LICENSE file)
 Maintainer  :  rcas@acm.org
@@ -288,9 +289,6 @@ showTemps ts  = renderStyle (st 20) (cs show ts)
 
 
 --- for clustering (ROMY)
--- fromFunctionCl rwlf rm oif Function {fCode = code} =
---   let dgs = map (fromBlockCl rwlf rm oif) code
---   in concatGraphs dgs
 
 fromBlockCl :: Show i => Eq i => Ord i => Show r => Ord r =>
              ReadWriteLatencyFunction i r -> ResourceManager i s ->

@@ -167,6 +167,7 @@ protected:
   Driver::BoolOption _disable_sec_regreg_constraints;
   Driver::BoolOption _disable_sec_secret_constraints;
   Driver::BoolOption _disable_sec_mem_constraints;
+  Driver::BoolOption _disable_sec_tts;
   
 public:
 
@@ -279,5 +280,6 @@ public:
   bool disable_sec_regreg_constraints(void) const {return _disable_sec_regreg_constraints.value();}
   bool disable_sec_secret_constraints(void) const {return _disable_sec_secret_constraints.value();}
   bool disable_sec_mem_constraints(void) const {return _disable_sec_mem_constraints.value();}
+  bool disable_sec_tts(void) const {return _disable_sec_tts.value();}
 };
 #endif

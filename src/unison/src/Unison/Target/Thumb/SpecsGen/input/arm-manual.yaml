@@ -199,6 +199,14 @@ instruction-set:
            - p1:              bound
            - p2:              bound
 
+        - id:                 tLDRpci_cpi
+          parent:             tLDRpci
+          operands:
+           - Rt:              [register, def, tGPR]
+           - addr:            bound
+           - p1:              bound
+           - p2:              bound
+
         - id:                 MOVE
           type:               copy
           operands:

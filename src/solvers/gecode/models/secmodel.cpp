@@ -46,12 +46,22 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
   int maxval = sum_of(input->maxc);
   int block_number = input -> B.size();
 
+  for (register_atom ra: input -> HR) { // Hardware registers
+    hardware_regs.insert(ra);
+  }
+
+  //cout << "SecModel 1" << endl;
+
+
   // Glboal variables
   v_gb = int_var_array(block_number, 0, maxval);
   v_lgs = int_var_array(temp_size, 0, maxval);
   v_lge = int_var_array(temp_size, 0, maxval);
   post_global_cycle_offset();
-  init_tts();
+  
+  if (!options-> disable_sec_tts())
+      init_tts();
+  //cout << "SecModel 2" << endl;
   
   vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi", "SW_fi", "LW_fi"}; 
   for (operation o : O()) { 
@@ -67,30 +77,60 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
     }
   }
   
+  //cout << "SecModel 3" << endl;
   v_lk = int_var_array(temp_size, -1, maxval);
-  v_tbt = int_var_array(temp_size, -1, temp_size);
-  v_tat = int_var_array(temp_size, -1, temp_size);
+
+  if (!options-> disable_sec_tts()) {
+      v_tbt = int_var_array(temp_size, -1, temp_size);
+      v_tat = int_var_array(temp_size, -1, temp_size);
+  }
   v_ok = int_var_array(op_size, -1, maxval);
   //}
+  //cout << "SecModel 3.1" << endl;
   // v_lk, v_ok uninitialized
   post_r2_constraints();
   post_m2_constraints();
   // Implementation 1
   
+  //cout << "SecModel 3.2" << endl;
   int reg_size = input->HR.size();
   v_rtle = int_var_array(reg_size * temp_size, -1, maxval);
   v_rtlemap = int_var_array(reg_size * temp_size, -1, maxval);
 
 
+  //cout << "SecModel 3.3" << endl;
   v_opcy = int_var_array(op_size, -1, maxval);
   v_opcymap = int_var_array(op_size, -1, maxval);
 
+
+  //cout << "SecModel 3.4" << endl;
   post_r1_constraints();
   post_m1_constraints();
   
+  //cout << "SecModel 4" << endl;
   post_security_constraints();
 
-  post_connecting_constraints();
+  //cout << "SecModel 4.1" << endl;
+  //post_connecting_constraints();
+
+  for (block b: input -> B) {
+    set <temporary> tmp;
+    set <operation> ops;
+    set <operand> opas;
+    extmps[b] = tmp;
+    exops[b] = ops;
+    exopas[b] = opas;
+  }
+
+  //cout << "SecModel 5" << endl;
+  sec_r.seed(p_options->seed());
+  sec_p = p_options->relax();
+ 
+  rng.seed(p_options->seed());
+  unif = new std::uniform_real_distribution<double>(0,1);
+
+  monolithic = false;
+  //unif(0, 1);
 }
 
 
@@ -98,7 +138,18 @@ SecModel::SecModel(SecModel& cg) :
   GlobalModel(cg),
   memops(cg.memops),
   tbts(cg.tbts),
-  tats(cg.tats)
+  hardware_regs(cg.hardware_regs),
+  extmps(cg.extmps),
+  exops(cg.exops),
+  exopas(cg.exopas),
+  rsol(cg.rsol),
+  csol(cg.csol),
+  isol(cg.isol),
+  sec_r(cg.sec_r),
+  sec_p(cg.sec_p),
+  rng(cg.rng),
+  unif(cg.unif),
+  monolithic(cg.monolithic)
 {
   v_gb.update(*this, cg.v_gb);
   v_lgs.update(*this, cg.v_lgs);
@@ -179,6 +230,31 @@ void SecModel::post_global_cycle_offset(void) {
   }
 }
 
+void SecModel::set_monolithic(bool val) {
+    monolithic = val;
+}
+
+
+void SecModel::post_solution_brancher(SecModel *s) {
+
+    IntArgs sol;
+    IntVarArgs vs;
+    IntArgs sol2;
+    BoolVarArgs vs2;
+    //for (int c: solver->cycles) sol2 << ((c == -1) ? 0 : 1);
+    //std::cout << "Posting solution brancher" << std::endl;
+    for (BoolVar a: v_a) vs2 << a;
+    for (BoolVar a: s -> v_a) sol2 << a.val();
+
+    for (IntVar c: s->v_c) sol << (c.assigned() ? c.val() : -1);
+    for (IntVar r: s->v_r) sol << (r.assigned() ? r.val() : -1);
+    for (IntVar c: v_c) vs << c;
+    for (IntVar r: v_r) vs << r;
+
+
+    solution_branch(*this, vs2, sol2);
+    solution_branch(*this, vs, sol);
+}
 
 void SecModel::post_branchers(void) {
   // std::cout << "SecModel post branchers" << std::endl;
@@ -205,6 +281,185 @@ void SecModel::post_branchers(void) {
   //     	     NULL, NULL);
   //   }
   // }
+}
+
+/*void SecModel::post_complete_branchers(unsigned int s) {
+  //
+
+  branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_global_cost_decision);
+
+  Rnd r;
+  r.seed(s);
+  branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
+         NULL, &print_global_inactive_decision);
+
+  branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_global_instruction_decision);
+
+  branch(*this, v_y, INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_global_temporary_decision);
+
+  branch(*this, v_c, INT_VAR_NONE(), INT_VAL_MIN(),
+         &schedulable, &print_global_cycle_decision);
+
+  branch(*this, v_r, INT_VAR_NONE(), INT_VAL_RND(r),
+         &global_assignable, &print_global_register_decision);
+
+
+  branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_global_cost_decision);
+
+}*/
+
+void SecModel::post_unassigned_branchers(unsigned int s) {
+  //std::cout << "In post_unassigned branchers of secmodel: " << 100 + s << std::endl;
+
+  //branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
+  //       NULL, &print_global_cost_decision);
+
+
+  Rnd ran;
+  ran.seed(100 + s);
+  //branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
+  //       NULL, &print_global_inactive_decision);
+
+ //branch(*this, v_y, INT_VAR_NONE(), INT_VAL_MIN(),
+  //       NULL, &print_global_temporary_decision);
+
+/*  
+  IntVarArgs os;
+  IntVarArgs is;
+
+  for (block b: input -> B) {
+      for (std::set<operation>::iterator it = exops[b].begin(); it != exops[b].end(); ++it) {
+        os << c(*it);
+        is << i(*it);
+      }
+  }
+
+  std::cout << os << exops.size() << std::endl;
+  
+
+  IntVarArgs rs;
+  for (block b: input -> B) {
+      for (std::set<temporary>::iterator it = extmps[b].begin(); it != extmps[b].end(); ++it) {
+        rs << r(*it);
+      }
+  }
+  std::cout << rs << extmps.size() << std::endl;
+
+
+  branch(*this, is, INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_global_instruction_decision);
+
+
+  branch(*this, os, INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_global_register_decision);
+
+  branch(*this, rs, INT_VAR_NONE(), INT_VAL_RND(ran),
+         NULL, &print_global_register_decision);
+
+*/
+
+  //std::cout << extmps.size() << std::endl;
+
+  // Post solution brancher
+/*
+  {
+      IntVarArgs os;
+      IntVarArgs is;
+      IntVarArgs rs;
+
+      IntArgs ossol;
+      IntArgs issol;
+      IntArgs rssol;
+
+      for (block b: input -> B) {
+          for (std::set<operation>::iterator it = exops[b].begin(); it != exops[b].end(); ++it) {
+            //double d = (*unif)(rng);
+            //std::cout << "Random value: " << d << " sec_p: " << sec_p << std::endl; 
+            //if (d > sec_p) {
+            os << c(*it);
+            is << i(*it);
+            ossol << csol[*it];
+            issol << isol[*it];
+            //}
+          }
+          for (std::set<temporary>::iterator it = extmps[b].begin(); it != extmps[b].end(); ++it) {
+            //double d = (*unif)(rng);
+           // std::cout << "Random value r: " << d << " sec_p: " << sec_p << std::endl; 
+            //if (d > sec_p) {
+
+            rs << r(*it);
+            rssol << rsol[*it];
+            //}
+          }
+      }
+      if (is.size() > 0) 
+          solution_branch_split(*this, is, issol);
+      if (os.size() > 0) 
+          solution_branch_split(*this, os, ossol);
+      if (rs.size() > 0) 
+          solution_branch_split(*this, rs, rssol);
+  }
+  */
+  // Post regular branchers
+  for (block b: input -> B) {
+      IntVarArgs os;
+      IntVarArgs is;
+      IntVarArgs rs;
+#ifdef OPERS
+      IntVarArgs ys;
+#endif
+      BoolVarArgs as;
+      for (std::set<operation>::iterator it = exops[b].begin(); it != exops[b].end(); ++it) {
+        os << c(*it);
+        is << i(*it);
+        as << a(*it);
+      }
+      for (std::set<temporary>::iterator it = extmps[b].begin(); it != extmps[b].end(); ++it) {
+        rs << r(*it);
+      }
+
+#ifdef OPERS
+      for(operand p: exopas[b]) {
+        ys << y(p);
+      }
+#endif
+
+      if (as.size() > 0) 
+          branch(*this, as, BOOL_VAR_RND(ran), BOOL_VAL_RND(ran),
+             NULL, NULL);
+      if (is.size() > 0) 
+          branch(*this, is, INT_VAR_RND(ran), INT_VAL_MIN(),
+             NULL, NULL);
+
+#ifdef OPERS
+      if (ys.size() > 0) 
+          branch(*this, ys, INT_VAR_RND(ran), INT_VAL_MIN(),
+             NULL, NULL);
+#endif
+      
+
+      if (os.size() > 0)
+          branch(*this, os, INT_VAR_RND(ran), INT_VAL_MIN(),
+             NULL, NULL);
+
+      if (rs.size() > 0) 
+          branch(*this, rs, INT_VAR_RND(ran), INT_VAL_RND(ran), //(ran),
+             NULL, NULL);
+
+      //std::cout << b << " " << rs << rs.size() << std::endl;
+      //std::cout << b << " " << is << is.size() << std::endl;
+      //std::cout << b << " " << os << os.size() << std::endl;
+      //std::cout << b << " " << as << as.size() << std::endl;
+      //std::cout << b << " " << ys << ys.size() << std::endl;
+
+  }
+
+
+
 }
 
 
@@ -361,10 +616,18 @@ void SecModel::post_m2_constraints(void) {
 
 void SecModel::post_random_register_constraints(void) {
   // These pairs should not be in the same register or should not be consequent
+  IntArgs hrs;
+  for (register_atom ra: input -> HR) { // Hardware registers
+    hrs << ra;
+  }
+  IntSet d(hrs);
   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
     temporary t1 = tp.first;
     temporary t2 = tp.second;
-    constraint((l(t1) && l(t2) && (r(t1) == r(t2))) >>
+    BoolVar is_hd(*this, 0, 1);
+    dom(*this, r(t1), d, is_hd);
+    constraint((l(t1) && l(t2) && (r(t1) == r(t2)) && is_hd) >>
+    //constraint((l(t1) && l(t2) && (r(t1) == r(t2))) >>
 	       (!subseq(t1,t2) && !subseq(t2,t1)));
   }
 }
@@ -446,18 +709,21 @@ void SecModel::post_random_mem_constraints(void) {
 
 
 void SecModel::post_different_solution(SecModel * g1, bool unsat) {
-  std::cout << "posting different solution" << std:: endl;
-  BoolVarArgs lits;
-  for (temporary t : tbts)
-    if (g1->v_tbt[t].assigned())
-      lits << var(v_tbt[t] == g1->v_tbt[t].val());
+  //std::cout << "posting different solution" << std:: endl;
 
-  for (temporary t : tats)
-    if (g1->v_tat[t].assigned())
-      lits << var(v_tat[t] == g1->v_tat[t].val());
-  
-  if (lits.size() > 0)
-    rel(*this, BOT_AND, lits, 0);
+  if (!options-> disable_sec_tts()) {
+      BoolVarArgs lits;
+      for (temporary t : tbts)
+        if (g1->v_tbt[t].assigned())
+          lits << var(v_tbt[t] == g1->v_tbt[t].val());
+
+      for (temporary t : tats)
+        if (g1->v_tat[t].assigned())
+          lits << var(v_tat[t] == g1->v_tat[t].val());
+      
+      if (lits.size() > 0)
+        rel(*this, BOT_AND, lits, 0);
+  }
 
   GlobalModel::post_different_solution(g1, unsat);
 
@@ -470,7 +736,7 @@ void SecModel::post_implied_constraints(void) {
   IntVarArgs rs;
   IntVarArgs lss;
   int size = T().size();
-  bool arr[size];
+  // bool arr[size];
   
   for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
     temporary t1 = tp.first;
@@ -506,30 +772,33 @@ void SecModel::post_implied_constraints(void) {
       spo[r].push_back(t);
 
   }
-  for (register_atom ind = 0; ind < nregs; ind++) {
-    vector<int>sp = spo[ind];
-    if (sp.size() > 1) {
-      for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
-	temporary t1 = tp.first;
-	temporary t2 = tp.second;
-	bool f1 = false, f2 = false;
-	for (temporary spi: sp) {
-	  if (spi == t1) f1 = true;
-	  if (spi == t2) f2 = true;
-	}
-	if (f1 && f2) {
-	  //std::cout << "temps: " << t1 << " " << t2 << std::endl;
-	  // todo
-	  constraint( subseq(t1,t2) == 0 && subseq(t2,t1) == 0);
-	  constraint( v_tat[temp(t1)] != t2 && v_tbt[temp(t1)] != t2 &&
-	  		v_tat[temp(t2)] != t1 && v_tbt[temp(t2)] != t1); 
-	  // exists ti not in randpairs such that r(ti) = r
-	}
-	    
-      }
-    }
-  }
 
+  if (!options-> disable_sec_tts()) {
+      for (register_atom ind = 0; ind < nregs; ind++) {
+        vector<int>sp = spo[ind];
+        if (sp.size() > 1) {
+          for (std::pair<const temporary, const temporary> tp : input -> randpairs) {
+            temporary t1 = tp.first;
+            temporary t2 = tp.second;
+            bool f1 = false, f2 = false;
+            for (temporary spi: sp) {
+              if (spi == t1) f1 = true;
+              if (spi == t2) f2 = true;
+            }
+            if (f1 && f2) {
+              //std::cout << "temps: " << t1 << " " << t2 << std::endl;
+              // todo
+              constraint( subseq(t1,t2) == 0 && subseq(t2,t1) == 0);
+              constraint( v_tat[temp(t1)] != t2 && v_tbt[temp(t1)] != t2 &&
+                            v_tat[temp(t2)] != t1 && v_tbt[temp(t2)] != t1); 
+              // exists ti not in randpairs such that r(ti) = r
+            }
+                
+          }
+        }
+      }
+
+  }
   
   for (temporary t1 : T())
     for (temporary t2 : T()) {
@@ -538,12 +807,14 @@ void SecModel::post_implied_constraints(void) {
     }
 
   // If tbt[t1] = t2 then tat[t2] == t2
-  for (temporary t1 : T()) {
-    for (temporary t2 : T()) {
-      if (t1 == t2) continue;
-      constraint( (v_tat[t1] == t2) >> (v_tbt[t2] == t1));
-      constraint( (v_tat[t1] == t2) << (v_tbt[t2] == t1));
-    }
+  if (!options-> disable_sec_tts()) {
+      for (temporary t1 : T()) {
+        for (temporary t2 : T()) {
+          if (t1 == t2) continue;
+          constraint( (v_tat[t1] == t2) >> (v_tbt[t2] == t1));
+          constraint( (v_tat[t1] == t2) << (v_tbt[t2] == t1));
+        }
+      }
   }
   
   // If two operands are assigned to the same register then
@@ -616,9 +887,9 @@ void SecModel::post_connecting_constraints(void) {
     for (temporary t1 : input -> temps[p]) {
       if (t1 == -1) continue; // should actually not happen
       for (temporary t2 : input -> temps[q]) {
-	if (t2 == -1) continue; // should actually not happen
-	tps << var (v_tat[t1] == t2 && v_tbt[t2] == t1);
-	// constraint(v_tbt[q] == p);
+        if (t2 == -1) continue; // should actually not happen
+        tps << var (v_tat[t1] == t2 && v_tbt[t2] == t1);
+        // constraint(v_tbt[q] == p);
       }
     }
     constraint( (x(p) && x(q)) >> (sum(tps) > 0));
@@ -629,9 +900,12 @@ void SecModel::post_connecting_constraints(void) {
 void SecModel::post_security_constraints(void) {
   if (!options-> disable_sec_regreg_constraints()) {
     post_random_register_constraints();
-    post_tt_constraints();
+
+    if (!options-> disable_sec_tts()) {
+        post_tt_constraints();
+        post_connecting_constraints();
+    }
     post_implied_constraints();
-    post_connecting_constraints();
     // // post_strict_constraints();
   }
   if (!options-> disable_sec_secret_constraints())
@@ -685,3 +959,462 @@ block SecModel::bot (temporary t) {
   operation o = input -> oper[p];
   return (input -> oblock[o]);
 }
+
+
+void SecModel::apply_global_solution(SecModel * sm) {
+
+  for (temporary t1 : input->T) {
+    if (!sm->is_dead(t1)) {
+      constraint(r(t1) == sm->r(t1));
+    }
+  }
+
+   // std::cout << "St2 " << std::endl;
+  for (operation o : input->O) {
+    constraint(i(o) == sm->i(o));
+  }
+  
+   // std::cout << "St3 " << std::endl;
+  for (operation o : input->O)
+    if (!sm->is_inactive(o)) {
+      constraint(c(o) == sm->c(o));
+    }
+
+  //  std::cout << "St4 " << std::endl;
+  for (operand p : input->P) {
+    constraint(y(p) == sm->y(p));
+  }
+}
+
+void SecModel::clear_extmps() {
+
+  extmps.clear();
+
+}
+
+void SecModel::apply_solution(SecLocalModel * ls) {
+
+  block b = ls->b;
+
+  // Not assign border solutions
+  // Map for the cycle of every register
+  map <int, int> mp;
+  map <int, int> mp_up;
+  map <int, int> extemps;
+  map <int, int> extemps_up;
+  set <temporary> extmpsloc;
+  set <operation> exopsloc;
+  set <operand>   exopasloc;
+  set <operation> exopers;
+  set <operation> exopers_up;
+  set <operand> exoperands;
+  set <operand> exoperands_up;
+
+
+  // Temporaries to exlude from applying the solution
+  // init max values for temporaries
+  for (temporary t1 : input->tmp[b]) {
+    if (!ls->is_dead(t1)) {
+      int val = ls -> r(t1).val();
+      int maxval = sum_of(input->maxc);
+      mp[val] = 0;
+      mp_up[val] = maxval;
+    }
+  }
+
+  for (temporary t1 : input->tmp[b]) {
+    if (!ls->is_dead(t1)) {
+      int val = ls -> r(t1).val();
+      if (!hardware_regs.count(val)) {
+        continue;
+      }
+      //input -> definer[t] the operand that defines t
+      //input -> users[t] the operand that defines t
+      operation o = input -> def_opr[t1];
+      if (ls -> is_inactive(o)) continue;
+      int cyc = ls -> c(o).val();
+      if (mp[val] < cyc) {
+	mp[val] = cyc;
+	extemps[val] = t1;
+      }
+      if (mp_up[val] > cyc) {
+        mp_up[val] = cyc;
+        extemps_up[val] = t1;
+      }
+    }
+  }
+  // the selected ones
+  for (auto it = extemps.begin(); it !=extemps.end(); ++it) {
+    temporary t = it->second;
+    operation o = input -> def_opr[t]; //the operation that defines t
+    operand   p = input -> definer[t]; //the operand that defines t
+
+    exopers.insert(o);
+#ifdef OPERS
+    for (operand pi : input -> ope[b]) // for all operands in this block
+        if (input -> copyreltop[pi] == p) {
+            exoperands.insert(pi);
+            exopers.insert(input->oper[pi]);
+            for (operand pj : input->operands[input->oper[pi]])
+                exoperands.insert(pj);
+            break;
+        }
+#endif
+        
+    /*for (operand p : input -> users[t])
+        exoperands.insert(p);
+    */
+  }
+
+  for (auto it = extemps_up.begin(); it !=extemps_up.end(); ++it) {
+    temporary t = it->second;
+    operation o = input -> def_opr[t];
+    operand   p = input -> definer[t]; //the operand that defines t
+    exopers_up.insert(o);
+    /*for (operand p : input -> users[t])
+        exoperands_up.insert(p);*/
+
+#ifdef OPERS
+    for (operand pi : input -> ope[b]) // for all operands in this block
+        if (input -> copyreltop[pi] == p) {
+            exoperands_up.insert(pi);
+            exopers_up.insert(input->oper[pi]);
+            for (operand pj : input->operands[input->oper[pi]])
+                exoperands_up.insert(pj);
+            break;
+        }
+#endif
+ 
+  }
+
+/*  for (temporary t1 : input->tmp[b]) {
+    if (!ls->is_dead(t1)) {
+      int val = ls -> r(t1).val();
+      if (!hardware_regs.count(val)) {
+        continue;
+      }
+      //input -> definer[t] the operand that defines t
+      //input -> users[t] the operand that defines t
+      operation o = input -> def_opr[t1];
+      if (ls -> is_inactive(o)) continue;
+      int cyc = ls -> c(o).val();
+      if (mp[val] < cyc) {
+	mp[val] = cyc;
+	extemps[val] = t1;
+	exopers.insert(o);
+        for (operand p : input -> users[t1])
+            exoperands.insert(p);
+      }
+      if (mp_up[val] > cyc) {
+        mp_up[val] = cyc;
+        extemps_up[val] = t1;
+	exopers_up.insert(o);
+        for (operand p : input -> users[t1])
+            exoperands_up.insert(p);
+
+      }
+    }
+  }
+*/
+  if (b != input->B.size() -1)  {
+      for (std::map<int,int>::iterator it = extemps.begin(); it != extemps.end(); ++it) {
+        extmps[b].insert(it -> second);
+        extmpsloc.insert(it -> second);
+      }
+
+      for (std::set<int>::iterator it = exopers.begin(); it != exopers.end(); ++it) {
+	exops[b].insert(*it);
+	exopsloc.insert(*it);
+      }
+
+#ifdef OPERS
+      for (operand p: exoperands) {
+        exopas[b].insert(p);
+        exopasloc.insert(p);
+      }
+#endif
+  }
+
+  if (b != 0) {
+      for (std::map<int,int>::iterator it = extemps_up.begin(); it != extemps_up.end(); ++it) {
+        extmps[b-1].insert(it -> second);
+        extmpsloc.insert(it -> second);
+      }
+      for (std::set<int>::iterator it = exopers_up.begin(); it != exopers_up.end(); ++it) {
+	exops[b-1].insert(*it);
+	exopsloc.insert(*it);
+      }
+
+#ifdef OPERS
+      for(operand p: exoperands_up) {
+        exopas[b-1].insert(p);
+        exopasloc.insert(p);
+      }
+#endif
+
+  }
+
+
+  for (temporary t1 : input->tmp[b]) {
+    if (!ls->is_dead(t1)) {
+      if (extmpsloc.count(t1)) {
+        rsol[t1] = ls -> r(t1).val();
+        continue;
+      }
+      constraint(r(t1) == ls->r(t1));
+    }
+  }
+
+  // The instruction decides also if the operation is active
+  for (operation o : input->ops[b]) {
+    if (exopsloc.count(o)) {
+        isol[o] = ls -> i(o).val();
+        continue;
+    }
+    constraint(i(o) == ls->i(o));
+  }
+  
+  for (operation o : input->ops[b]) {
+    if (!ls->is_inactive(o)) {
+      if (exopsloc.count(o)) {
+        csol[o] = ls -> c(o).val();
+        continue;
+      }
+      constraint(c(o) == ls->c(o));
+    }
+  }
+  // The following is exactly the same as in globalmodel
+  for (operand p : input->ope[b]) {
+#ifdef OPERS
+    if (exopasloc.count(p)) {
+        //ysol[p] = ls -> y(p).val()
+        continue;
+    }
+#endif
+    constraint(y(p) == ls->y(p));
+  }
+}
+
+
+bool SecModel::master(const MetaInfo& mi) {
+  //std::cout << "Master" << std::endl;
+  if (mi.type() == MetaInfo::PORTFOLIO) {
+    //std::cout << "Master Portfolio" << std::endl;
+    assert(mi.type() == MetaInfo::PORTFOLIO);
+    return true; // default return value for portfolio master (no meaning)
+  } else if (mi.type() == MetaInfo::RESTART) {
+    //std::cout << "Master Restart" << std::endl;
+    if (mi.last() != NULL) {
+      //std::cout << "Master Restart constrain" << std::endl;
+      constrain(*mi.last());
+    }
+    mi.nogoods().post(* this);
+    return true; // forces a restart even if a solution has been found
+  }
+  GECODE_NEVER;
+}
+
+bool SecModel::slave(const MetaInfo& mi) {
+  //std::cout << "Slave" << std::endl;
+  if (mi.type() == MetaInfo::PORTFOLIO) {
+    //std::cout << "Slave portfolio" << std::endl;
+    //post_complete_branchers(mi.asset());
+    if (monolithic) {
+        //std::cout << "Slave Monolithic: " << mi.asset() << std::endl;
+        sec_r.seed(options->seed() + mi.asset());
+        post_complete_branchers(mi.asset());
+    }
+    else {
+        //std::cout << "Slave non monolithic" << std::endl;
+        post_unassigned_branchers(mi.asset());
+    }
+    return true; // default return value for portfolio slave (no meaning)
+  } else if (mi.type() == MetaInfo::RESTART) {
+    //std::cout << "Slave restart: " << mi.restart() << " is last solution null? " << (mi.last() == NULL) << std::endl;
+    if ((mi.last()!= NULL || mi.restart() > 0) && (sec_p > 0.0)) {
+      if (mi.last() != NULL) {
+        //std::cout << "Calling Next" << std::endl;
+        next(static_cast<const SecModel&>(*mi.last()));
+      }
+      return false;
+    } else if (mi.restart() == 0) {
+      first();
+      return true;
+    } else {
+      return true;
+    }
+
+  }
+  GECODE_NEVER;
+}
+
+void SecModel::first(void) {
+  //std::cout << "First" << std::endl;
+  return;
+}
+
+
+void SecModel::next(const SecModel& b) {
+  //std::cout << "Next" << std::endl;
+
+  if (monolithic) {
+    //std::cout << "Next monolithic: cost: " << b.cost() << std::endl;
+    {
+        IntVarArgs instr, linstr;
+        for (operation o: input -> O) {
+          instr << i(o);
+          linstr << b.i(o);
+        }
+        relax(*this, instr, linstr, sec_r, sec_p);
+    }
+
+  // temporaries
+    {
+        IntVarArgs temp, ltemp;
+        for (operand p : input -> P) {
+          temp << y(p);
+          ltemp << b.y(p);
+        }
+        relax(*this, temp, ltemp, sec_r, sec_p);
+    }
+
+
+  // Cycles
+    {
+        // Relax all active variables.
+        // relax(*this, v_a, b.v_a, sec_r, 1.0);
+        IntVarArgs cycles, lcycles;
+        for (operation o : input -> O) {
+          if (b.a(o).val()) { // if activated
+            cycles << c(o);
+            lcycles << b.c(o);
+          }
+        }
+        relax(*this, cycles, lcycles, sec_r, sec_p);
+    }
+
+  // Registers
+    {
+        IntVarArgs lregs, regs;
+        for (temporary t : input->T) {
+          if (b.l(t).assigned() && b.l(t).val()) { // if the tempoorary is assigned
+            lregs << b.r(t);
+            regs << r(t);
+          }
+        }
+        // Regs
+        relax(*this, regs, lregs, sec_r, sec_p);
+    }
+
+    //relax(*this, v_r, b.v_r, sec_r, sec_p);
+    //relax(*this, v_c, b.v_c, sec_r, sec_p);
+    //relax(*this, v_a, b.v_a, sec_r, sec_p);
+    //relax(*this, v_y, b.v_y, sec_r, sec_p);
+    //relax(*this, v_i, b.v_i, sec_r, sec_p);
+  }
+  else { // not monolithic
+      // Instructions
+      //std::cout << "Next non monolithic" << std::endl;
+      {
+        IntVarArgs instr, linstr;
+        for (block bl: input -> B) {
+            for (std::set<operation>::iterator it = exops[bl].begin(); it != exops[bl].end(); ++it) {
+                
+              instr << i(*it);
+              linstr << b.i(*it);
+            }
+        }
+        relax(*this, instr, linstr, sec_r, sec_p);
+      }
+
+      // cycles
+      {
+        IntVarArgs cyc, lcyc;
+        for (block bl: input -> B) {
+            for (std::set<operation>::iterator it = exops[bl].begin(); it != exops[bl].end(); ++it) {
+              if (b.a(*it).val()) {
+                  cyc << c(*it);
+                  lcyc << b.c(*it);
+              }
+            }
+        }
+        relax(*this, cyc, lcyc, sec_r, sec_p);
+      }
+
+      // operands
+
+#ifdef OPERS
+      {
+        IntVarArgs opes, lopes;
+        for (block bl: input -> B) {
+            for (std::set<operand>::iterator it = exopas[bl].begin(); it != exopas[bl].end(); ++it) {
+                opes << y(*it);
+                lopes << b.y(*it);
+            }
+        }
+        relax(*this, opes, lopes, sec_r, sec_p);
+      }
+#endif
+
+
+      // registers
+      {
+        IntVarArgs regs, lregs;
+        for (block bl: input -> B) {
+            for (std::set<temporary>::iterator it = extmps[bl].begin(); it != extmps[bl].end(); ++it) {
+              if (b.l(*it).assigned() && b.l(*it).val()) {
+                  regs << r(*it);
+                  lregs << b.r(*it);
+              }
+            }
+        }
+        relax(*this, regs, lregs, sec_r, sec_p);
+      }
+   }
+
+}
+
+
+void SecModel::constrain(const Space & _b) {
+    const SecModel& b = static_cast<const SecModel&>(_b);
+
+    //std::cout << "constrain with cost: " << b.cost() << std::endl;
+    BoolVarArgs bh;
+    
+    // get better solution
+    for (uint i = 0; i < input -> N; i++) 
+        if (b.cost()[i].assigned())
+            constraint(cost()[i] < b.cost()[i]);
+    return;
+}
+
+void SecModel::post_complete_branchers(unsigned int s) {
+
+  GlobalModel::post_complete_branchers(s);
+
+/*
+  std::cout << "post secmodel complete branchers: seed: " << s << " secr " << sec_r.seed() << std::endl;
+  branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
+         NULL, &print_global_cost_decision);
+
+  Rnd r;
+  r.seed(s);
+  branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
+         NULL, &print_global_inactive_decision);
+
+  branch(*this, v_i, INT_VAR_RND(r), INT_VAL_RND(r),
+         NULL, &print_global_instruction_decision);
+
+  branch(*this, v_y, INT_VAR_RND(r), INT_VAL_MIN(),
+         NULL, &print_global_temporary_decision);
+
+  branch(*this, v_c, INT_VAR_RND(r), INT_VAL_MIN(),
+         &schedulable, &print_global_cycle_decision);
+
+  branch(*this, v_r, INT_VAR_RND(r), INT_VAL_RND(r),
+         &global_assignable, &print_global_register_decision);
+*/
+
+}
+
+
