@@ -1,22 +1,26 @@
 # Getting Started with SecConCG
 
-SecConCG is tool to generate code that is secure against power side-channel attacks. 
+SecConCG is a tool to generate code that is secure against power side-channel (PSC) attacks. 
+In particular it generates code that is free from transitional effects among registers 
+and the memory bus.
 
-SecConCG is based on [Unison](https://unison-code.github.io/), a software tool that
-performs register allocation and instruction scheduling in integration using
-combinatorial optimization.
+SecConCG is based on [Unison](https://unison-code.github.io/), a combinatorial compiler backend that
+performs register allocation and instruction scheduling in integration.
 
 ## Prerequisites
 
-Unison has the following dependencies:
+SecConCG has the following dependencies:
 [Stack](http://www.haskellstack.org/),
 [Qt](https://www.qt.io/) (version 5.x, optional see [#33](https://github.com/unison-code/unison/issues/33)),
-[Graphviz library](http://www.graphviz.org/) (also optional), and
-[Gecode](http://www.gecode.org/) (version 6.2.0).
+[Graphviz library](http://www.graphviz.org/) (also optional),
+[Gecode](http://www.gecode.org/) (version 6.2.0),
+[Arpack](https://rcc.fsu.edu/software/arpack) (version 3.0.7-2)
+[Openblas](https://www.openblas.net/) (version 0.3.5)
+
 To get the first three dependencies in Debian-based distributions, just run:
 
 ```
-apt-get install haskell-stack qtbase5-dev libgraphviz-dev
+apt-get install haskell-stack qtbase5-dev libgraphviz-dev libarpack2-dev libopenblas-dev
 ```
 
 Upgrade Slack after installing it:
@@ -45,7 +49,7 @@ sudo make install
 Clone the code from Github:
 
 ```bash
-git clone https://github.com/romits800/divCon.git
+git clone -b secconcg https://github.com/romits800/divCon.git
 ```
 
 ## Building
@@ -83,57 +87,34 @@ make install PREFIX=$DIR
 
 If you have a .mir file you can run SecConCG as follows:
 ```bash
-uni import --target=mips factorial.mir -o factorial.uni --function=factorial --maxblocksize=50 --goal=speed
-uni linearize --target=mips factorial.uni -o factorial.lssa.uni
-uni extend --target=mips  factorial.lssa.uni -o factorial.ext.uni
-uni augment --target=mips factorial.ext.uni -o factorial.alt.uni
-uni model --target=mips factorial.alt.uni -o factorial.json 
-gecode-presolver -o factorial.ext.json -dzn factorial.dzn --verbose factorial.json
+uni import --target=Mips masked_xor.mir -o masked_xor.uni --function=xor --maxblocksize=20 --goal=speed --policy input.txt
+uni linearize --target=Mips masked_xor.uni -o masked_xor.lssa.uni
+uni extend --target=Mips  masked_xor.lssa.uni -o masked_xor.ext.uni
+uni augment --target=Mips masked_xor.ext.uni -o masked_xor.alt.uni
+uni model --target=Mips masked_xor.alt.uni -o masked_xor.json --policy input.txt
+gecode-presolver -o masked_xor.ext.json -dzn masked_xor.dzn --verbose masked_xor.json
 ```
-Run the gecode solver:
+Run the gecode PSC-aware solver:
 ```bash
-gecode-solver  -o factorial.out.json --verbose factorial.ext.json
+# disable symmetry breaking constraints
+flags=--disable-copy-dominance-constraints --disable-infinite-register-dominance-constraints --disable-operand-symmetry-breaking-constraints --disable-register-symmetry-breaking-constraints --disable-temporary-symmetry-breaking-constraints --disable-wcet-constraints
+# select implementation
+flags="$flags --sec-implementation sec_reg_2_mem_2" 
+gecode-secsolver $flags -o masked_xor.out.json --verbose masked_xor.ext.json
 ```
 or the portfolio solver (requires installing [MiniZincIDE-2.2.3-bundle-linux](https://github.com/MiniZinc/MiniZincIDE/releases/tag/2.2.3)):
 
 ```bash
-export SECCON_PATH=/path/to/divCon
+export SECCON_PATH=/path/to/seccon
 export MINIZINC_PATH=/path/to/minizincIDE/bin
 export PATH=${PATH}:${SECCON_PATH}/src/solvers/gecode:${SECCON_PATH}/src/solvers/multi_backend/minizinc/:${SECCON_PATH}/src/solvers/multi_backend/:${MINIZINC_PATH}:${SECCON_PATH}/src/solvers/multi_backend/common/ UNISON_DIR=${SECCON_PATH}
-${SECCON_PATH}/src/solvers/multi_backend/portfolio-solver -o factorial.out.json --verbose factorial.ext.json
+${SECCON_PATH}/src/solvers/multi_backend/portfolio-solver -o masked_xor.out.json --verbose masked_xor.ext.json
 ```
-
-And run the diversifier for:
-* Gap to optimal = 10%
-* Diversification algorithm = LNS
-..* Relax rate = 70%
-..* Restart sequence = constant
-..* Restart scale = 500
-* Random seed = 123
-* Distance = Hamming
-* Number of variants = 100
-
+Generate the assembly code:
 ```bash
-flags="--disable-copy-dominance-constraints --disable-infinite-register-dominance-constraints --disable-operand-symmetry-breaking-constraints --disable-register-symmetry-breaking-constraints --disable-temporary-symmetry-breaking-constraints --disable-wcet-constraints"
-
-gecode-diversify  ${flags} --acceptable-gap 10 --relax 0.7 --seed 123 --distance hamming --div-method monolithic_lns --restart constant --restart-scale 500 --number-divs 100 --solver-file factorial.out.json --use-optimal-for-diversification  --divs-dir $DIVS_DIR -o factorial.out.json --enable-solver-solution-brancher --branching clrandom  factorial.ext.json
-```
-This will generate 100 files with names `{0..99}.factorial.out.json`.
-
-## Documentation
-
-### Unison
-
-Check out Unison's work-in-progress
-[manual](https://unison-code.github.io/doc/manual.pdf). The manual's source can
-be found in the `doc` directory.
-
-Source-level documentation is also available for the core Haskell modules of
-Unison (`MachineIR.Base`, `Unison.Base`, and `Unison.Target.API`). To generate
-this documentation in HTML format and open it with a web browser, just run:
-
-```
-make doc
+uni export --target=Mips --keepops masked_xor.alt.uni -o masked_xor.unison.mir --solfile=masked_xor.out.json
+flags="-disable-post-ra -disable-tail-duplicate --disable-branch-fold -disable-block-placement"
+llc masked_xor.unison.mir -march=mipsel -mcpu=mips32 $flags -start-after livedebugvars -o masked_xor.s
 ```
 
 ## Contact
@@ -146,5 +127,3 @@ For any questions or issues on SecConCG contact:
 
 SecConCG is licensed under the BSD3 license, see the [LICENSE.md](LICENSE.md) file
 for details.
-
-
