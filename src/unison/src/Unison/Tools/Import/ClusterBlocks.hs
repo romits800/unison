@@ -234,12 +234,12 @@ checkClusters dg ((h,cl):t) m mx =
       let maxdep = maximum clprecs
           m' = Map.insert h maxdep m
       in checkClusters dg t m' mx
-    (True, True, _) -> checkClusters dg t m mx
-    (True, False, _) -> let mindep = minimum clsucs
-                            maxdep = maximum clprecs
-                            mv     = maximum [mindep, maxdep]
-                            m' = Map.insert h mv m
-                        in checkClusters dg t m' mx
+    (True, _, _) -> checkClusters dg t m mx
+--     (True, False, _) -> let mindep = minimum clsucs
+--                             maxdep = maximum clprecs
+--                             mv     = maximum [mindep, maxdep]
+--                             m' = Map.insert h mv m
+--                         in checkClusters dg t m' mx
     (False, _, _) -> let maxdep = maximum clprecs
                          m' = Map.insert h maxdep m
                      in checkClusters dg t m' mx

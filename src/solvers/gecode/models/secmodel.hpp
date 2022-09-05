@@ -39,6 +39,9 @@
 #include "globalmodel.hpp"
 #include "seclocalmodel.hpp"
 #include "branchers/sec_value.hpp"
+#include "branchers/solutionbrancher.hpp"
+#include "branchers/boolsolutionbrancher.hpp"
+#include <random>
 
 using namespace Gecode;
 using namespace std;
@@ -86,6 +89,11 @@ public:
   vector<temporary> tats;
   vector<temporary> tbts;
 
+
+  map <block, set <temporary>> extmps;
+  map <block, set <operation>> exops;
+  map <block, set <operand>> exopas;
+  set <register_atom> hardware_regs;
   // Gecode space methods
   SecModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl);
 
@@ -137,8 +145,44 @@ public:
   block bot (temporary t);
 
   void apply_solution(SecLocalModel * ls);
+  void apply_global_solution(SecModel * sm);
+
+  void post_unassigned_branchers(unsigned int s);
+
+  void clear_extmps();
   // int select_value_tt(IntVar x, unsigned int i);
   // void next(const SecModel& l);
+
+ // r: random number for LNS
+  Rnd sec_r;
+  // p: relax parameter for LNS
+  double sec_p;
+ 
+  map <int, int> rsol; // temporary to register map
+  map <int, int> csol; // operation to cycle map
+  map <int, int> isol; // operation to instruction map
+  //map <int, int> isol; // operation to instruction map
+  // Restart
+  bool master(const MetaInfo& mi);
+  bool slave(const MetaInfo& mi);
+  void first(void);
+  void next(const SecModel& b);
+
+  void constrain(const Space & _b);
+
+  std::mt19937_64 rng;
+
+  std::uniform_real_distribution<double> *unif; //(0, 1);
+
+
+  // solution brancher for monolithic
+
+  void post_solution_brancher(SecModel *sol);
+  bool monolithic;
+  void set_monolithic(bool val);
+
+
+  void post_complete_branchers(unsigned int s);
 
 };
 

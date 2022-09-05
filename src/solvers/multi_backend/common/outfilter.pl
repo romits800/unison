@@ -48,6 +48,7 @@ my $state = 1;
 my $soln = 0;
 my $proven = 0;
 my $cost = -1;
+my $time = -1;
 my $lb_found = 0;
 my $lb_value = 0;
 my @buf = ();
@@ -67,6 +68,7 @@ while (my $line = <STDIN>) {
             print $log "$arg,\n";
         }
         print $log "\"solver\": \"minizinc-solver\",\n";
+        print $log "\"solver_time\": \"$time\",\n";
         print $log "\"cost\": [$cost],\n";
         if ($soln) {
             print $log "\"has_solution\": true,\n";
@@ -93,6 +95,10 @@ while (my $line = <STDIN>) {
             # DO NOT REMOVE
             print STDERR "$line\n";
         }
+    } elsif ($line =~ "time") {
+	# DO NOT REMOVE
+	print STDERR "$line\n";
+	($time) = $line =~ /(\d+)/;
     } elsif ($line =~ "%") {
 	# DO NOT REMOVE
 	print STDERR "$line\n";
@@ -113,6 +119,8 @@ foreach my $arg (@buf) {
 }
 print "\"solver\": \"minizinc-solver\",\n";
 print "\"cost\": [$cost],\n";
+my $tmp = 1000 * $time;
+print "\"solver_time\": $tmp,\n";
 if ($soln) {
     print "\"has_solution\": true,\n";
 } else {
