@@ -97,7 +97,7 @@ runFunction
        (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
         implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
         explicitCallRegs, inFile, debug, intermediate, lint, lintPragma,
-        Just uniFile, Nothing, Nothing, Nothing, Nothing) mirInput targetWithOption
+        Just uniFile, Nothing, Nothing, Nothing, Nothing, Nothing) mirInput targetWithOption
 
      case importResult of
       -- import succeeds:
@@ -131,7 +131,7 @@ runFunction
            Model.run
              (baseFile', scaleFreq, oldModel, applyBaseFile, tightPressureBound,
               strictlyBetter, unsatisfiable, noCC, mirVersion, Just jsonFile,
-              Nothing)
+              Nothing, Nothing)
              altUniInput targetWithOption
 
            let extJsonFile   = addExtension "ext.json" prefix

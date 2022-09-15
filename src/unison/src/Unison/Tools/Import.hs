@@ -93,7 +93,7 @@ import qualified Unison.ParseSecurityPolicies as PSP
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
      explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile,
-     policy, clusterNumber, kmeansIterations, numberEigenvectors)
+     policy, gfMulImpl, clusterNumber, kmeansIterations, numberEigenvectors)
     mir target =
   do
     secPolicy <- maybeStrictReadFile policy
@@ -113,8 +113,10 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
             applyTransformations
             (uniTransformations (goal, noCC, noReserved, maxBlockSize,
                                  estimateFreq, implementFrames, rematType,
-                                 lintPragma, explicitCallRegs, policies,
-                                 clusterNumber, kmeansIterations, numberEigenvectors))
+                                 lintPragma, explicitCallRegs,
+                                 policies, gfMulImpl,
+                                 clusterNumber, kmeansIterations,
+                                 numberEigenvectors))
             target ff
         baseName = takeBaseName mirFile
       in case selected function mfs of
@@ -152,7 +154,8 @@ mirTransformations (estimateFreq, simplifyControlFlow, explicitCallRegs) =
 
 uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
                     implementFrames, rematType, lintPragma, explicitCallRegs,
-                    policy, clusterNumber, kmeansIterations, numberEigenvectors) =
+                    policy, gfMulImpl,
+                    clusterNumber, kmeansIterations, numberEigenvectors) =
   --let types = inferSecurityTypes target f policy in
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
@@ -187,8 +190,9 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (repairCSSA, "repairCSSA", True),
      (advancePhis, "advancePhis", True),
      (postponeBranches, "postponeBranches", True),
+     (renameOperations, "renameOperations", True),
      (renameTemps, "renameTemps", True),
-     (reorderXorOperations policy, "reorderXorOperations", policy /= []),
+     (reorderXorOperations policy gfMulImpl, "reorderXorOperations", policy /= []),
      (sortGlobalTemps, "sortGlobalTemps", True),
      (renameOperations, "renameOperations", True),
      (estimateFrequency, "estimateFrequency", estimateFreq),

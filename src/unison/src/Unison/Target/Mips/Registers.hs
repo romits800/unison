@@ -12,7 +12,8 @@ This file is part of Unison, see http://unison-code.github.io
 module Unison.Target.Mips.Registers
     (registerArray, registerAtoms, regClasses, registers,
      subRegIndexType, infRegClassUsage, infRegClassBound,
-     reserved, callerSaved, calleeSaved, hardwareRegisters) where
+     reserved, callerSaved, calleeSaved, hardwareRegisters,
+     funcArgs) where
 
 import qualified Data.Map as M
 
@@ -212,3 +213,6 @@ hardwareRegisters = [ZERO, AT, V0, V1,
                      T8, T9,
                      K0, K1,
                      GP, SP, FP, RA]
+
+-- | Function Arguments
+funcArgs = [A0, A1, A2, A3]

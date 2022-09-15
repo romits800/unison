@@ -49,7 +49,9 @@ data StateTuple i r = StateTuple {
   fArgs  :: Map String (KnownOperations, [String], [String]),
   fBbs   :: Map Integer [[Integer]],
   fFlag  :: FlagsType,
-  fBcfg  :: BCFGraph i r
+  fBcfg  :: BCFGraph i r,
+  fMulImpl :: Maybe String,
+  fT2Func  :: Map String String
   }
 
 data FlagsType = FlagsType {
@@ -58,7 +60,62 @@ data FlagsType = FlagsType {
   } deriving (Eq, Ord)
 
 
-inferSecurityTypes target f @ Function {fCode = _} ipolicies =
+
+-- getFuncName SingleOperation { oId  = oid, 
+--                               oOpr = Natural {oNatural = Linear {
+--                                                  oIs = i, -- Instruction i
+--                                                  oUs = a:b : _,
+--                                                  oDs = [] }}} = oid
+
+
+getBoundGlobalAddress (Bound(MachineGlobalAddress {mgaAddress = str}) : _) = str
+getBoundGlobalAddress (_ : rest) = getBoundGlobalAddress rest
+getBoundGlobalAddress [] = error "getBoundGlobalAddress: This should not happen"
+
+isBoundGlobalAddress (Bound(MachineGlobalAddress {}) : _) = True
+isBoundGlobalAddress (_:rest) = isBoundGlobalAddress rest
+isBoundGlobalAddress [] = False
+
+isTemp2String types (tid:tids)  = case Map.lookup tid (fT2Func types) of
+                                    Nothing -> isTemp2String types tids
+                                    Just _ -> True
+isTemp2String _ []  = False
+
+
+getTemp2String types (tid:tids)  = case Map.lookup tid (fT2Func types) of
+                                     Nothing -> getTemp2String types tids
+                                     Just str -> str
+getTemp2String _ []  = error "getTemp2String: This should not happen" 
+
+
+
+-- The call contains the address
+getFuncName _ SingleOperation {oId = _,
+                               oOpr = Natural {oNatural =
+                                               Call {
+                                                  oCallIs = _, -- Instruction i
+                                                  oCallUs = us}}}
+  | isBoundGlobalAddress us = getBoundGlobalAddress us
+-- The call uses copies
+getFuncName types SingleOperation {oId = _,
+                                   oOpr = Natural {oNatural =
+                                                   Call {
+                                                      oCallIs = _, -- Instruction i
+                                                      oCallUs = us}}}
+  | isTemp2String types ts = getTemp2String types ts
+  where  ts = getTids us []
+getFuncName types op =  error ("getFuncName: Couldn't find funcname: " ++ show op ++
+                                " t2funcs: " ++ show (fT2Func types))
+
+
+getCall types Function {fCode = fcode} callop = 
+  let
+    callop' = fromIntegral callop
+    code = flatten fcode
+    operation = code !! callop'
+  in getFuncName types operation 
+  
+inferSecurityTypes target f @ Function {fCode = _} ipolicies gfMulImpl =
   let --inpol           = showPolicies ([],[],[]) policies
       policies        = getPoliciesF f $ createPolicyMap ipolicies Map.empty
       pmap            = createPolicyMap policies Map.empty -- try to find a way to copy
@@ -71,6 +128,7 @@ inferSecurityTypes target f @ Function {fCode = _} ipolicies =
       c2o             = Map.empty -- copies to operations
       args            = Map.empty -- arguments of each operation
       bbs             = Map.empty -- basic-block relations
+      t2func          = Map.empty -- temporary that contains a function address
       -- ToDo:: Check if something else is required
       flag            = FlagsType { isFixedPoint = True, hasPhis = False }
       -- Get adjacent
@@ -88,7 +146,8 @@ inferSecurityTypes target f @ Function {fCode = _} ipolicies =
       t               = StateTuple {fPmap = pmap, fInmap = inmap, fSupp = supp, fUnq = unq,
                                     fDom = dom,   fXor = xor,     fM2o = m2o,   fC2o  = c2o,
                                     fP2p = p2p,   fP2t = p2t,     fArgs = args, fBbs = bbs,
-                                    fFlag = flag, fBcfg  = bcfg}
+                                    fFlag = flag, fBcfg  = bcfg,  fMulImpl = gfMulImpl,
+                                    fT2Func = t2func }
       t'              = inferSecurityTypesI target t f
   in t'
 
@@ -190,7 +249,9 @@ getPoliciesB:: Show r => Show i => Map String (Policy String)-> [Policy String] 
 getPoliciesB policies accpol Block {bCode = code} =
   foldl (getPoliciesO policies) accpol code
 
-getPoliciesO :: Show r => Show i => Map String (Policy String) ->  [Policy String] -> BlockOperation i r -> [Policy String]
+getPoliciesO :: Show r => Show i =>
+                Map String (Policy String) ->  [Policy String] ->
+                BlockOperation i r -> [Policy String]
 getPoliciesO pols accpol Bundle {bundleOs = bs } =
   foldl (getPoliciesO pols) accpol bs
 getPoliciesO pols accpol SingleOperation
@@ -217,17 +278,21 @@ getPoliciesO _ accpol _ = accpol
 addPrefix True = "F"
 addPrefix False = "S"
 
-inferTypes:: Show r => Show i => TargetWithOptions i r rc s -> StateTuple i r -> Function i r -> StateTuple i r 
+inferTypes :: Eq r => Show r => Show i =>
+              TargetWithOptions i r rc s -> StateTuple i r ->
+              Function i r -> StateTuple i r 
 inferTypes target types f @ Function {fCode = code} =
   foldl (inferTypesBlock target f) types code
   
 
 
-inferTypesBlock:: Show r => Show i => TargetWithOptions i r rc s -> Function i r -> StateTuple i r -> Block i r -> StateTuple i r
+inferTypesBlock :: Eq r => Show r => Show i =>
+                   TargetWithOptions i r rc s -> Function i r ->
+                   StateTuple i r -> Block i r -> StateTuple i r
 inferTypesBlock target f types Block {bLab= bid, bCode = code} =
   inferTypesOperation target f bid types code
 
-inferTypesOperation :: Show r => Show i => Integral a => TargetWithOptions i r rc s -> Function i r -> BlockId -> StateTuple i r -> [BlockOperation i r] -> StateTuple i r
+inferTypesOperation :: Eq r => Show r => Show i => Integral a => TargetWithOptions i r rc s -> Function i r -> BlockId -> StateTuple i r -> [BlockOperation i r] -> StateTuple i r
 inferTypesOperation _ _ _ types [] = types
 inferTypesOperation target f bid types (Bundle {bundleOs = bs}:codes) =
   inferTypesOperation target f bid types (bs ++ codes)
@@ -241,9 +306,11 @@ inferTypesOperation target f bid types (SingleOperation
                       oDs = d:_ }}}:codes) =
   let
     isxor = any (isXor target) i
-    isgmul= any (isGMul target) i
+    isgmul= case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
     xor' = updateXor (fXor types) ts1 ts2 isxor [d]
-    args' = updateArgs (fArgs types) (knownOp target i) ts1 ts2 [d]
+    args' = updateArgs (fArgs types) (knownOp target i types) ts1 ts2 [d]
     supp' = updateBSupps isxor (fSupp types, xor', args') ts1 ts2 [d]
     unq' = updateBUnqs (fUnq types, fSupp types) ts1 ts2 [d]
     -- if is xor
@@ -266,9 +333,11 @@ inferTypesOperation target f bid types (SingleOperation
     -- exception for control register???
     -- if is xor
     isxor = any (isXor target) i
-    isgmul= any (isGMul target) i
+    isgmul= case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
     xor' = updateXor (fXor types) [t1] [t2] isxor [d]
-    args' = updateArgs (fArgs types) (knownOp target i) [t1] [t2] [d]
+    args' = updateArgs (fArgs types) (knownOp target i types) [t1] [t2] [d]
     supp' = updateBSupps isxor (fSupp types, xor', args') [t1] [t2] [d]
     unq' = updateBUnqs (fUnq types, fSupp types) [t1] [t2] [d]
     dom' = if isxor
@@ -293,10 +362,13 @@ inferTypesOperation target f bid types (SingleOperation
     unq'  = updateUnqs (fUnq types) ts [mfi]
     dom'  = updateDoms (fDom types) ts [mfi]
     isxor = any (isXor target) i
-    isgmul = any (isGMul target) i
+    isgmul = case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
     m2o' = updateM2o (fM2o types) (addPrefix isfixed ++ show mf) oid ts
     args' = updateArgsUop (fArgs types)  ts [mfi]
-    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fM2o = m2o', fArgs = args'} 
+    types'  = types { fSupp = supp', fUnq = unq', fDom = dom',
+                      fM2o = m2o', fArgs = args'} 
     pmap' = updatePmaps isxor isgmul types' ts [] [mfi]
     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
@@ -314,12 +386,36 @@ inferTypesOperation target f bid types (SingleOperation
     unq'  = updateUnqs (fUnq types) [t] [mfi]
     dom'  = updateDoms (fDom types) [t] [mfi]
     isxor = any (isXor target) i
-    isgmul = any (isGMul target) i
+    isgmul = case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
     m2o' = updateM2o (fM2o types) (addPrefix isfixed ++ show mf) oid []
     args' = updateArgsUop (fArgs types)  [t] [mfi]
-    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fM2o = m2o', fArgs = args'} 
+    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fM2o = m2o',
+                      fArgs = args'} 
     pmap' = updatePmaps isxor isgmul types' [t] [] [mfi]
     types'' = types { fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+-- The type here should be public
+inferTypesOperation target f bid types (SingleOperation
+  {oOpr = Natural {oNatural = Linear {
+                      oIs = _i, -- Instruction i
+                      oUs = t :
+                            Bound(MachineGlobalAddress {mgaAddress = str}):_,
+                      oDs = defops }}}:codes) =
+  let
+    supp' = updateSupps (fSupp types) [t] defops
+    unq'  = updateUnqs (fUnq types) [t] defops
+    dom'  = updateDoms (fDom types) [t] defops
+    isxor = False
+    isgmul = False
+    xor'  = updateXor (fXor types) [t] [] True defops
+    args' = updateArgsUop (fArgs types)  [t] defops
+    funcs' = updateFuncs (fT2Func types) defops str
+    types'= types { fSupp = supp', fUnq = unq', fDom = dom',
+                    fXor = xor', fArgs = args', fT2Func = funcs'} 
+    pmap' = updatePmaps isxor isgmul types' [t] [] defops
+    types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
 -- operation with one operand
 inferTypesOperation target f bid types (SingleOperation
@@ -334,7 +430,9 @@ inferTypesOperation target f bid types (SingleOperation
     unq'  = updateUnqs (fUnq types) ts defops
     dom'  = updateDoms (fDom types) ts defops
     isxor = any (isXor target) i
-    isgmul = any (isGMul target) i
+    isgmul = case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
     xor' = updateXor (fXor types) ts [] True defops
     args' = updateArgsUop (fArgs types)  ts defops
     types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'} 
@@ -353,7 +451,9 @@ inferTypesOperation target f bid types (SingleOperation
     unq'  = updateUnqs (fUnq types) [t] defops
     dom'  = updateDoms (fDom types) [t] defops
     isxor = any (isXor target) i
-    isgmul = any (isGMul target) i
+    isgmul = case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
     xor' = updateXor (fXor types) [t] [] True defops
     args' = updateArgsUop (fArgs types)  [t] defops
     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
@@ -506,18 +606,36 @@ inferTypesOperation _ _ _ _ (SingleOperation
          foldl (\s -> \op -> s ++ " " ++ (show op)) "Use Operands: " ous ++ "\n" ++
          foldl (\s -> \op -> s ++ " " ++ (show op)) "Def Operands: " defops ++ "\n" ++
          foldl (\s -> \i  -> s ++ " " ++ (show i))  "Instructions: " ins ++ "\n")
+
+
+-- inferTypesOperation target f bid types (
+--   o1 @ SingleOperation
+--     {oOpr = Natural {oNatural = Branch {
+--                            oBranchIs = _, -- instruction i
+--                            oBranchUs = _ }}}:
+--   o2 @ SingleOperation
+--     {oId = _,
+--      oOpr = Virtual ( Fun  { oFunctionUs = oFus,
+--                                 oFunctionDs = oFds
+--                               }
+--                        )}:codes) = error ( show o1 ++ show o2) 
+  -- infertypesoperation target f bid types codes
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Branch {
                       oBranchIs = _, -- instruction i
-                      oBranchUs = _ }}}:codes) = inferTypesOperation target f bid types codes
+                      oBranchUs = _ }}}:codes) =
+  inferTypesOperation target f bid types codes
+
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Call {
                       oCallIs = _, -- Instruction i
-                      oCallUs = _ }}}:codes) = inferTypesOperation target f bid types codes
+                      oCallUs = _ }}}:codes) =
+    inferTypesOperation target f bid types codes
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = TailCall {
                       oTailCallIs = _, -- Instruction i
-                      oTailCallUs = _ }}}:codes) = inferTypesOperation target f bid types codes
+                      oTailCallUs = _ }}}:codes) =
+  inferTypesOperation target f bid types codes
 -- copies
 inferTypesOperation target f bid types (SingleOperation
   { oId  = oid, 
@@ -565,20 +683,42 @@ inferTypesOperation target f bid types (SingleOperation
     oOpr = Virtual ( Fun  { oFunctionUs = oFus,
                             oFunctionDs = oFds
                           }
-                   )}:codes) =
-  let
-    supp' = updateSupps (fSupp types) oFus oFds -- assume no side effects in function
-    -- This will anyways be False
-    xor' = updateXor (fXor types) oFus [] False oFds
-    -- args' = updateArgs args KOOther ts1 ts2 [d]
-    -- supp' = updateBSupps isxor (supp, xor', args') ts1 ts2 [d]
-    unq' = updateLUnqs ((fUnq types), (fSupp types)) oFus oFds
-    -- if is xor
-    dom' = updateBDomsEmpty (fDom types) oFds
-    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
-    pmap' = updateLPmaps types' oFus oFds
-    types'' = types' {fPmap = pmap'}
-  in inferTypesOperation target f bid types'' codes
+                   ),
+    oAs  = Attributes {aCall = Just callop}} : codes) =
+  case fMulImpl types of
+    Just str | isgmul str ->
+               let
+                 (ts1,ts2) = getTwoArgs oFus target
+                 isxor = False
+                 isgmul= True
+                 xor' = updateXor (fXor types) [ts1] [ts2] isxor oFds
+                 args' = updateArgs (fArgs types) KOGmul [ts1] [ts2] oFds
+                 supp' = updateBSupps isxor (fSupp types, xor', args') [ts1] [ts2] oFds
+                 unq' = updateBUnqs (fUnq types, fSupp types) [ts1] [ts2] oFds
+                 dom' = updateBDomsEmpty (fDom types) oFds
+                 types'  = types { fSupp = supp', fUnq = unq', fDom = dom',
+                                   fXor = xor', fArgs = args'} 
+                 pmap'   = updatePmaps isxor isgmul types' [ts1] [ts2] oFds
+                 types'' = types' {fPmap = pmap'}
+               in inferTypesOperation target f bid types'' codes
+      where
+        callsite = getCall types f callop
+        isgmul str = callsite == str
+    _ ->
+      let 
+        supp' = updateSupps (fSupp types) oFus oFds -- assume no side effects in function
+        -- This will anyways be False
+        xor' = updateXor (fXor types) oFus [] False oFds
+        -- args' = updateArgs args KOOther ts1 ts2 oFds
+        -- supp' = updateBSupps isxor (supp, xor', args') ts1 ts2 [d]
+        unq' = updateLUnqs ((fUnq types), (fSupp types)) oFus oFds
+        -- if is xor
+        dom' = updateBDomsEmpty (fDom types) oFds
+        types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
+        pmap' = updateLPmaps types' oFus oFds
+        types'' = types' {fPmap = pmap'}
+      in inferTypesOperation target f bid types'' codes
+    -- error (show o ++ show callsite)
 -- Phi (TODO)
 inferTypesOperation target f bid types (SingleOperation
   { oId = _,
@@ -640,7 +780,9 @@ inferTypesOperation target f bid types (SingleOperation
 
 
                                      
-updateNewTemps :: Show r => Map Integer [Operand r] -> Map Integer [Integer] -> StateTuple i r -> (Integer, [Operand r]) -> StateTuple i r
+updateNewTemps :: Show r => Map Integer [Operand r] ->
+                  Map Integer [Integer] -> StateTuple i r ->
+                  (Integer, [Operand r]) -> StateTuple i r
 updateNewTemps p2t p2p types (oid, tmps) =
   let 
     adj = Map.lookup oid p2p
@@ -651,7 +793,9 @@ updateNewTemps p2t p2p types (oid, tmps) =
         xor'   = updateXor (fXor types) oldtmps [] True tmps
         unq'   = updateLUnqs (fUnq types, fSupp types) oldtmps tmps
         dom'   = updateBDomsEmpty (fDom types) tmps
-        types' = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
+        funcs' = updateT2Func (fT2Func types) oldtmps tmps
+        types' = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor',
+                        fT2Func = funcs'}
         pmap'  = updateLPmaps types' oldtmps tmps
         flag' = (fFlag types) {hasPhis = isAnyNothing}
         types'' = types' {fPmap = pmap', fFlag = flag'}
@@ -663,7 +807,10 @@ updateNewTemps p2t p2p types (oid, tmps) =
         dom'  = updateDoms (fDom types) oldtmps tmps
         xor'  = updateXor (fXor types) oldtmps [] True tmps
         args' = updateArgsUop (fArgs types)  oldtmps tmps
-        types' = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+        funcs' = updateT2Func (fT2Func types) oldtmps tmps
+        types' = types {fSupp = supp', fUnq = unq', fDom = dom',
+                        fXor = xor', fArgs = args',
+                        fT2Func = funcs'}
         pmap' = updatePmaps False False types' oldtmps [] tmps
         -- pmap' = updatePmaps False False (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args', bbs, flag) oldtmps [] tmps
         types'' = types' {fPmap = pmap'}
@@ -696,6 +843,22 @@ updateM2o m2o fid oid tids =
       Nothing -> Just (Map.insert oid dtids Map.empty)
   in Map.alter f fid m2o
 
+getFunc _ [] = Nothing
+getFunc t2s (tid:tids) =
+  case Map.lookup tid t2s of
+    Nothing -> getFunc t2s tids
+    Just str -> Just str
+
+updateT2Func t2s oldtmps newtmps =
+  let oldtids  = getTids oldtmps [] -- destinations
+      newtids  = getTids newtmps [] -- destinations
+  in case getFunc t2s oldtids of
+    Nothing -> t2s
+    Just str -> foldl (\mnew -> \tid -> Map.insert tid str mnew) t2s newtids
+
+updateFuncs t2s dts str =
+  let dtids  = getTids dts [] -- destinations
+  in foldl (\mnew -> \tid -> Map.insert tid str mnew) t2s dtids 
 
 updateC2o c2o dts oid sts =
   let
@@ -721,7 +884,8 @@ anyOp f (h:tail) = case f h of
   Just x -> Just x
   Nothing -> anyOp f tail
 
-getSameOperand :: Map String (KnownOperations, [String], [String]) -> [String] -> [String]
+getSameOperand :: Map String (KnownOperations, [String], [String])
+  -> [String] -> [String]
   -> Maybe (KnownOperations, [String], [String])
 getSameOperand args ts1 ts2 =
   let f  (t,t') = case Map.lookup t' args of
@@ -781,9 +945,11 @@ isDistributive args ts1 ts2 =
 
   
 
-knownOp target i =
+knownOp target i types =
   let isxor = any (isXor target) i
-      isgmul = any (isGMul target) i
+      isgmul = case fMulImpl types of
+                 Nothing -> any (isGMul target) i
+                 _ -> False -- TODO: this is not correct               
   in case (isxor, isgmul) of
     (True,_) -> KOXor
     (_,True) -> KOGmul
@@ -817,15 +983,15 @@ updateArgsUop args ts dts =
     args' = foldl (f2 s1) args dtids
   in args'
 
-updateArgsUopD args stids dtids = 
-  let
-    f tid = Map.lookup tid args
-    s1 = anyOp f stids
-    f2 s1 s dtid = case s1 of
-      Just x -> Map.insert dtid x s
-      Nothing -> s
-    args' = foldl (f2 s1) args dtids
-  in args'
+-- updateArgsUopD args stids dtids = 
+--   let
+--     f tid = Map.lookup tid args
+--     s1 = anyOp f stids
+--     f2 s1 s dtid = case s1 of
+--       Just x -> Map.insert dtid x s
+--       Nothing -> s
+--     args' = foldl (f2 s1) args dtids
+--   in args'
 
 
 
@@ -881,12 +1047,12 @@ updateUnqs unq sts dts =
   in unq'
 
 
-updateUnqsD unq stids dtids =
-  let f m s tid = Map.union s $ Map.findWithDefault Map.empty tid m
-      s1    = foldl (f unq) Map.empty stids
-      f2 s1 s dtid = Map.insert dtid s1 s
-      unq' = foldl (f2 s1) unq dtids
-  in unq'
+-- updateUnqsD unq stids dtids =
+--   let f m s tid = Map.union s $ Map.findWithDefault Map.empty tid m
+--       s1    = foldl (f unq) Map.empty stids
+--       f2 s1 s dtid = Map.insert dtid s1 s
+--       unq' = foldl (f2 s1) unq dtids
+--   in unq'
 
 updateDoms dom sts dts =
   let stids = getTids sts [] -- sources
@@ -897,12 +1063,12 @@ updateDoms dom sts dts =
       dom' = foldl (f2 s1) dom dtids
   in dom'
 
-updateDomsD dom stids dtids =
-  let f m s tid = Map.union s $ Map.findWithDefault Map.empty tid m
-      s1    = foldl (f dom) Map.empty stids
-      f2 s1 s dtid = Map.insert dtid s1 s
-      dom' = foldl (f2 s1) dom dtids
-  in dom'
+-- updateDomsD dom stids dtids =
+--   let f m s tid = Map.union s $ Map.findWithDefault Map.empty tid m
+--       s1    = foldl (f dom) Map.empty stids
+--       f2 s1 s dtid = Map.insert dtid s1 s
+--       dom' = foldl (f2 s1) dom dtids
+--   in dom'
 
 -- To check this
 all_xor xor stids =
@@ -1037,10 +1203,10 @@ updateBDomsEmpty dom dts =
       dom'    = foldl f2 dom dtids
   in dom'
 
-updateBDomsEmptyD dom dtids =
-  let f2 u dtid = Map.insert dtid Map.empty  u 
-      dom'    = foldl f2 dom dtids
-  in dom'
+-- updateBDomsEmptyD dom dtids =
+--   let f2 u dtid = Map.insert dtid Map.empty  u 
+--       dom'    = foldl f2 dom dtids
+--   in dom'
 
 
 updateBDomsD (dom, unq) sts1 sts2 dts =
@@ -1264,37 +1430,52 @@ getTids (Bound (MachineFrameIndex {mfiIndex = mi,
 getTids (_:ts) tids = getTids ts tids
 
 
-splitOps_i [] acc = acc
-splitOps_i (t@(Temporary {}):ts) (tbv, tbb) = splitOps_i ts (t:tbv, tbb)
-splitOps_i (t@(MOperand {}):ts) (tbv, tbb) = splitOps_i ts (t:tbv, tbb)
-splitOps_i (t@(BlockRef {}):ts) (tbv, tbb) = splitOps_i ts (tbv, t:tbb) 
-splitOps_i (_:ts) acc = splitOps_i ts acc
+-- splitOps_i [] acc = acc
+-- splitOps_i (t@(Temporary {}):ts) (tbv, tbb) = splitOps_i ts (t:tbv, tbb)
+-- splitOps_i (t@(MOperand {}):ts) (tbv, tbb) = splitOps_i ts (t:tbv, tbb)
+-- splitOps_i (t@(BlockRef {}):ts) (tbv, tbb) = splitOps_i ts (tbv, t:tbb) 
+-- splitOps_i (_:ts) acc = splitOps_i ts acc
 
 
-splitOps tbs = splitOps_i tbs ([],[])
+-- splitOps tbs = splitOps_i tbs ([],[])
 
 fJust (Just v) = v
 fJust Nothing = error "fJust: SecurityTypeInference.hs: This should not be Nothing."
+
+
+
+getFirstArg :: Eq r => [Operand r] -> r -> Operand r
+getFirstArg (op @ MOperand{operandReg = Just Register {regId = TargetRegister {rTargetReg = r }}}:_) r0
+  | r == r0 = op
+getFirstArg (op @ Temporary { tReg = Just Register {regId = TargetRegister {rTargetReg = r }}}:_) r0
+  | r == r0 = op
+getFirstArg (op @ Register {regId = TargetRegister {rTargetReg = r }}:_) r0
+  | r == r0 = op
+getFirstArg (_:rest) r0 = getFirstArg rest r0
+getFirstArg [] _ = error "getFirstArg: Cannot find first argument"
+
+getSecondArg :: Eq r => [Operand r] -> r -> Operand r
+getSecondArg (op @ MOperand{operandReg = Just Register {regId = TargetRegister {rTargetReg = r }}}:_) r1
+  | r == r1 = op
+getSecondArg (op @ Temporary { tReg = Just Register {regId = TargetRegister {rTargetReg = r }}}:_) r1
+  | r == r1 = op
+getSecondArg (op @ Register {regId = TargetRegister {rTargetReg = r }}:_) r1
+  | r == r1 = op
+getSecondArg (_:rest) r1 = getSecondArg rest r1
+getSecondArg [] _ = error "getSecondArg: Cannot find second argument"
+
+
+getTwoArgs :: Eq r => [Operand r] -> TargetWithOptions i r rc s -> (Operand r, Operand r)
+getTwoArgs ops target = 
+  let
+    [r0,r1] = take 2 $ funcArgs target
+    op0 = getFirstArg ops r0
+    op1 = getSecondArg ops r1
+  in (op0, op1)
+
 
 --fJust1 (Just v) = v
 --fJust1 Nothing = error "fJust1: SecurityTypeInference.hs: This should not be Nothing."
 
 --fJust2 (Just v) = v
 --fJust2 Nothing = error "fJust2: SecurityTypeInference.hs: This should not be Nothing."
-
-
--- fpmap types = fPmap types
--- fm2o types = fM2o types
--- finmap types = fInmap types
-
--- fc2o  types = fC2o types
--- fbbs  types = fBbs types
--- fsupp types = fSupp types
--- fdom  types = fDom types
--- fxor  types = fXor types
--- funq  types = fUnq types
-
-
--- For debugging
--- fJust2 _ (Just v) = v
--- fJust2 a Nothing = error (show a ++ "fJust: SecurityTypeInference.hs: This should not be Nothing.")

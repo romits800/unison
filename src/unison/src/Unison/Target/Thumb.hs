@@ -80,6 +80,7 @@ target =
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
+      API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
     }
@@ -750,7 +751,7 @@ reorderImplicitOperandsInInstr
 -- probably requires adjustment with the actual frame
 reorderImplicitOperandsInInstr
   mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
-                      msOperands = [d, _, base, offset]}
+                      msOperands = [d, _, base, _offset]}
   | i == TADDframe_cpsr = 
     let mos' = [d, mkMachineReg SP, base] ++ defaultMIRPred
     in mi {msOpcode = mkMachineTargetOpc TADDrSPi, msOperands = mos'}
@@ -1060,20 +1061,17 @@ altRetConstraints (_ : code) constraints = (code, constraints)
 -- altNonSymmetricConstraints (_ : code) constraints = (code, constraints)
 
 
-getTemporaries :: [Integer] -> [Operand r] -> [Integer] 
-getTemporaries acc []  = acc
-getTemporaries acc ((Temporary {tId = ts}):tss) = getTemporaries (ts:acc) tss
-getTemporaries acc (_:tss) = getTemporaries acc tss
+-- getTemporaries :: [Integer] -> [Operand r] -> [Integer] 
+-- getTemporaries acc []  = acc
+-- getTemporaries acc ((Temporary {tId = ts}):tss) = getTemporaries (ts:acc) tss
+-- getTemporaries acc (_:tss) = getTemporaries acc tss
 
 
-equalTemps [] [] = True
-equalTemps [] _ = False
-equalTemps _ [] = False
-equalTemps (t1:ts1) (t2:ts2) | t1 == t2 = equalTemps ts1 ts2
-equalTemps (t1:ts1) (t2:ts2) = False
-
--- equalTemps ((Temporary {tId = ts1}):tss1) ((Temporary {tId = ts2}):tss2) | ts1 == ts2 = equalTemps tss1 tss2
--- equalTemps ((Temporary {tId = ts1}):tss1) ((Temporary {tId = ts2}):tss2) = False
+-- equalTemps [] [] = True
+-- equalTemps [] _ = False
+-- equalTemps _ [] = False
+-- equalTemps (t1:ts1) (t2:ts2) | t1 == t2 = equalTemps ts1 ts2
+-- equalTemps (t1:ts1) (t2:ts2) = False
 
 
 altLoadStoreConstraints (

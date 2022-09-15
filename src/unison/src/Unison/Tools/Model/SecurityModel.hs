@@ -31,9 +31,9 @@ isNotInInmap inmap t = isNothing $ Map.lookup t inmap
 allNotInmap ts inmap =
   all (isNotInInmap inmap) ts 
 
-parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies =
+parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies gfMulImpl =
   let
-    types' = inferSecurityTypes target f policies
+    types' = inferSecurityTypes target f policies gfMulImpl
     pmap' = fPmap types'
     inmap = fInmap types'
     m2o'  = fM2o types'

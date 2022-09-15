@@ -65,7 +65,8 @@ target =
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
-      API.tIsGMul            = const isGMul,
+      API.tIsGMul           = const isGMul,
+      API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
     }
@@ -271,3 +272,6 @@ spillOverhead _ = Nothing
 
 -- | Hardware registers
 hardwareRegisters = [R0, R1, R2, R3, R4, R5, R6, R7]
+
+-- | Function Arguments
+funcArgs = [R0, R1, R2, R3]

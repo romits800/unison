@@ -80,7 +80,8 @@ target =
       API.tConstraints      = constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
-      API.tIsGMul            = const isGMul,
+      API.tIsGMul           = const isGMul,
+      API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
     }

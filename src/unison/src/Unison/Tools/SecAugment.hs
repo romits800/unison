@@ -32,14 +32,15 @@ import Common.Util
 import qualified Unison.ParseSecurityPolicies as PSP
 import Unison.Transformations.SecurityTypeInference
 
-run (uniFile, debug, intermediate, lint, lintPragma, altUniFile, policy) uni target =
+run (uniFile, debug, intermediate, lint, lintPragma, altUniFile, policy,
+     gfMulImpl) uni target =
   do
     secPolicy <- maybeStrictReadFile policy
     let f = parse target uni
         policies =  case secPolicy of
                       (Just pfile) -> PSP.parse pfile
                       Nothing -> []
-        types = inferSecurityTypes target f policies
+        types = inferSecurityTypes target f policies gfMulImpl
         (altF, partialAltFs) = applyTransformations
                                (secAugmenterTransformations types)
                                target f
