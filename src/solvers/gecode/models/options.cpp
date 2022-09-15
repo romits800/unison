@@ -142,7 +142,8 @@ ModelOptions::ModelOptions(void)
     _disable_sec_memmem_constraints("disable-sec-memmem-constraints", "Disable the memory to memory constraints constraints.", false),
     _disable_sec_secret_constraints("disable-sec-secret-constraints", "Disable the secret register preceeded by random register constraints.", false),
     _disable_sec_mem_constraints("disable-sec-mem-constraints", "Disable memory constraints.", false),
-    _disable_sec_tts("disable-sec-tts", "Disable some memory intensive constraints.", false)    
+    _disable_sec_tts("disable-sec-tts", "Disable some memory intensive constraints.", false),
+    _unassigned_budget("unassigned-budget", "time budget per operation for solving the unassigned partial solution", 10.0)
 {
   add(_output_file);
   add(_dzn_file);
@@ -284,4 +285,5 @@ ModelOptions::ModelOptions(void)
   add(_disable_sec_secret_constraints);
   add(_disable_sec_mem_constraints);
   add(_disable_sec_tts);
+  add(_unassigned_budget);
 }

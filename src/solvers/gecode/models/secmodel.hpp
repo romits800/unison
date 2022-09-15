@@ -184,6 +184,11 @@ public:
 
   void post_complete_branchers(unsigned int s);
 
+
+  void relax_all(const SecModel& b, double relax_rate);
+
+  void copy_unassigned(SecModel& b);
+
 };
 
 #endif

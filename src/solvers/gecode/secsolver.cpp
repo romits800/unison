@@ -908,12 +908,15 @@ int main(int argc, char* argv[]) {
       iteration_failed += gs.failures;
       iteration_nodes += gs.nodes;
 
+      SecModel *skeleton = NULL;
       // std::cout << "Deactivation" << deactivation << std::endl;
       // if (deactivation) {
       // 	std::cout << "Solution " << results.back().solution -> v_ry[101] << std::endl;
       // 	std::cout << "Base " << base -> v_ry[101] << std::endl;
       // }
       if (gs.result == SOME_SOLUTION) {
+        // keeping a copy of the global solution gs.solution
+        skeleton = (SecModel*) gs.solution -> clone();
 
         if (options.verbose()) {
           cerr << global() << "found solution (failures: " << gs.failures
@@ -992,25 +995,6 @@ int main(int argc, char* argv[]) {
 	    GECODE_NOT_NULL(ls.solution);
 
 
-/*
-            for (int iii=0; iii< 4; iii++) {
-                cerr << local(b) << "Trying to extend " << iii << endl;
-            gs.solution->apply_solution(ls.solution, iii);
-            
-            if (ls.result == OPTIMAL_SOLUTION) {
-              local_solutions[b].push_back(ls.solution);
-              base->post_local_solution_cost(ls.solution);
-            }
-            SpaceStatus status = gs.solution->status();
-            // Propagate the cost of the found local solution in the global problem
-
-            if (status == Gecode::SS_FAILED) {
-                cerr << local(b) << "could not extend: " << iii << endl;
-                found_all_local=false;
-            }
-            }
- 
-*/
             gs.solution->apply_solution(ls.solution);
             
             if (ls.result == OPTIMAL_SOLUTION) {
@@ -1069,9 +1053,9 @@ int main(int argc, char* argv[]) {
           SecModel *ggg = NULL; // = e.next();
           if (threads > 1) {
               Search::Options ro;
-              int FACTOR = 20;
+              unsigned int FACTOR = 20;
               double limit =
-                base->options->monolithic_budget() * base->input->O.size() * FACTOR;
+                base->options->unassigned_budget() * base->input->O.size() * FACTOR;
               Search::Stop * monolithicStop = new_stop(limit, base->options);
               if (base->options->verbose())
                 cerr << global() << "time limit: " << limit << endl;
@@ -1096,7 +1080,7 @@ int main(int argc, char* argv[]) {
 
               PBS<SecModel> e(gs.solution, sebs, ro);
 
-              bool found_solution = false;
+              //bool found_solution = false;
 
               while (SecModel* nextm = e.next()) {
                 if (base->options->verbose()) {
@@ -1107,12 +1091,14 @@ int main(int argc, char* argv[]) {
                   //cout << nextm -> cost() << endl; 
                 
                 }
-                found_solution = true;
+                //found_solution = true;
                 SecModel * oldm = ggg;
                 ggg = nextm;
                 if (oldm) // Empty at the beginning
                     delete oldm;
               }
+
+        
 
           } else {
 
@@ -1120,7 +1106,7 @@ int main(int argc, char* argv[]) {
               Search::Options ro;
               int FACTOR = 20;
               double limit =
-                base->options->monolithic_budget() * base->input->O.size() * FACTOR;
+                base->options->unassigned_budget() * base->input->O.size() * FACTOR;
               Search::Stop * monolithicStop = new_stop(limit, base->options);
               if (base->options->verbose())
                 cerr << global() << "time limit: " << limit << endl;
@@ -1135,32 +1121,85 @@ int main(int argc, char* argv[]) {
 
               RBS<SecModel, BAB> e(gs.solution, ro);
 
-              bool found_solution = false;
+              //bool found_solution = false;
 
               while (SecModel* nextm = e.next()) {
                 if (base->options->verbose()) {
                   cerr << global() << "Found solution: " << limit << endl;
-                  //cout << nextm -> v_r << endl; 
                   //cout << nextm -> v_c << endl; 
-                  //cout << nextm -> v_i << endl; 
-                  //cout << nextm -> cost() << endl; 
-                
                 }
-                found_solution = true;
+                //found_solution = true;
                 SecModel * oldm = ggg;
                 ggg = nextm;
                 if (oldm) // Empty at the beginning
                     delete oldm;
               }
+              if (monolithicStop->stop(e.statistics(), ro)) {
+                  std::cout << global() << "Time limit " << std::endl;
+              }
+              else { 
+                  std::cout << global() << "Unsat or found optimal solution " << std::endl;
+            }
+#if 0
+              if (!ggg) {
+                    std::cout << global() << "No solution found. Trying to relax." << std::endl;
+                   if (skeleton->status() != Gecode::SS_FAILED) {
+                        
+// starting old stuff
+                    int count_iter = 0;
+                    while (count_iter++ < 20) {
+                        SecModel *tmp = (SecModel*) skeleton -> clone();
+                        tmp->copy_unassigned(*gs.solution);
+                        tmp->post_unassigned_branchers(0);
+                        tmp->post_complete_branchers(100);
+                        tmp->relax_all(*gs.solution, 0.4);
+                        tmp->set_monolithic(true);
+                        if (tmp -> status() == Gecode::SS_FAILED)
+                            break;
+ 
+                        Search::Options ro;
+                        int FACTOR = 1;
+                        double limit =
+                          base->options->monolithic_budget() * base->input->O.size() * FACTOR;
+                        Search::Stop * monolithicStop = new_stop(limit, base->options);
+                        if (base->options->verbose()) {
+                          cerr << global() << "time limit: " << limit << endl;
+                          cerr << global() << "count iter: " << count_iter << endl;
+
+                          cerr << global() << tmp -> v_r << std::endl;
+                        }
+                        ro.stop = monolithicStop;
+                        //RBS<SecModel, BAB> e(tmp, ro);
+                        DFS<SecModel> e(tmp, ro);
+
+                        while (SecModel* nextm = e.next()) {
+                          if (base->options->verbose()) {
+                            cerr << global() << "Found solution: " << limit << endl;
+                          }
+                          SecModel * oldm = ggg;
+                          ggg = nextm;
+                          if (oldm) // Empty at the beginning
+                              delete oldm;
+                        }
+                        if (ggg != NULL) {
+                            ggg->set_monolithic(false);
+                            break;
+                        }
+                        if (tmp) {
+                            delete tmp;
+                        }
+                        
+                    } // while end
+            }
+                    
+              }
+#endif
 
           }
           //PBS<SecModel, BAB> e(gs.solution, sebs, ro);
 
           //RBS<GlobalModel, BAB> e(m, ro);
           // DFS<SecModel> e(gs.solution);
-
-
-
 
 	  if (ggg == NULL) {
 	    found_all_local = false;
@@ -1175,7 +1214,30 @@ int main(int argc, char* argv[]) {
                      << "didn't fail.." << endl;
             }
 
+
+            SecModel * base2 = new SecModel(&input, &options, IPL_DOM);
+            if (base2->status() == SS_FAILED)
+                cerr << global() << "Failed state" << endl;
+                
+#if 0
+	    if (options.verbose())
+                cerr << global() << "Trying to find more solutions" << endl;
+            unsigned int FACTOR = 10;
+            Solution<SecModel> ms = solve_monolithic(base2, ggg, go, FACTOR);
+
+            //double solving_time = t.stop();
+            //total_failed += ms.failures;
+            //total_nodes += ms.nodes;        
+            if (ms.result == SOME_SOLUTION) {
+                delete gs.solution; // new
+                gs.solution = ms.solution; //->apply_global_solution(ms.solution);
+            } else {
+                gs.solution->apply_global_solution(ggg);
+            }
+
+#else
             gs.solution->apply_global_solution(ggg);
+#endif
 
             SpaceStatus status = gs.solution->status();
 
@@ -1332,8 +1394,8 @@ int main(int argc, char* argv[]) {
         SecModel * base2 = new SecModel(&input, &options, IPL_DOM);
         if (base2->status() == SS_FAILED)
             std::cout << "Failed state" << std::endl;
-            
-        Solution<SecModel> ms = solve_monolithic(base2, sol, go);
+        unsigned int FACTOR = 30; 
+        Solution<SecModel> ms = solve_monolithic(base2, sol, go, FACTOR);
 
         double solving_time = t.stop();
         total_failed += ms.failures;

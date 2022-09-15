@@ -620,14 +620,16 @@ SolverResult shave_local_costs(SecModel * base) {
 
 Solution<SecModel> solve_monolithic(SecModel * base, 
                                     SecModel * sol, 
-                                    GIST_OPTIONS * go) {
+                                    GIST_OPTIONS * go,
+                                    unsigned int FACTOR) {
   (void)go;
 
   base->set_monolithic(true);
   SecModel * m = (SecModel*) base->clone();
   //  add solution brancher
-  if (sol!=NULL)
-      m->post_solution_brancher(sol);
+  if (sol!=NULL) {
+      m->post_solution_brancher(sol); 
+  }
   m->post_complete_branchers(0);
 
 #ifdef GRAPHICS
@@ -645,7 +647,7 @@ Solution<SecModel> solve_monolithic(SecModel * base,
   /*if (base->options->verbose())
     cerr << monolithic() << "Threads: " << ro.threads << endl;
    */
-  unsigned int FACTOR = 30;
+  //unsigned int FACTOR = 30;
   double limit =
     base->options->monolithic_budget() * base->input->O.size() * FACTOR;
   Search::Stop * monolithicStop = new_stop(limit, base->options);
@@ -693,6 +695,12 @@ Solution<SecModel> solve_monolithic(SecModel * base,
 
   SolverResult r;
   r = found_solution ? SOME_SOLUTION : LIMIT;
+
+  if (monolithicStop->stop(e.statistics(), ro))
+      std::cout << "Time limit " << std::endl;
+  else 
+      std::cout << "Unsat or found optimal solution " << std::endl;
+    
   /*if (monolithicStop->stop(e.statistics(), ro))
     r = found_solution ? SOME_SOLUTION : LIMIT;
   else
@@ -700,6 +708,7 @@ Solution<SecModel> solve_monolithic(SecModel * base,
   */
   delete monolithicStop;
 
+  m->set_monolithic(false);
   return Solution<SecModel>(
            r, found_solution ? m : NULL,
            e.statistics().fail,

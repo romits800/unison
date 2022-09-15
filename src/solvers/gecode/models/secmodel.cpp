@@ -251,7 +251,6 @@ void SecModel::post_solution_brancher(SecModel *s) {
     for (IntVar c: v_c) vs << c;
     for (IntVar r: v_r) vs << r;
 
-
     solution_branch(*this, vs2, sol2);
     solution_branch(*this, vs, sol);
 }
@@ -313,105 +312,16 @@ void SecModel::post_branchers(void) {
 }*/
 
 void SecModel::post_unassigned_branchers(unsigned int s) {
-  //std::cout << "In post_unassigned branchers of secmodel: " << 100 + s << std::endl;
-
-  //branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-  //       NULL, &print_global_cost_decision);
-
-
   Rnd ran;
   ran.seed(100 + s);
-  //branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
-  //       NULL, &print_global_inactive_decision);
-
- //branch(*this, v_y, INT_VAR_NONE(), INT_VAL_MIN(),
-  //       NULL, &print_global_temporary_decision);
-
-/*  
-  IntVarArgs os;
-  IntVarArgs is;
-
-  for (block b: input -> B) {
-      for (std::set<operation>::iterator it = exops[b].begin(); it != exops[b].end(); ++it) {
-        os << c(*it);
-        is << i(*it);
-      }
-  }
-
-  std::cout << os << exops.size() << std::endl;
-  
-
-  IntVarArgs rs;
-  for (block b: input -> B) {
-      for (std::set<temporary>::iterator it = extmps[b].begin(); it != extmps[b].end(); ++it) {
-        rs << r(*it);
-      }
-  }
-  std::cout << rs << extmps.size() << std::endl;
-
-
-  branch(*this, is, INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_global_instruction_decision);
-
-
-  branch(*this, os, INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_global_register_decision);
-
-  branch(*this, rs, INT_VAR_NONE(), INT_VAL_RND(ran),
-         NULL, &print_global_register_decision);
-
-*/
-
-  //std::cout << extmps.size() << std::endl;
-
-  // Post solution brancher
-/*
-  {
-      IntVarArgs os;
-      IntVarArgs is;
-      IntVarArgs rs;
-
-      IntArgs ossol;
-      IntArgs issol;
-      IntArgs rssol;
-
-      for (block b: input -> B) {
-          for (std::set<operation>::iterator it = exops[b].begin(); it != exops[b].end(); ++it) {
-            //double d = (*unif)(rng);
-            //std::cout << "Random value: " << d << " sec_p: " << sec_p << std::endl; 
-            //if (d > sec_p) {
-            os << c(*it);
-            is << i(*it);
-            ossol << csol[*it];
-            issol << isol[*it];
-            //}
-          }
-          for (std::set<temporary>::iterator it = extmps[b].begin(); it != extmps[b].end(); ++it) {
-            //double d = (*unif)(rng);
-           // std::cout << "Random value r: " << d << " sec_p: " << sec_p << std::endl; 
-            //if (d > sec_p) {
-
-            rs << r(*it);
-            rssol << rsol[*it];
-            //}
-          }
-      }
-      if (is.size() > 0) 
-          solution_branch_split(*this, is, issol);
-      if (os.size() > 0) 
-          solution_branch_split(*this, os, ossol);
-      if (rs.size() > 0) 
-          solution_branch_split(*this, rs, rssol);
-  }
-  */
   // Post regular branchers
   for (block b: input -> B) {
       IntVarArgs os;
       IntVarArgs is;
       IntVarArgs rs;
-#ifdef OPERS
+//#ifdef OPERS
       IntVarArgs ys;
-#endif
+//#endif
       BoolVarArgs as;
       for (std::set<operation>::iterator it = exops[b].begin(); it != exops[b].end(); ++it) {
         os << c(*it);
@@ -422,11 +332,11 @@ void SecModel::post_unassigned_branchers(unsigned int s) {
         rs << r(*it);
       }
 
-#ifdef OPERS
+//#ifdef OPERS
       for(operand p: exopas[b]) {
         ys << y(p);
       }
-#endif
+//#endif
 
       if (as.size() > 0) 
           branch(*this, as, BOOL_VAR_RND(ran), BOOL_VAL_RND(ran),
@@ -435,11 +345,11 @@ void SecModel::post_unassigned_branchers(unsigned int s) {
           branch(*this, is, INT_VAR_RND(ran), INT_VAL_MIN(),
              NULL, NULL);
 
-#ifdef OPERS
+///#ifdef OPERS
       if (ys.size() > 0) 
           branch(*this, ys, INT_VAR_RND(ran), INT_VAL_MIN(),
              NULL, NULL);
-#endif
+//#endif
       
 
       if (os.size() > 0)
@@ -1050,7 +960,7 @@ void SecModel::apply_solution(SecLocalModel * ls) {
     operand   p = input -> definer[t]; //the operand that defines t
 
     exopers.insert(o);
-#ifdef OPERS
+//#ifdef OPERS
     for (operand pi : input -> ope[b]) // for all operands in this block
         if (input -> copyreltop[pi] == p) {
             exoperands.insert(pi);
@@ -1059,7 +969,7 @@ void SecModel::apply_solution(SecLocalModel * ls) {
                 exoperands.insert(pj);
             break;
         }
-#endif
+//#endif
         
     /*for (operand p : input -> users[t])
         exoperands.insert(p);
@@ -1074,16 +984,16 @@ void SecModel::apply_solution(SecLocalModel * ls) {
     /*for (operand p : input -> users[t])
         exoperands_up.insert(p);*/
 
-#ifdef OPERS
+//#ifdef OPERS
     for (operand pi : input -> ope[b]) // for all operands in this block
         if (input -> copyreltop[pi] == p) {
             exoperands_up.insert(pi);
             exopers_up.insert(input->oper[pi]);
             for (operand pj : input->operands[input->oper[pi]])
                 exoperands_up.insert(pj);
-            break;
+  //          break;
         }
-#endif
+//#endif
  
   }
 
@@ -1127,12 +1037,12 @@ void SecModel::apply_solution(SecLocalModel * ls) {
 	exopsloc.insert(*it);
       }
 
-#ifdef OPERS
+//#ifdef OPERS
       for (operand p: exoperands) {
         exopas[b].insert(p);
         exopasloc.insert(p);
       }
-#endif
+//#endif
   }
 
   if (b != 0) {
@@ -1145,12 +1055,12 @@ void SecModel::apply_solution(SecLocalModel * ls) {
 	exopsloc.insert(*it);
       }
 
-#ifdef OPERS
+//#ifdef OPERS
       for(operand p: exoperands_up) {
         exopas[b-1].insert(p);
         exopasloc.insert(p);
       }
-#endif
+//#endif
 
   }
 
@@ -1418,3 +1328,94 @@ void SecModel::post_complete_branchers(unsigned int s) {
 }
 
 
+
+void SecModel::relax_all(const SecModel& b, double relax_rate) {
+  //std::cout << "Next" << std::endl;
+    set <operand> unops;
+    {
+        IntVarArgs temp, ltemp;
+        for (block bi: input -> B) {
+            for (operand p : exopas[bi]) {
+              unops.insert(p);
+              if (b.y(p).assigned()) {
+                  temp << y(p);
+                  ltemp << b.y(p);
+              }
+            }
+        }
+        relax(*this, temp, ltemp, sec_r, relax_rate);
+    }
+
+    double relax_rate_2 = 0.1;
+
+    //double relax_rate = 0.2;
+    //std::cout << "Next monolithic: cost: " << b.cost() << std::endl;
+    {
+        IntVarArgs instr, linstr;
+        for (operation o: input -> O) {
+          if (b.i(o).assigned()) {
+              instr << i(o);
+              linstr << b.i(o);
+          }
+        }
+        relax(*this, instr, linstr, sec_r, relax_rate_2);
+    }
+
+#if 1
+  // temporaries
+    {
+        IntVarArgs temp, ltemp;
+        for (operand p : input -> P) {
+          if (b.y(p).assigned() && !unops.count(p)) {
+              temp << y(p);
+              ltemp << b.y(p);
+          }
+        }
+        if (temp.size()>0)
+            relax(*this, temp, ltemp, sec_r, relax_rate);
+    }
+#endif
+
+
+  // Cycles
+    {
+        // Relax all active variables.
+        // relax(*this, v_a, b.v_a, sec_r, 1.0);
+        IntVarArgs cycles, lcycles;
+        for (operation o : input -> O) {
+          if (b.a(o).val() && b.c(o).assigned()) { // if activated
+            cycles << c(o);
+            lcycles << b.c(o);
+          }
+        }
+        relax(*this, cycles, lcycles, sec_r, relax_rate_2);
+    }
+
+  // Registers
+    {
+        IntVarArgs lregs, regs;
+        for (temporary t : input->T) {
+          if (b.l(t).assigned() && b.l(t).val() && b.r(t).assigned()) { // if the tempoorary is assigned
+            lregs << b.r(t);
+            regs << r(t);
+          }
+        }
+        // Regs
+        relax(*this, regs, lregs, sec_r, relax_rate_2);
+    }
+
+}
+
+
+void SecModel::copy_unassigned(SecModel& b) {
+
+ for (block bi: input -> B) {
+    for (temporary t: b.extmps[bi]) 
+        extmps[bi].insert(t);
+    for (operation o: b.exops[bi]) 
+        exops[bi].insert(o);
+    for (operand p: b.exopas[bi]) 
+        exopas[bi].insert(p);
+ }
+
+}

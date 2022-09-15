@@ -87,7 +87,7 @@ deactivate(SecModel * base, SecModel * gs,
 SolverResult shave_local_costs(SecModel * base);
 
 // Solves the entire problem without a decomposition scheme
-Solution<SecModel> solve_monolithic(SecModel * base, SecModel * sol, GIST_OPTIONS * go);
+Solution<SecModel> solve_monolithic(SecModel * base, SecModel * sol, GIST_OPTIONS * go, unsigned int FACTOR);
 
 // Solves the entire problem without a decomposition scheme in parallel
 Solution<SecModel>
