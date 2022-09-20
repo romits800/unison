@@ -2939,8 +2939,7 @@ operandInfo i
   | i `elem` [TADDframe_cpsr] =
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass TGPR) 1 False,
-      TemporaryInfo (RegisterClass CCR) 1 False,
-      TemporaryInfo (AbstractRegisterClass Unknown) 1 False])
+      TemporaryInfo (RegisterClass CCR) 1 False])
   | i `elem` [TADDframe] =
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass TGPR) 1 False,
