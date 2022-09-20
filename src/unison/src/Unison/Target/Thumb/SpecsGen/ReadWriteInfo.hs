@@ -422,23 +422,23 @@ readWriteInfo i
        T2UHSAX, T2UHSUB16, T2UHSUB8, T2UMAAL, T2UMLAL, T2UMULL, T2UQADD16,
        T2UQADD8, T2UQASX, T2UQSAX, T2UQSUB16, T2UQSUB8, T2USAD8, T2USADA8,
        T2USAT, T2USAT16, T2USAX, T2USUB16, T2USUB8, T2UXTAB, T2UXTAB16,
-       T2UXTAH, T2UXTB, T2UXTB16, T2UXTH, TADDhirr, TADDhirrs, TADDi3,
-       TADDi3s, TADDi8, TADDi8s, TADDrSP, TADDrSPi, TADDrr, TADDrrs,
-       TADDspi, TADDspi_pseudo, TADDspr, TADR, TAND, TAND_r, TANDs,
-       TASRri, TASRris, TASRrr, TASRrrs, TB, TBIC, TBIC_r, TBICs, TBKPT,
-       TBRIND, TBR_JTr, TBX, TBX_RET, TBX_RET_vararg, TBcc, TCBNZ, TCBZ,
-       TCMPhir_cpsr, TCMPi8_cpsr, TCMPr_cpsr, TCPS, TEOR, TEOR_r, TEORs,
-       THINT, THLT, TLDRBi, TLDRBr, TLDRBrz, TLDRHi, TLDRHr, TLDRHrz,
-       TLDRLIT_ga_abs, TLDRLIT_ga_pcrel, TLDRSB, TLDRSBz, TLDRSH, TLDRSHz,
-       TLDRi, TLDRpci, TLDRpci_pic, TLDRr, TLDRrz, TLDRspi, TLEApcrel,
-       TLEApcrelJT, TLSLri, TLSLris, TLSLrr, TLSLrrs, TLSRri, TLSRris,
-       TLSRrr, TLSRrrs, TMOVCCr_pseudo, TMOVi8, TMOVi8s, TMOVi8s_demat,
-       TMOVi8s_remat, TMOVi8s_source, TMOVr, TMUL, TMUL_r, TMULz, TMVN,
-       TMVNs, TORR, TORR_r, TORRs, TPICADD, TREV, TREV16, TREVSH, TROR,
-       TRORs, TRSB, TRSBs, TSETEND, TSTRBi, TSTRBr, TSTRBrz, TSTRHi,
-       TSTRHr, TSTRHrz, TSTRi, TSTRr, TSTRrz, TSTRspi, TSUBi3, TSUBi3s,
-       TSUBi8, TSUBi8s, TSUBrr, TSUBrrs, TSUBspi, TSUBspi_pseudo, TSXTB,
-       TSXTH, TSXTHz, TTRAP, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH,
+       T2UXTAH, T2UXTB, T2UXTB16, T2UXTH, TADDframe_cpsr, TADDhirr,
+       TADDhirrs, TADDi3, TADDi3s, TADDi8, TADDi8s, TADDrSP, TADDrSPi,
+       TADDrr, TADDrrs, TADDspi, TADDspi_pseudo, TADDspr, TADR, TAND,
+       TAND_r, TANDs, TASRri, TASRris, TASRrr, TASRrrs, TB, TBIC, TBIC_r,
+       TBICs, TBKPT, TBRIND, TBR_JTr, TBX, TBX_RET, TBX_RET_vararg, TBcc,
+       TCBNZ, TCBZ, TCMPhir_cpsr, TCMPi8_cpsr, TCMPr_cpsr, TCPS, TEOR,
+       TEOR_r, TEORs, THINT, THLT, TLDRBi, TLDRBr, TLDRBrz, TLDRHi,
+       TLDRHr, TLDRHrz, TLDRLIT_ga_abs, TLDRLIT_ga_pcrel, TLDRSB, TLDRSBz,
+       TLDRSH, TLDRSHz, TLDRi, TLDRpci, TLDRpci_pic, TLDRr, TLDRrz,
+       TLDRspi, TLEApcrel, TLEApcrelJT, TLSLri, TLSLris, TLSLrr, TLSLrrs,
+       TLSRri, TLSRris, TLSRrr, TLSRrrs, TMOVCCr_pseudo, TMOVi8, TMOVi8s,
+       TMOVi8s_demat, TMOVi8s_remat, TMOVi8s_source, TMOVr, TMUL, TMUL_r,
+       TMULz, TMVN, TMVNs, TORR, TORR_r, TORRs, TPICADD, TREV, TREV16,
+       TREVSH, TROR, TRORs, TRSB, TRSBs, TSETEND, TSTRBi, TSTRBr, TSTRBrz,
+       TSTRHi, TSTRHr, TSTRHrz, TSTRi, TSTRr, TSTRrz, TSTRspi, TSUBi3,
+       TSUBi3s, TSUBi8, TSUBi8s, TSUBrr, TSUBrrs, TSUBspi, TSUBspi_pseudo,
+       TSXTB, TSXTH, TSXTHz, TTRAP, TTST_cpsr, TUDF, TUXTB, TUXTBz, TUXTH,
        TUXTHz]
     = ([], [])
   | i `elem`
@@ -519,8 +519,7 @@ readWriteInfo i
        T2CMNri, T2CMNzrr, T2CMNzrs, T2CMPri, T2CMPrr, T2CMPrs,
        T2MOVsra_flag, T2MOVsrl_flag, T2RSBSri, T2RSBSrs, T2SUBSri,
        T2SUBSrr, T2SUBSrs, T2TEQri, T2TEQrr, T2TEQrs, T2TSTri, T2TSTrr,
-       T2TSTrs, TADDframe, TADDframe_cpsr, TCMNz, TCMPhir, TCMPi8, TCMPr,
-       TMOVSr, TTST]
+       T2TSTrs, TADDframe, TCMNz, TCMPhir, TCMPi8, TCMPr, TMOVSr, TTST]
     = ([], [OtherSideEffect CPSR])
   | i `elem`
       [VMSR, VMSR_FPEXC, VMSR_FPINST, VMSR_FPINST2, VMSR_FPSID]
