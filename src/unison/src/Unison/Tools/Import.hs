@@ -79,6 +79,7 @@ import Unison.Tools.Import.ImplementFrameOperations
 import Unison.Tools.Import.FoldCopies
 import Unison.Tools.Import.SplitBlocks
 import Unison.Tools.Import.ClusterBlocks
+import Unison.Tools.Import.ReorderInstructionsCloseToDefs
 import Unison.Tools.Import.RepairCSSA
 import Unison.Tools.Import.AdvancePhis
 import Unison.Tools.Import.TagRemats
@@ -93,7 +94,7 @@ import qualified Unison.ParseSecurityPolicies as PSP
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
      explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile,
-     policy, gfMulImpl, clusterNumber, kmeansIterations, numberEigenvectors)
+     policy, gfMulImpl, clusterNumber, kmeansIterations, numberEigenvectors, reorderInsts)
     mir target =
   do
     secPolicy <- maybeStrictReadFile policy
@@ -116,7 +117,7 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
                                  lintPragma, explicitCallRegs,
                                  policies, gfMulImpl,
                                  clusterNumber, kmeansIterations,
-                                 numberEigenvectors))
+                                 numberEigenvectors, reorderInsts))
             target ff
         baseName = takeBaseName mirFile
       in case selected function mfs of
@@ -155,7 +156,8 @@ mirTransformations (estimateFreq, simplifyControlFlow, explicitCallRegs) =
 uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
                     implementFrames, rematType, lintPragma, explicitCallRegs,
                     policy, gfMulImpl,
-                    clusterNumber, kmeansIterations, numberEigenvectors) =
+                    clusterNumber, kmeansIterations, numberEigenvectors,
+                    reorderInsts) =
   --let types = inferSecurityTypes target f policy in
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
@@ -182,6 +184,7 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (killUnusedTemps, "killUnusedTemps", True),
      (extractRegs, "extractRegs", True), --here
      (foldCopies, "foldCopies", True),
+     (reorderInstructionsCloseToDefs, "reorderInstructionsCloseToDefs", reorderInsts),
      (renameOperations, "renameOperations", True),
      (clusterBlocks (fromJust clusterNumber) kmeansIterations numberEigenvectors,
       "clusterBlocks", isJust clusterNumber), -- TODO(Romy): add new flag for this

@@ -2242,6 +2242,7 @@ instance Show MipsInstruction where
         show LOAD_F = "LOAD_F"
         show MOVE_F = "MOVE_F"
         show LW_fi = "LW_fi"
+        show LB_fi = "LB_fi"
         show LHu_fi = "LHu_fi"
         show SW_fi = "SW_fi"
         show SWL_fi = "SWL_fi"

@@ -68,11 +68,11 @@ clusterBlock:: Show i => Show r => Ord s => Ord r => Ord i =>
 clusterBlock k iter neigens target acc code =
   let
     -- Generate Dependency Graph
-    (dg,dg')      = genDgs code target
+    ((dgd,dgo),dg')      = genDgs code target
     -- Number of clusters
     ki            = fromIntegral k
     -- Generate eigenvalues from adjacency matrix
-    eigvs         = genEigenValues ki dg neigens
+    eigvs         = genEigenValues ki dgd dgo neigens
     -- Run KMeans on the eigenvalues
     (_err, _kin:km)    = runKMeansMany iter ki eigvs
     -- Sort clusters so that they are in accending order
@@ -116,7 +116,7 @@ reorderOps b @ Block {bCode = code} clusters =
   in (map fst sorted, b {bCode = map snd sorted})
 
 genDgs :: Show i => Show r => Ord s => Ord r => Ord i =>
-          Block i r -> TargetWithOptions i r rc s -> (DGraph i r, DGraph i r)
+          Block i r -> TargetWithOptions i r rc s -> ((DGraph i r, DGraph i r), DGraph i r)
 genDgs f target = 
   let rwlf  = readWriteLatency target
       rm    = resourceManager target
@@ -129,13 +129,15 @@ genDgs f target =
 -- maximum :: Ord a => [a] -> a
 -- maximum = foldr1 (\x y ->if x >= y then x else y)
 genEigenValues:: Show i => Show r => Ord r => Ord i =>
-                 Int -> DGraph i r -> Maybe Integer -> MU.Matrix Double --[[Double]] --[V.Vector Double]
-genEigenValues k dg neigens =
+                 Int -> DGraph i r -> DGraph i r -> Maybe Integer -> MU.Matrix Double --[[Double]] --[V.Vector Double]
+genEigenValues k dgd dgo neigens =
   let 
-    dim = (maximum $ nodes dg) + 1
-    eds = edges dg
-    edsv = concatMap (\(i,j) -> [((i,j), 1.0), ((j,i), 1.0)]) eds
-    sm  = SparseMatrix { dim = dim, indexes = edsv } -- sparse matrix
+    dim = (maximum $ (nodes dgd ++ nodes dgo)) + 1
+    edsd = edges dgd
+    edso = edges dgo
+    edsvd = concatMap (\(i,j) -> [((i,j), 1.0), ((j,i), 1.0)]) edsd
+    edsvo = concatMap (\(i,j) -> [((i,j), 1.0), ((j,i), 1.0)]) edso
+    sm  = SparseMatrix { dim = dim, indexes = (edsvd ++ edsvo) } -- sparse matrix
     -- taken from lineageflow that uses harpack
     -- TODO: Don't know why this is better when using more than k
     RReal m = case neigens of

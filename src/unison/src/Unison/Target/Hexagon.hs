@@ -81,6 +81,8 @@ target =
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
+      API.tIsStore          = const isStore,
+      API.tIsLoad           = const isLoad,
       API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
@@ -740,6 +742,11 @@ expandCopy _ _ o = [o]
 isXor i = error "isXor not implemented for this target."
 
 isGMul i = error "isGMul not implemented for this target."
+
+isStore i = error "isStore not implemented for this target."
+
+isLoad i = error "isLoad not implemented for this target."
+
 
 addSecurityCopy f _ = f
 

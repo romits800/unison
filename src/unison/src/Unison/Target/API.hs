@@ -65,6 +65,8 @@ module Unison.Target.API (
   spillOverhead,
   isXor,
   isGMul,
+  isStore,
+  isLoad,
   funcArgs,
   hardwareRegisters,
   addSecurityCopy
@@ -232,6 +234,8 @@ spillOverhead (ti, to) = tSpillOverhead ti to
 -- ROMY (add new function)
 isXor (ti, to) = tIsXor ti to
 isGMul (ti, to) = tIsGMul ti to
+isStore (ti, to) = tIsStore ti to
+isLoad (ti, to) = tIsLoad ti to
 funcArgs (ti, to) = tFuncArgs ti to
 hardwareRegisters (ti, to) = tHardwareRegs ti to
 addSecurityCopy (ti, to) = tAddSecurityCopy ti to
@@ -416,6 +420,12 @@ data TargetDescription i r rc s = TargetDescription {
       -- | Return true if instruction is a mul operation - needs to be gmul
       tIsGMul           :: TargetOptions -> Instruction i ->
                            Bool,
+      -- | Return true if instruction is a store operation
+      tIsStore          :: TargetOptions -> Instruction i ->
+                           Bool,
+      -- | Return true if instruction is a mul operation - needs to be gmul
+      tIsLoad           :: TargetOptions -> Instruction i ->
+                           Bool,
       -- | Hardware Registers arguments in functions
       tFuncArgs         :: TargetOptions -> [r],
       -- | Hardware Registers for SecDivCon
@@ -423,6 +433,7 @@ data TargetDescription i r rc s = TargetDescription {
       -- | Expand with copies of random input values
       tAddSecurityCopy  :: TargetOptions -> Function i r -> Integer ->
                            Function i r
+
 }
 
 -- | Any 'TargetDescription'. Used to support multiple targets without

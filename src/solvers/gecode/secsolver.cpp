@@ -939,11 +939,14 @@ int main(int argc, char* argv[]) {
 	// maybe shuffle the blocks?
 	bool found_all_local = true, unsat = false;
 	std::default_random_engine rng(43243);
+        #if 1
 	shuffle(bs.begin(), bs.end(), rng);
+        #endif
 
 	for (block b: bs) {
 	  // std::cout << "Block " << b << std::endl;
 	  Solution<SecLocalModel> ls = local_problem(gs.solution, b);
+
 	  if (ls.result != UNSATISFIABLE) {
 	    SecLocalModel * base_local = ls.solution;
 	    Gecode::SpaceStatus lss = base_local->status();
@@ -1010,8 +1013,17 @@ int main(int argc, char* argv[]) {
               if (options.verbose()) {
                 cerr << local(b)
                      << "could not extend global solution: too costly" << endl;
+               // cerr << ls.solution -> v_r << endl;
+               // cerr << ls.solution -> v_c << endl;
+               // cerr << gs.solution -> v_r << endl;
+               // cerr << gs.solution -> v_c << endl;
 	      }
               break;
+            } else {
+               // cerr << ls.solution -> v_r << endl;
+               // cerr << ls.solution -> v_c << endl;
+               // cerr << gs.solution -> v_r << endl;
+               // cerr << gs.solution -> v_c << endl;
             }
 
             //std::cout << "v_r" << gs.solution -> v_r << std::endl;

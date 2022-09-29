@@ -1570,11 +1570,11 @@ operandInfo i
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass FGR64Opnd) 1 False])
   | i `elem`
-      [LB, LBE, LBE_MM, LBUX, LBUX_MM, LB_MM, LBu, LBuE, LBuE_MM, LBu_MM,
-       LBu_fi, LEA_ADDiu, LEA_ADDiu_MM, LH, LHE, LHE_MM, LHX, LHX_MM,
-       LH_MM, LH_fi, LHu, LHuE, LHuE_MM, LHu_MM, LHu_fi, LL, LLE, LL_R6,
-       LW, LWE, LWE_MM, LWX, LWXS_MM, LWX_MM, LW_MM, LW_MMR6, LW_fi,
-       LoadAddrReg32, Ulh, Ulhu, Ulw]
+      [LB, LBE, LBE_MM, LBUX, LBUX_MM, LB_MM, LB_fi, LBu, LBuE, LBuE_MM,
+       LBu_MM, LBu_fi, LEA_ADDiu, LEA_ADDiu_MM, LH, LHE, LHE_MM, LHX,
+       LHX_MM, LH_MM, LH_fi, LHu, LHuE, LHuE_MM, LHu_MM, LHu_fi, LL, LLE,
+       LL_R6, LW, LWE, LWE_MM, LWX, LWXS_MM, LWX_MM, LW_MM, LW_MMR6,
+       LW_fi, LoadAddrReg32, Ulh, Ulhu, Ulw]
     =
     ([BoundInfo, BoundInfo],
      [TemporaryInfo (RegisterClass GPR32Opnd) 1 False])

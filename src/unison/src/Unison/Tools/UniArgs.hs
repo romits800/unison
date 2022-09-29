@@ -33,7 +33,8 @@ data Uni =
                sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool,
                policy :: Maybe FilePath, gfMulImpl :: Maybe String,
                clusterNumber :: Maybe Integer,
-               kmeansIterations :: Maybe Word32, numberEigenvectors :: Maybe Integer} |
+               kmeansIterations :: Maybe Word32, numberEigenvectors :: Maybe Integer, 
+               reorderInsts :: Bool} |
     Linearize {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
                lint :: Bool, lintPragma :: Bool} |
@@ -147,7 +148,9 @@ import' = Import {
   policy          = Nothing &= help "Security Policy",
   clusterNumber   = Nothing &= help "Number of clusters for block spliting",
   kmeansIterations= Nothing &= help "Number of iterations to improve clustering",
-  numberEigenvectors= Nothing &= help "Number of eigenvectors for clustering"}
+  numberEigenvectors= Nothing &= help "Number of eigenvectors for clustering",
+  reorderInsts    = False &= help "Reorder instructions to be near their definitions."
+}
   &= help "Import a MachineIR function into Unison"
 
 linearize' = Linearize {} &= help "Transform a Unison function into Linear SSA form"

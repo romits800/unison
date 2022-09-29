@@ -430,12 +430,12 @@ readWriteInfo i
     = ([], [OtherSideEffect T8])
   | i `elem`
       [FAULTING_LOAD_OP, LB, LB64, LBE, LBE_MM, LBE_MMR6, LBU16_MM,
-       LBUE_MMR6, LBUX, LBUX_MM, LBU_MMR6, LB_MM, LB_MMR6, LBu, LBu64,
-       LBuE, LBuE_MM, LBu_MM, LBu_fi, LBu_fi_remat_fi, LD, LDC1, LDC164,
-       LDC1_MM, LDC1_fi, LDC1_fi_remat_fi, LDC2, LDC2_R6, LDC3, LH, LH64,
-       LHE, LHE_MM, LHU16_MM, LHX, LHX_MM, LH_MM, LH_fi, LHu, LHu64, LHuE,
-       LHuE_MM, LHu_MM, LHu_fi, LL, LLD, LLD_R6, LLE, LLE_MM, LLE_MMR6,
-       LL_MM, LL_R6, LOAD_ACC128, LOAD_ACC64, LOAD_ACC64DSP,
+       LBUE_MMR6, LBUX, LBUX_MM, LBU_MMR6, LB_MM, LB_MMR6, LB_fi, LBu,
+       LBu64, LBuE, LBuE_MM, LBu_MM, LBu_fi, LBu_fi_remat_fi, LD, LDC1,
+       LDC164, LDC1_MM, LDC1_fi, LDC1_fi_remat_fi, LDC2, LDC2_R6, LDC3,
+       LH, LH64, LHE, LHE_MM, LHU16_MM, LHX, LHX_MM, LH_MM, LH_fi, LHu,
+       LHu64, LHuE, LHuE_MM, LHu_MM, LHu_fi, LL, LLD, LLD_R6, LLE, LLE_MM,
+       LLE_MMR6, LL_MM, LL_R6, LOAD_ACC128, LOAD_ACC64, LOAD_ACC64DSP,
        LOAD_CCOND_DSP, LOAD_STACK_GUARD, LW, LW16_MM, LW64, LWC1, LWC1_MM,
        LWC1_fi, LWC1_fi_remat_fi, LWC2, LWC2_R6, LWC3, LWE, LWE_MM,
        LWE_MMR6, LWGP_MM, LWM16_MM, LWM16_MMR6, LWM32_MM, LWP_MM, LWSP_MM,

@@ -76,6 +76,9 @@ public:
 
   vector<operation> memops;
   
+  vector<string> memcopies = {"LOAD", "STORE"}; 
+  instruction get_mem_instr(operation o);
+
   SecLocalModel(Parameters * p_input, ModelOptions * p_options, IntPropLevel p_ipl,
 		const SecModel * gs, block b);
   

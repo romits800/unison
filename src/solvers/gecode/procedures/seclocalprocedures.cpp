@@ -44,6 +44,7 @@ SecLocalModel * make_local(const SecModel * gs, block b) {
 
 Solution<SecLocalModel> local_problem(SecModel * g1, block b) {
   IntPropLevel ipl = IPL_DOM;
+
   if (g1->input->ops[b].size() > g1->options->consistency_threshold()) {
     ipl = IPL_BND;
     if (g1->options->verbose())

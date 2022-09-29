@@ -51,7 +51,8 @@ mainWithTargets targets = do
                           goal, mirVersion, sizeThreshold, explicitCallRegs,
                           inFile, debug, intermediate, lint, lintPragma,
                           outFile, policy, gfMulImpl,
-                          clusterNumber, kmeansIterations, numberEigenvectors)
+                          clusterNumber, kmeansIterations, numberEigenvectors,
+                          reorderInsts)
                          input (target, targetOption)
                     return ()
     Linearize{..} ->

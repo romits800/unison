@@ -47,7 +47,7 @@ alignedPairs i ([_, _], []) | i `elem` [SYNCI, SYNCI_MMR6] = []
 alignedPairs i ([_, _], [_])
   | i `elem`
       [LB, LB64, LBE, LBE_MM, LBE_MMR6, LBU16_MM, LBUE_MMR6, LBU_MMR6,
-       LB_MM, LB_MMR6, LBu, LBu64, LBuE, LBuE_MM, LBu_MM, LBu_fi,
+       LB_MM, LB_MMR6, LB_fi, LBu, LBu64, LBuE, LBuE_MM, LBu_MM, LBu_fi,
        LBu_fi_source_fi, LD, LDC1, LDC164, LDC1_MM, LDC1_fi,
        LDC1_fi_source_fi, LDC2, LDC2_R6, LDC3, LEA_ADDiu, LEA_ADDiu64,
        LEA_ADDiu_MM, LEA_ADDiu_source, LH, LH64, LHE, LHE_MM, LHU16_MM,

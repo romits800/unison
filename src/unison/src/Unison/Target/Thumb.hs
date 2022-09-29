@@ -80,6 +80,8 @@ target =
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
+      API.tIsStore          = const isStore,
+      API.tIsLoad           = const isLoad,
       API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy
@@ -943,6 +945,29 @@ isXor _ = False
 
 isGMul (TargetInstruction i) | i `elem` [TMUL] = True
 isGMul _ = False
+
+isStore (TargetInstruction i) | i `elem` [TSTRspi, TSTRspi_fi, TSTRBi, 
+                                          TSTRBr, TSTRBrz,
+                                          TSTRHi, 
+                                          TSTRHr, TSTRHrz,
+                                          TSTRi,
+                                          TSTRr, TSTRrz] = True
+isStore _ = False
+
+isLoad (TargetInstruction i) | i `elem` [TLDRspi, TLDRspi_fi, TLDRBi, 
+                                         TLDRBr, TLDRBrz,
+                                         TLDRHi, TLDRHr,
+                                         TLDRLIT_ga_abs, 
+                                         TLDRLIT_ga_pcrel, 
+                                         TLDRSB, TLDRSBz, 
+                                         TLDRSH, TLDRSHz,
+                                         TLDRi,
+                                         TLDRpci, TLDRpci_cpi,
+                                         TLDRpci_pic,
+                                         TLDRr, TLDRrz] = True
+isLoad _ = False
+
+
 
 -- add copies of temporary t in each BB
 addSecurityCopy f @ Function {fCode = code} t =

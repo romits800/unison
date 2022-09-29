@@ -56,6 +56,7 @@ public:
   IntVarArray v_gb;
   IntVarArray v_lgs;
   IntVarArray v_lge;
+  IntVarArray v_gc;
 
   // Implementation 1
   
@@ -137,12 +138,15 @@ public:
   BoolVar subseq2(temporary t1, temporary t2);
   BoolVar msubseq2(operation o1, operation o2);
 
+  vector<string> memcopies = {"LOAD", "STORE"}; 
   // Global constraints
   void post_global_cycle_offset(void);
   IntVar gb(block b) const {return v_gb[b]; }
   IntVar lgs(block b) const {return v_lgs[b]; }
   IntVar lge(block b) const {return v_lge[b]; }
+  IntVar gc(block b) const {return v_gc[b]; }
   block bot (temporary t);
+  instruction get_mem_instr (operation o);
 
   void apply_solution(SecLocalModel * ls);
   void apply_global_solution(SecModel * sm);
