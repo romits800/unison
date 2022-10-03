@@ -31,8 +31,10 @@ data Uni =
                rematType :: RematType, function :: Maybe String,
                goal :: Maybe String, mirVersion :: MachineIRVersion,
                sizeThreshold :: Maybe Integer, explicitCallRegs :: Bool,
-               policy :: Maybe FilePath, clusterNumber :: Maybe Integer,
-               kmeansIterations :: Maybe Word32, numberEigenvectors :: Maybe Integer} |
+               policy :: Maybe FilePath, gfMulImpl :: Maybe String,
+               clusterNumber :: Maybe Integer,
+               kmeansIterations :: Maybe Word32, numberEigenvectors :: Maybe Integer, 
+               reorderInsts :: Bool} |
     Linearize {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
                lint :: Bool, lintPragma :: Bool} |
@@ -46,13 +48,15 @@ data Uni =
                rematType :: RematType} |
     SecAugment{targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
-               lint :: Bool, lintPragma :: Bool, policy :: Maybe FilePath} |
+               lint :: Bool, lintPragma :: Bool, policy :: Maybe FilePath,
+               gfMulImpl :: Maybe String} |
     Model     {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, baseFile :: Maybe FilePath,
                scaleFreq :: Bool, oldModel :: Bool, applyBaseFile :: Bool,
                tightPressureBound :: Bool, strictlyBetter :: Bool,
                unsatisfiable :: Bool, noCC :: Bool,
-               mirVersion :: MachineIRVersion, policy :: Maybe FilePath} |
+               mirVersion :: MachineIRVersion, policy :: Maybe FilePath,
+               gfMulImpl :: Maybe String} |
     Export    {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, removeReds :: Bool,
                keepNops :: Bool, baseFile :: Maybe FilePath,
@@ -109,8 +113,8 @@ data Uni =
                explicitCallRegs :: Bool}
     deriving (Data, Typeable, Show, Eq)
 
-allModes = [import', linearize', extend', augment', secaugment', model', export', analyze',
-            normalize', lint', count', legalize', plot', run']
+allModes = [import', linearize', extend', augment', secaugment',
+            model', export', analyze', normalize', lint', count', legalize', plot', run']
 
 uniArgs = cmdArgsMode $ modes allModes &= program "uni"
           &= summary "Unison v0, Roberto Castaneda Lozano [rcas@acm.org]"
@@ -140,10 +144,13 @@ import' = Import {
   goal            = Nothing &= help "Optimization goal (one of {speed, size})",
   sizeThreshold   = Nothing &= help "Function size over which solving is skipped",
   explicitCallRegs = False &= help "Extract call uses and definitions explicitly from their operands",
+  gfMulImpl       = Nothing &= help "The function name of GF(2^n) Multiplication",
   policy          = Nothing &= help "Security Policy",
   clusterNumber   = Nothing &= help "Number of clusters for block spliting",
   kmeansIterations= Nothing &= help "Number of iterations to improve clustering",
-  numberEigenvectors= Nothing &= help "Number of eigenvectors for clustering"}
+  numberEigenvectors= Nothing &= help "Number of eigenvectors for clustering",
+  reorderInsts    = False &= help "Reorder instructions to be near their definitions."
+}
   &= help "Import a MachineIR function into Unison"
 
 linearize' = Linearize {} &= help "Transform a Unison function into Linear SSA form"
@@ -157,7 +164,8 @@ augment' = Augment {
   &= help "Augment a Unison function with alternative temporaries"
 
 secaugment' = SecAugment {
-  policy             = Nothing &= help "Security Policy"}
+  policy          = Nothing &= help "Security Policy",
+  gfMulImpl       = Nothing &= help "The name of GF(2^n) Multiplication"}
   &= help "Security augment a Unison function with additional random copies"
 
 model' = Model {
@@ -167,7 +175,8 @@ model' = Model {
   tightPressureBound = False &= help "Compute a tight bound of the register atoms contained in an infinite register space (incompatible with presolver's infinite register dominance constraints)",
   strictlyBetter     = True &= help "Require the solver to find a strictly better solution than the base (as opposed to better or equal)",
   unsatisfiable      = False &= help "Make the constraint problem trivially unsatisfiable",
-  policy             = Nothing &= help "Security Policy"
+  policy             = Nothing &= help "Security Policy",
+  gfMulImpl          = Nothing &= help "The name of GF(2^n) Multiplication"
   }
   &= help "Generate a code generation problem for a Unison function"
 

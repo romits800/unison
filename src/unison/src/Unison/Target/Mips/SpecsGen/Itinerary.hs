@@ -199,7 +199,7 @@ itinerary i
     = II_JR
   | i `elem` [JRADDIUSP, JRCADDIUSP_MMR6] = II_JRADDIUSP
   | i `elem` [JRC16_MM] = II_JRC
-  | i `elem` [LB, LB64, LbRxRyOffMemX16] = II_LB
+  | i `elem` [LB, LB64, LB_fi, LbRxRyOffMemX16] = II_LB
   | i `elem`
       [LBU16_MM, LBu, LBu64, LBu_fi, LBu_fi_remat_fi, LbuRxRyOffMemX16]
     = II_LBU

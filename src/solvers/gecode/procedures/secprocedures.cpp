@@ -618,56 +618,97 @@ SolverResult shave_local_costs(SecModel * base) {
   return SOME_SOLUTION;
 }
 
-Solution<SecModel> solve_monolithic(SecModel * base, GIST_OPTIONS * go) {
+Solution<SecModel> solve_monolithic(SecModel * base, 
+                                    SecModel * sol, 
+                                    GIST_OPTIONS * go,
+                                    unsigned int FACTOR) {
   (void)go;
 
+  base->set_monolithic(true);
   SecModel * m = (SecModel*) base->clone();
+  //  add solution brancher
+  if (sol!=NULL) {
+      m->post_solution_brancher(sol); 
+  }
   m->post_complete_branchers(0);
 
 #ifdef GRAPHICS
   if (base->options->gist_global()) Gist::bab(m, *go);
 #endif
 
-  unsigned int scale = base->input->O.size() / 10;
+  Search::Options ro;
+  unsigned int scale = base->options->restart_scale() / 10;
   Search::Cutoff* c = Search::Cutoff::luby(scale);
   if (base->options->verbose())
     cerr << monolithic() << "Luby scale: " << scale << endl;
-  Search::Options ro;
   ro.cutoff = c;
-  ro.nogoods_limit = 128;
-
-  unsigned int threads = 1; // FIXME: increasing this yields segmentation fault
-  unsigned int FACTOR = 10;
+  ro.nogoods_limit = 1024;
+  
+  /*if (base->options->verbose())
+    cerr << monolithic() << "Threads: " << ro.threads << endl;
+   */
+  //unsigned int FACTOR = 30;
   double limit =
     base->options->monolithic_budget() * base->input->O.size() * FACTOR;
   Search::Stop * monolithicStop = new_stop(limit, base->options);
   if (base->options->verbose())
     cerr << monolithic() << "time limit: " << limit << endl;
-  Search::Options o;
-  o.threads = threads;
-  o.stop = monolithicStop;
+
+   
+  /*
+  unsigned int threads = base->options->threads(); // FIXME: increasing this yields segmentation fault
+  ro.assets = threads;
+  ro.threads = threads;
+  ro.stop = monolithicStop;
 
   SEBs sebs;
-  for (unsigned int t = 0; t < threads; t++) sebs << rbs<SecModel, BAB>(ro);
+  for (unsigned int t = 0; t < threads; t++) {
+      Search::Options o;
+      unsigned long int scale = base->options->restart_scale() / 2;
+      //unsigned int scale = base->input->O.size() / 10;
+      Search::Cutoff* c = Search::Cutoff::luby(scale);
+      if (base->options->verbose())
+            cerr << global() << "Luby scale: " << scale << endl;
+      o.cutoff = c;
+      o.nogoods_limit = 1024; //128;
+      o.stop = monolithicStop;
+      sebs << rbs<SecModel, BAB>(o);
+  }
+  PBS<SecModel> e(m, sebs, ro);
+  */
+
   ro.stop = monolithicStop;
   RBS<SecModel, BAB> e(m, ro);
+  
 
   bool found_solution = false;
-  while (SecModel* nextm = e.next()) {
+  SecModel* nextm;
+  while (nextm = e.next()) {
+    //std::cout << "Found  Solution " << std::endl;
+    std::cout << "Found  Solution 2" << nextm -> cost() << std::endl;
     found_solution = true;
     SecModel * oldm = m;
     m = nextm;
     delete oldm;
   }
+  std::cout << "Nextm is null: " << (nextm == NULL) << std::endl;
 
   SolverResult r;
+  r = found_solution ? SOME_SOLUTION : LIMIT;
+
   if (monolithicStop->stop(e.statistics(), ro))
+      std::cout << "Time limit " << std::endl;
+  else 
+      std::cout << "Unsat or found optimal solution " << std::endl;
+    
+  /*if (monolithicStop->stop(e.statistics(), ro))
     r = found_solution ? SOME_SOLUTION : LIMIT;
   else
     r = found_solution ? OPTIMAL_SOLUTION : UNSATISFIABLE;
-
+  */
   delete monolithicStop;
 
+  m->set_monolithic(false);
   return Solution<SecModel>(
            r, found_solution ? m : NULL,
            e.statistics().fail,

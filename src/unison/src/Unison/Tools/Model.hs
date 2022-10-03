@@ -52,7 +52,8 @@ import qualified Unison.Target.API as API
 import qualified Unison.ParseSecurityPolicies as PSP
 
 run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
-     strictlyBetter, unsatisfiable, noCC, mirVersion, jsonFile, policy)
+     strictlyBetter, unsatisfiable, noCC, mirVersion, jsonFile, policy,
+     gfMulImpl)
     extUni target =
   do baseMir <- maybeStrictReadFile baseFile
      secPolicy <- maybeStrictReadFile policy
@@ -65,7 +66,7 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
                 (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
                 aux target f ps
          ps'' = presolver oldModel aux target f ps'
-         ps''' = securityModeler aux target f secPolicy ps''
+         ps''' = securityModeler aux target f secPolicy gfMulImpl ps''
      emitOutput jsonFile ((BSL.unpack (encodePretty ps''')))
 
 
@@ -74,12 +75,12 @@ modeler (scaleFreq, noCC) aux target f =
     where is = IS.parameters scaleFreq aux f target
           ra = is `seq` RA.parameters noCC aux f target
 
-securityModeler aux target f policyFile ps = 
+securityModeler aux target f policyFile gfMulImpl ps = 
   let
       policies =  case policyFile of
         (Just pfile) -> PSP.parse pfile
         Nothing -> []
-      sec_pars = SM.parameters aux target f policies
+      sec_pars = SM.parameters aux target f policies gfMulImpl
       ops = toJSON (M.fromList sec_pars)
   in unionMaps ps ops
   

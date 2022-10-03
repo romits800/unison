@@ -43,7 +43,6 @@ protected:
   int* sol;
   // Cache of first unassigned view
   mutable int start;
-  static int invoked; // = 0;	// 
   // Description
   class Description : public Choice {
   public:
@@ -67,6 +66,7 @@ protected:
     }
   };
 public:
+  static int invoked; // = 0;	// 
   // Construct branching
   SolutionBrancher(Home home,
                    ViewArray<IntView>& v0, int sol0[])
@@ -161,6 +161,7 @@ void solution_branch(Home home, const IntVarArgs& v, const IntArgs& sol) {
   for (int i=sol.size(); i--; )
     vsol[i]=sol[i];
   // Post the brancher
+  SolutionBrancher::invoked = 0;
   SolutionBrancher::post(home,vv,vsol);
 }
 

@@ -393,6 +393,7 @@ parent i
   | i `elem` [MOVE_D] = Just FMOV_D32
   | i `elem` [MOVE_F] = Just FMOV_S
   | i `elem` [JALRPseudo_NOP] = Just JALRPseudo
+  | i `elem` [LB_fi] = Just LB
   | i `elem` [LBu_fi] = Just LBu
   | i `elem` [LBu_fi_demat_fi, LBu_fi_remat_fi, LBu_fi_source_fi] =
     Just LBu_fi

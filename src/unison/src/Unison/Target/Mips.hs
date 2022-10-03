@@ -76,6 +76,9 @@ target =
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
+      API.tIsStore          = const isStore,
+      API.tIsLoad           = const isLoad,
+      API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
       API.tBranchInstruction= const branchInstruction
@@ -551,7 +554,126 @@ isXor _ = False
 isGMul (TargetInstruction i) | i `elem` [MUL, MULT, MULU] = True
 isGMul _ = False
 
-addSecurityCopy f _ = f
+
+isStore (TargetInstruction i) | i `elem` [SB, SW, SH, SWL, SWL_fi, SWR, SWR_fi, 
+                                          SB_fi, SW_fi, SH_fi,
+                                          SWC1, SWC1_fi] = True
+isStore _ = False
+
+isLoad (TargetInstruction i) | i `elem` [LB, LBu, LH, LHu, LW, LB_fi, LBu_fi, 
+                                         LH_fi, LHu_fi, LW_fi, LWC1, LWC1_fi,
+                                         LDC1, LDC1_fi] = True
+isLoad _ = False
+
+
+
+addSecurityCopy f @ Function {fCode = code} t = 
+  let
+    ids = newIndexes $ flatten code
+    (_, code') = foldl (addSecurityCopyBlock t) (ids, []) code
+  in f {fCode = code'}
+
+-- TODO(Add pattern for the first operation - in operation
+addSecurityCopyBlock t (ids, accCode)
+  (b @ Block {bCode =
+              o1 @ SingleOperation {oOpr = Virtual ( Delimiter (
+                                                  In {oIns = oins}))}:
+              o2 @ SingleOperation {oOpr = Copy {oCopyIs = ins}}:
+              rest}) | t `elem` (getTemps oins [])  && copyContains ins [ADDiu_negsp] =
+  let
+    (tid, oid, pid) = ids
+    ins = [TargetInstruction ADDi]
+    t1 = mkTemp t --getTemp oins t
+    t2 = mkTemp tid
+    pt1 = mkMOperand pid [t1] Nothing
+    pt1' = mkBound (mkMachineImm 0)
+    pd1 = mkMOperand (pid+1) [t2] Nothing
+    op = makeOptional $ mkLinear oid ins [pt1, pt1'] [pd1]
+    rest' = map (mapToModelOperand (replaceTemp t1 [t1, t2])) rest
+    code' = o1:o2:op:rest'
+    ids'  = updateIndexes ids code'
+  in (ids', accCode ++ [b {bCode = code'}])
+addSecurityCopyBlock t (ids, accCode)
+  (b @ Block {bCode =
+              o1 @ SingleOperation {oOpr = Virtual ( Delimiter (
+                                                       In {oIns = oins}))}:
+              rest}) | t `elem` (getTemps oins [])  =
+  let
+    (tid, oid, pid) = ids
+    ins = [TargetInstruction ADDi]
+    t1 = mkTemp t
+    t2 = mkTemp tid
+    pt1 = mkMOperand pid [t1] Nothing
+    pt1' = mkBound (mkMachineImm 0)
+    pd1 = mkMOperand (pid+1) [t2] Nothing
+    op = makeOptional $ mkLinear oid ins [pt1, pt1'] [pd1]
+    rest' = map (mapToModelOperand (replaceTemp t1 [t1, t2])) rest
+    code' = o1:op:rest'
+    ids'  = updateIndexes ids code'
+  in (ids', accCode ++ [b {bCode = code'}])
+addSecurityCopyBlock t (ids, accCode)
+  (b @ Block {bCode = bcode}) | is_def bcode t =
+  let
+    (tid, oid, pid) = ids
+    pos = get_def bcode t 0
+    ins = [TargetInstruction ADDi]
+    t1 = mkTemp t
+    t2 = mkTemp tid
+    pt1 = mkMOperand pid [t1] Nothing
+    pt1' = mkBound (mkMachineImm 0)
+    pd1 = mkMOperand (pid+1) [t2] Nothing
+    op = makeOptional $ mkLinear oid ins [pt1, pt1'] [pd1]
+    (bef, after) = split_2 pos bcode []
+    after' = map (mapToModelOperand (replaceTemp t1 [t1, t2])) after
+    code' = bef ++ op:after'
+    ids'  = updateIndexes ids code'
+  in (ids', accCode ++ [b {bCode = code'}])
+addSecurityCopyBlock _ (ids, accCode) b = (ids, accCode ++ [b])
+
+split_2 :: Int -> [a] -> [a] -> ([a],[a])
+split_2 n (h:t) b | n == 0 = (reverse (h:b),t)
+split_2 n (h:t) b  = split_2 (n-1) t (h:b)
+split_2 _ [] _ = error "split_2: this should not happen."
+
+is_def (o1 @ SingleOperation{ oOpr = Natural 
+                                { oNatural = Linear {oDs = ops} }}:rest) t | t `elem` (getTemps ops []) = True 
+is_def (_:rest) t = is_def rest t
+is_def [] _ = False
+
+get_def (o1 @ SingleOperation{ oOpr = Natural 
+                                { oNatural = Linear {oDs = ops} }}:rest) t n | t `elem` (getTemps ops []) = n
+get_def (_:rest) t n = get_def rest t (n+1)
+get_def [] _ _ = error "get_def: This should not happen."
+
+
+copyContains [] _ = False
+copyContains (TargetInstruction i:_) is | i `elem` is = True
+copyContains (_:ins) is  = copyContains ins is
+
+getTemps [] tids = tids
+getTemps ((Temporary {tId = tid}):ts) tids = getTemps ts (tid:tids)
+getTemps (NullTemporary:ts) tids = getTemps ts tids
+getTemps ((MOperand {altTemps = temps}):ts) tids = getTemps (temps ++ ts) tids
+getTemps (_:ts) tids = getTemps ts tids
+
+-- getTemp [] _ = error "getTemp: could not find temp"
+-- getTemp ((t @ Temporary {tId = tid}):_) ltid | ltid == tid = t
+-- getTemp ((MOperand {altTemps = temps}):ts) ltid = getTemp (temps ++ ts) ltid
+-- getTemp (_:ts) ltid = getTemp ts ltid
+
+
+updateIndexes (ti, ii, pi) code =
+  let ti' = maxIndex ti (newTempIndex code)
+      ii' = maxIndex ii (newOprIndex code)
+      pi' = maxIndex pi (newOperIndex code)
+  in (ti', ii', pi')
+
+maxIndex id f = max id f + 1
+
+replaceTemp t ts p @ MOperand {altTemps = ats} =
+  let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
+  in p {altTemps = ats'}
+
 
 branchInstruction bid oid =
   let ins = [TargetInstruction { oTargetInstr = B }, TargetInstruction { oTargetInstr = B_NOP}] 

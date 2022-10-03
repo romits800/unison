@@ -22,9 +22,9 @@ import Unison.Target.API
 import Unison.Constructors
 import Unison.Predicates
 
-balanceBlocks policies f @ Function {fCode = _} target =
+balanceBlocks policies gfMulImpl f @ Function {fCode = _} target =
   let
-    types = inferSecurityTypes target f policies
+    types = inferSecurityTypes target f policies gfMulImpl
     bbs = Map.toList $ fBbs types
     bbsToBalance = filter (\(_,p) -> [] `elem` p) bbs
     bbsToBalance' = map fst bbsToBalance

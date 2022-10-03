@@ -144,7 +144,9 @@ ModelOptions::ModelOptions(void)
     _disable_sec_mem_constraints("disable-sec-mem-constraints", "Disable memory constraints.", false),
     _enable_power_constraints("enable-power-constraints", "Disable power constraints.", false),
     _enable_ct_constraints("enable-ct-constraints", "Disable constant-resource constraints.", false),
-    _extra_branch_cost("extra-branch-cost", "Enable extra branch cost for MIPS.", false)
+    _extra_branch_cost("extra-branch-cost", "Enable extra branch cost for MIPS.", false),
+    _disable_sec_tts("disable-sec-tts", "Disable some memory intensive constraints.", false),
+    _unassigned_budget("unassigned-budget", "time budget per operation for solving the unassigned partial solution", 10.0)
 {
   add(_output_file);
   add(_dzn_file);
@@ -290,4 +292,7 @@ ModelOptions::ModelOptions(void)
   add(_enable_ct_constraints);
 
   add(_extra_branch_cost);
+
+  add(_disable_sec_tts);
+  add(_unassigned_budget);
 }

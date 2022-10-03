@@ -97,6 +97,9 @@ instruction-set:
         - id:                 LW_fi
           parent:             LW
 
+        - id:                 LB_fi
+          parent:             LB
+
         - id:                 LHu_fi
           parent:             LHu
 

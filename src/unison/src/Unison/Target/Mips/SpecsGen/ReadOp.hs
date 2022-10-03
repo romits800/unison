@@ -2240,6 +2240,7 @@ readOp "STORE_F" = STORE_F
 readOp "LOAD_F" = LOAD_F
 readOp "MOVE_F" = MOVE_F
 readOp "LW_fi" = LW_fi
+readOp "LB_fi" = LB_fi
 readOp "LHu_fi" = LHu_fi
 readOp "SW_fi" = SW_fi
 readOp "SWL_fi" = SWL_fi

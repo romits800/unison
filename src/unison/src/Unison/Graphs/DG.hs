@@ -1,4 +1,5 @@
-{-|
+{-|utomatic merge failed; fix conflicts and then commit the result.
+
 Copyright   :  Copyright (c) 2016, RISE SICS AB
 License     :  BSD3 (see the LICENSE file)
 Maintainer  :  rcas@acm.org
@@ -291,23 +292,24 @@ showTemps ts  = renderStyle (st 20) (cs show ts)
 
 fromBlockCl :: Show i => Eq i => Ord i => Show r => Ord r =>
              ReadWriteLatencyFunction i r -> ResourceManager i s ->
-             OperandInfoFunction i rc -> Block i r -> DGraph i r
+             OperandInfoFunction i rc -> Block i r -> (DGraph i r, DGraph i r)
 fromBlockCl rwlf rm oif Block {bCode = code} =
   let lfs      = latencies rm
       t2ls     = tempLatencies oif
-      dg       = mkGraph (map toLNode code) []
-      edg      = foldl (insertEdges code) dg
+      dgData   = mkGraph (map toLNode code) []
+      edgData  = foldl (insertEdges code) dgData
                   [
-                   dataEdges t2ls,
                    readWriteEdges rwlf,
-                   -- TODO: boundary edges are just a type of "readWrite" edges,
-                   -- that would also possibly make the extended edges
-                   -- unnecessary
+                   dataEdges t2ls
+                  ]
+      dgOther  = mkGraph (map toLNode code) []
+      edgOther = foldl (insertEdges code) dgOther
+                  [
                    boundaryEdges lfs,
                    extendedEdges lfs,
                    callFunctionEdges
                   ]
-  in edg
+  in (edgData,edgOther)
 
 
 precs :: DGraph i r -> Int -> [Int]

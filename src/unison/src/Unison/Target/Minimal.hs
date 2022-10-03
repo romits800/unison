@@ -65,7 +65,10 @@ target =
       API.tConstraints      = const constraints,
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
-      API.tIsGMul            = const isGMul,
+      API.tIsGMul           = const isGMul,
+      API.tIsStore          = const isStore,
+      API.tIsLoad           = const isLoad, 
+      API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
       API.tBranchInstruction= const branchInstruction
@@ -260,6 +263,11 @@ isXor i = error "isXor not implemented for this target."
 
 isGMul i = error "isXor not implemented for this target."
 
+isStore i = error "isStore not implemented for this target."
+
+isLoad i = error "isLoad not implemented for this target."
+
+
 -- | Add additional copies or random numbers
 addSecurityCopy f _ = f
 
@@ -278,3 +286,5 @@ branchInstruction bid oid =
   let ins = [TargetInstruction { oTargetInstr = B }] --[General { oGeneralInstr = NullInstruction } ]
       ops = [BlockRef { blockRefId = bid } ]
   in mkBranch oid ins ops
+-- | Function Arguments
+funcArgs = [R0, R1, R2, R3]

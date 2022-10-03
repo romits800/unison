@@ -1,4 +1,4 @@
-DivCon is licensed under the BSD3 license:
+SecConCG is licensed under the BSD3 license:
 
 >  Copyright (c) 2020, Rodothea Myrsini Tsoupidi
 >  All rights reserved.
@@ -28,7 +28,7 @@ DivCon is licensed under the BSD3 license:
 
 DivCon includes code from the following projects:
 
-- [Unison](http://unison-code.github.io) (DivCon uses 
+- [Unison](http://unison-code.github.io) (SecConCG uses 
   the Unison Code). The code is licensed under
   [BSD3](https://github.com/unison-code/unison/blob/master/LICENSE.md).
 

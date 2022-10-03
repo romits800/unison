@@ -79,13 +79,13 @@ import Unison.Tools.Import.ImplementFrameOperations
 import Unison.Tools.Import.FoldCopies
 import Unison.Tools.Import.SplitBlocks
 import Unison.Tools.Import.ClusterBlocks
+import Unison.Tools.Import.ReorderInstructionsCloseToDefs
 import Unison.Tools.Import.RepairCSSA
 import Unison.Tools.Import.AdvancePhis
 import Unison.Tools.Import.TagRemats
 
 import Unison.Tools.Import.ReorderXorOperations
 import Unison.Transformations.BalanceBlocks
--- import Unison.Transformations.SecurityTypeInference
 
 import qualified Unison.ParseSecurityPolicies as PSP
 
@@ -93,7 +93,7 @@ import qualified Unison.ParseSecurityPolicies as PSP
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
      explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile,
-     policy, clusterNumber, kmeansIterations, numberEigenvectors)
+     policy, gfMulImpl, clusterNumber, kmeansIterations, numberEigenvectors, reorderInsts)
     mir target =
   do
     secPolicy <- maybeStrictReadFile policy
@@ -113,8 +113,10 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
             applyTransformations
             (uniTransformations (goal, noCC, noReserved, maxBlockSize,
                                  estimateFreq, implementFrames, rematType,
-                                 lintPragma, explicitCallRegs, policies,
-                                 clusterNumber, kmeansIterations, numberEigenvectors))
+                                 lintPragma, explicitCallRegs,
+                                 policies, gfMulImpl,
+                                 clusterNumber, kmeansIterations,
+                                 numberEigenvectors, reorderInsts))
             target ff
         baseName = takeBaseName mirFile
       in case selected function mfs of
@@ -152,7 +154,9 @@ mirTransformations (estimateFreq, simplifyControlFlow, explicitCallRegs) =
 
 uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
                     implementFrames, rematType, lintPragma, explicitCallRegs,
-                    policy, clusterNumber, kmeansIterations, numberEigenvectors) =
+                    policy, gfMulImpl,
+                    clusterNumber, kmeansIterations, numberEigenvectors,
+                    reorderInsts) =
   --let types = inferSecurityTypes target f policy in
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
@@ -179,18 +183,20 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
      (killUnusedTemps, "killUnusedTemps", True),
      (extractRegs, "extractRegs", True), --here
      (foldCopies, "foldCopies", True),
+     (reorderInstructionsCloseToDefs, "reorderInstructionsCloseToDefs", reorderInsts),
      (renameOperations, "renameOperations", True),
      (clusterBlocks (fromJust clusterNumber) kmeansIterations numberEigenvectors,
       "clusterBlocks", isJust clusterNumber), -- TODO(Romy): add new flag for this
      (splitBlocks (fromJust maxBlockSize), "splitBlocks", isJust maxBlockSize),
      (renameBlocks, "renameBlocks", True),
-     (balanceBlocks policy, "balanceBlocks", True), --- Sec stuff
+     (balanceBlocks policy gfMulImpl, "balanceBlocks", True), --- Sec stuff
      (renameBlocks, "renameBlocks", True), -- sec stuff
      (repairCSSA, "repairCSSA", True),
      (advancePhis, "advancePhis", True),
      (postponeBranches, "postponeBranches", True),
+     (renameOperations, "renameOperations", True),
      (renameTemps, "renameTemps", True),
-     (reorderXorOperations policy, "reorderXorOperations", policy /= []),
+     (reorderXorOperations policy gfMulImpl, "reorderXorOperations", policy /= []),
      (sortGlobalTemps, "sortGlobalTemps", True),
      (renameOperations, "renameOperations", True),
      (estimateFrequency, "estimateFrequency", estimateFreq),

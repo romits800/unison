@@ -23,9 +23,9 @@ import Unison.Target.API
 
 import Unison.Constructors
 
-reorderXorOperations policies f @ Function {fCode = code} target =
+reorderXorOperations policies gfMulImpl f @ Function {fCode = code} target =
   let
-    types = inferSecurityTypes target f policies
+    types = inferSecurityTypes target f policies gfMulImpl
     pmap  = fPmap types
     code' = foldl (reorderXorOperationsBl target pmap) [] code
   in f {fCode = code'}

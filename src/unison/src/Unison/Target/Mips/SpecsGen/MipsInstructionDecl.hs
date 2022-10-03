@@ -2241,6 +2241,7 @@ data MipsInstruction = ABSQ_S_PH
                      | LOAD_F
                      | MOVE_F
                      | LW_fi
+                     | LB_fi
                      | LHu_fi
                      | SW_fi
                      | SWL_fi

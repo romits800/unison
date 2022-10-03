@@ -50,8 +50,9 @@ mainWithTargets targets = do
                           maxBlockSize, implementFrames, rematType, function,
                           goal, mirVersion, sizeThreshold, explicitCallRegs,
                           inFile, debug, intermediate, lint, lintPragma,
-                          outFile, policy, clusterNumber, kmeansIterations,
-                          numberEigenvectors)
+                          outFile, policy, gfMulImpl,
+                          clusterNumber, kmeansIterations, numberEigenvectors,
+                          reorderInsts)
                          input (target, targetOption)
                     return ()
     Linearize{..} ->
@@ -83,7 +84,7 @@ mainWithTargets targets = do
              (Any target) ->
                  SecAugment.run
                  (inFile, debug, intermediate, lint, lintPragma, outFile,
-                  policy)
+                  policy, gfMulImpl)
                  input (target, targetOption)
     Model{..} ->
         do input <- strictReadFile inFile
@@ -92,7 +93,7 @@ mainWithTargets targets = do
                  Model.run
                  (baseFile, scaleFreq, oldModel, applyBaseFile,
                   tightPressureBound, strictlyBetter, unsatisfiable, noCC,
-                  mirVersion, outFile, policy)
+                  mirVersion, outFile, policy, gfMulImpl)
                  input (target, targetOption)
     Export{..} ->
         do input <- strictReadFile inFile

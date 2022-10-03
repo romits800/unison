@@ -80,6 +80,9 @@ target =
       API.tSpillOverhead    = const spillOverhead,
       API.tIsXor            = const isXor,
       API.tIsGMul           = const isGMul,
+      API.tIsStore          = const isStore,
+      API.tIsLoad           = const isLoad,
+      API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
       API.tBranchInstruction= const branchInstruction
@@ -461,11 +464,13 @@ promoteImplicitOperands
 
 promoteImplicitOperands
   mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
-                      msOperands = mos}
+                      msOperands = [o1, o2, o3,
+                                    cc @ MachineReg {mrName = CPSR}] }
   | i `elem` [TADDframe] && writesSideEffect i CPSR =
     let
-      fu   = length $ snd $ operandInfo i
-      mos' = insertAt (mkMachineReg CPSR) (fu - 1) mos
+      --fu   = length $ snd $ operandInfo i
+      cc'  = mkMachineReg CPSR
+      mos' = [o1, cc', o2, o3]
     in mi {msOpcode = mkMachineTargetOpc (toExplicitCpsrDef i),
            msOperands = mos'}
 
@@ -966,6 +971,29 @@ isXor _ = False
 isGMul (TargetInstruction i) | i `elem` [TMUL] = True
 isGMul _ = False
 
+isStore (TargetInstruction i) | i `elem` [TSTRspi, TSTRspi_fi, TSTRBi, 
+                                          TSTRBr, TSTRBrz,
+                                          TSTRHi, 
+                                          TSTRHr, TSTRHrz,
+                                          TSTRi,
+                                          TSTRr, TSTRrz] = True
+isStore _ = False
+
+isLoad (TargetInstruction i) | i `elem` [TLDRspi, TLDRspi_fi, TLDRBi, 
+                                         TLDRBr, TLDRBrz,
+                                         TLDRHi, TLDRHr,
+                                         TLDRLIT_ga_abs, 
+                                         TLDRLIT_ga_pcrel, 
+                                         TLDRSB, TLDRSBz, 
+                                         TLDRSH, TLDRSHz,
+                                         TLDRi,
+                                         TLDRpci, TLDRpci_cpi,
+                                         TLDRpci_pic,
+                                         TLDRr, TLDRrz] = True
+isLoad _ = False
+
+
+
 -- add copies of temporary t in each BB
 addSecurityCopy f @ Function {fCode = code} t =
   let
@@ -1091,16 +1119,17 @@ altRetConstraints (_ : code) constraints = (code, constraints)
 -- getTemporaries acc []  = acc
 -- getTemporaries acc ((Temporary {tId = ts}):tss) = getTemporaries (ts:acc) tss
 -- getTemporaries acc (_:tss) = getTemporaries acc tss
-
-
 -- equalTemps [] [] = True
 -- equalTemps [] _ = False
 -- equalTemps _ [] = False
 -- equalTemps (t1:ts1) (t2:ts2) | t1 == t2 = equalTemps ts1 ts2
 -- equalTemps (t1:ts1) (t2:ts2) = False
 
--- equalTemps ((Temporary {tId = ts1}):tss1) ((Temporary {tId = ts2}):tss2) | ts1 == ts2 = equalTemps tss1 tss2
--- equalTemps ((Temporary {tId = ts1}):tss1) ((Temporary {tId = ts2}):tss2) = False
+-- equalTemps [] [] = True
+-- equalTemps [] _ = False
+-- equalTemps _ [] = False
+-- equalTemps (t1:ts1) (t2:ts2) | t1 == t2 = equalTemps ts1 ts2
+-- equalTemps (t1:ts1) (t2:ts2) = False
 
 
 altLoadStoreConstraints (

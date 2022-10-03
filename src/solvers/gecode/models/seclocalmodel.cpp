@@ -47,19 +47,18 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 
     // Find mem operations
   
-    vector<string> memstrings = {"tSTRspi_fi", "tLDRspi_fi", "SW_fi", "LW_fi"}; 
-    for (operation o : O()) { 
-      if (input -> type[o] == COPY)
-	memops.push_back(o);
-      else {
-	for(instruction i : input-> instructions[o]) {
-	  if (contains(memstrings, input -> insname[i])) {
-	    memops.push_back(o);
-	    break;
-	  }
-	}
+  vector<string> memstrings = {"tSTRBi", "tLDRBi", "tSTRspi_fi", 
+                                "tLDRspi_fi", "SW_fi", "LW_fi", "SB_fi", "LB_fi"}; 
+  for (operation o : O()) { 
+    for(instruction i : input-> instructions[o]) {
+      if (contains(memstrings, input -> insname[i]) ||
+         contains(memcopies, input -> insname[i]) ) {
+        memops.push_back(o);
+        break;
       }
     }
+   // }
+  }
 
     // for(instruction i1 : input-> instructions[o1]) {
     // 	  if ( contains(memstrings, (input -> insname[i1]))
@@ -113,7 +112,8 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 
 SecLocalModel::SecLocalModel(SecLocalModel& cg) :
   LocalModel(cg),
-  memops(cg.memops)
+  memops(cg.memops),
+  memcopies(cg.memcopies)
 {
   // Implementation 1
   v_rtle.update(*this, cg.v_rtle);
@@ -347,8 +347,9 @@ void SecLocalModel::post_m1_constraints(void) {
       IntVarArray sorted_lts = int_var_array(op_size, -1, maxval);
       // IntVarArray os_map = int_var_array(op_size, -1, maxval);
       for (operation o: memops) { // Hardware registers
-	int mem = input -> instructions[o][input -> instructions[o].size() - 1];
-	BoolVar if1 = (input -> type[o] == COPY) ? var(i(o) == mem) : var(i(o) == i(o));
+	//int mem = input -> instructions[o][input -> instructions[o].size() - 1];
+	BoolVar if1 = (input -> type[o] == COPY) ? var(i(o) == get_mem_instr(o)) : var(i(o) == i(o));
+	//BoolVar if1 = (input -> type[o] == COPY) ? var(i(o) == mem) : var(i(o) == i(o));
 	BoolVar ifb  = var((a(o) == 1) && if1); 
 	IntVar thenb = var(c(o));
 	IntVar elseb = var(-1); 
@@ -403,7 +404,7 @@ void SecLocalModel::post_r2_constraints(void) {
       	    lts << res;
       	  }
 	}
-	max(*this, lts, v_lk[temp(t1)], IPL_DOM);
+	max(*this, lts, v_lk[temp(t1)]); //, IPL_DOM);
       }
     }
 }
@@ -417,8 +418,10 @@ void SecLocalModel::post_m2_constraints(void) {
 	IntVarArgs lts;
 	for (operation o2 : memops) {
 	  if (o1 != o2) {
-	    int mem = input -> instructions[o2][input -> instructions[o2].size() - 1];
-	    BoolVar if1 = (input -> type[o2] == COPY) ? var(i(o2) == mem) : var(i(o2) == i(o2));
+	    //int mem = input -> instructions[o2][input -> instructions[o2].size() - 1];
+
+	    BoolVar if1 = (input -> type[o2] == COPY) ? var(i(o2) == get_mem_instr(o2)) : var(i(o2) == i(o2));
+	    //BoolVar if1 = (input -> type[o2] == COPY) ? var(i(o2) == mem) : var(i(o2) == i(o2));
 	    BoolVar ifb  = var(a(o2) && if1 && (c(o2) <= c(o1)));
 	    IntVar thenb = var( c(o2) );
 	    IntVar elseb = var( -1 ); 
@@ -427,7 +430,7 @@ void SecLocalModel::post_m2_constraints(void) {
 	    lts <<  res;
 	  }
 	}
-	max(*this, lts, v_ok[instr(o1)], IPL_DOM);
+	max(*this, lts, v_ok[instr(o1)]); //, IPL_DOM);
       }
     }
 }
@@ -566,14 +569,18 @@ void SecLocalModel::post_secret_mem_constraints(void) {
       BoolVarArgs b1;
       BoolVarArgs b2;
       int op_size = O().size();
-      int mem1 = input -> instructions[o1][input -> instructions[o1].size() - 1];
-      BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == mem1) : var(i(o1) == i(o1));
-
+      //int mem1 = input -> instructions[o1][input -> instructions[o1].size() - 1];
       if (instr(o1) < op_size && instr(o1) >= 0) {
+
+	  BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == get_mem_instr(o1)) : var(i(o1) == i(o1));
+          // BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == mem1) : var(i(o1) == i(o1));
+
 	for (const operation o2: tp.second) {
 	  if (instr(o2) < op_size && instr(o2) >= 0) {
-	    int mem2 = input -> instructions[o2][input -> instructions[o2].size() - 1];
-	    BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == mem2) : var(i(o2) == i(o2));
+	    //int mem2 = input -> instructions[o2][input -> instructions[o2].size() - 1];
+	    //BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == mem2) : var(i(o2) == i(o2));
+
+	    BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == get_mem_instr(o2)) : var(i(o2) == i(o2));
 	    b1 << var (a(o2) && if2 && msubseq(o1,o2));
 	    b2 << var (a(o2) && if2 && msubseq(o2,o1));
 	  }
@@ -596,10 +603,14 @@ void SecLocalModel::post_random_mem_constraints(void) {
     int op_size = O().size();
     if (instr(o1) < op_size && instr(o2) < op_size &&
 	instr(o1) >= 0 && instr(o2) >= 0) {
-      int mem1 = input -> instructions[o1][input -> instructions[o1].size() - 1];
-      BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == mem1) : var(i(o1) == i(o1));
-      int mem2 = input -> instructions[o2][input -> instructions[o2].size() - 1];
-      BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == mem2) : var(i(o2) == i(o2));
+
+      BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == get_mem_instr(o1)) : var(i(o1) == i(o1));
+
+      BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == get_mem_instr(o2)) : var(i(o2) == i(o2));
+      //int mem1 = input -> instructions[o1][input -> instructions[o1].size() - 1];
+      //BoolVar if1 = (input -> type[o1] == COPY) ? var(i(o1) == mem1) : var(i(o1) == i(o1));
+      //int mem2 = input -> instructions[o2][input -> instructions[o2].size() - 1];
+      //BoolVar if2 = (input -> type[o2] == COPY) ? var(i(o2) == mem2) : var(i(o2) == i(o2));
       constraint((a(o1) && if1 && a(o2) && if2) >>
 		 (!msubseq(o1,o2) && !msubseq(o2,o1)));
     }
@@ -829,3 +840,14 @@ void SecLocalModel::post_tt_constraints(void) {
     }
   // }
 }
+
+instruction SecLocalModel::get_mem_instr(operation o) {
+
+  for (instruction i: input->instructions[o]) {
+    if (contains(memcopies, input -> insname[i])) {
+        return i;
+    }
+  }
+  return -1;
+}
+

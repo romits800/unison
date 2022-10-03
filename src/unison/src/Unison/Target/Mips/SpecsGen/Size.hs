@@ -224,7 +224,7 @@ size i
        JALX, JALX_MM, JAL_MM, JIALC, JIALC_MMR6, JIC, JIC_MMR6, JR, JR64,
        JR_HB, JR_HB_R6, JR_MM, J_MM, JalOneReg, JalTwoReg, LB, LB64, LBE,
        LBE_MM, LBE_MMR6, LBUE_MMR6, LBUX, LBUX_MM, LBU_MMR6, LB_MM,
-       LB_MMR6, LBu, LBu64, LBuE, LBuE_MM, LBu_MM, LBu_fi,
+       LB_MMR6, LB_fi, LBu, LBu64, LBuE, LBuE_MM, LBu_MM, LBu_fi,
        LBu_fi_remat_fi, LD, LDC1, LDC164, LDC1_MM, LDC1_fi,
        LDC1_fi_remat_fi, LDC2, LDC2_R6, LDC3, LDI_B, LDI_D, LDI_H, LDI_W,
        LDL, LDPC, LDR, LDXC1, LDXC164, LD_B, LD_D, LD_H, LD_W, LEA_ADDiu,
