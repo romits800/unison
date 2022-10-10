@@ -111,15 +111,16 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
         exops[b] = ops;
         exopas[b] = opas;
     }
-    sec_r.seed(p_options->seed());
-    sec_p = p_options->relax();
-     
-    rng.seed(p_options->seed());
-    unif = new std::uniform_real_distribution<double>(0,1);
 
     monolithic = false;
 
   }
+  sec_r.seed(p_options->seed());
+  sec_p = p_options->relax();
+  
+  rng.seed(p_options->seed());
+  unif = new std::uniform_real_distribution<double>(0,1);
+
   post_security_constraints();
 }
 
@@ -1238,7 +1239,6 @@ void SecModel::first(void) {
 
 
 void SecModel::next(const SecModel& b) {
-  //std::cout << "Next" << std::endl;
 
   if (monolithic) {
     //std::cout << "Next monolithic: cost: " << b.cost() << std::endl;
@@ -1248,6 +1248,7 @@ void SecModel::next(const SecModel& b) {
           instr << i(o);
           linstr << b.i(o);
         }
+
         relax(*this, instr, linstr, sec_r, sec_p);
     }
 
