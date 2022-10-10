@@ -345,6 +345,10 @@ resources _ =
 nop = Linear [TargetInstruction NOP] [] []
 
 readWriteInfo i
+  -- pop branch results in a branch and should have the control
+  -- write side effect
+  | SpecsGen.itinerary i == IIC_iPop_Br = 
+      second addControl $ SpecsGen.readWriteInfo i
   -- copies do not have memory side effects (loads and stores do not alias
   -- with other memory accesses as they operate on spill slots only)
   | SpecsGen.instructionType i == CopyInstructionType = SpecsGen.readWriteInfo i
@@ -368,6 +372,7 @@ readWriteInfo i
   | otherwise = SpecsGen.readWriteInfo i
 
 addMem = (++ [Memory "mem"])
+addControl = (++ [ControlSideEffect])
 
 -- | Implementation of frame setup and destroy operations. All functions
 -- observed so far have a reserved call frame (hasReservedCallFrame(MF)), which
@@ -1048,8 +1053,8 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
 
 constraints f =
   foldMatch altRetConstraints [] f ++
-  foldMatch altLoadStoreConstraints [] f -- ++
-  -- foldMatch altNonSymmetricConstraints [] f
+  foldMatch altLoadStoreConstraints [] f  -- ++
+  --foldMatch altNonSymmetricConstraints [] f
 
 altRetConstraints (
   op @ SingleOperation {oOpr = Copy {
@@ -1065,6 +1070,7 @@ altRetConstraints (
   in (code, constraints ++ [alt])
 
 altRetConstraints (_ : code) constraints = (code, constraints)
+
 
 -- altNonSymmetricConstraints (
 --   op1 @ SingleOperation {oOpr = Natural {
