@@ -759,6 +759,7 @@ void GlobalModel::compare(const Space& sp, std::ostream& pOs) const {
 }
 
 bool GlobalModel::equal_to(const GlobalModel * gs) const {
+
   for (global_congruence g : input->G) {
     operand p = input->representative[input->regular[g]];
     if (ry(p).val() != gs->ry(p).val()) return false;

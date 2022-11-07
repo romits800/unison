@@ -17,7 +17,7 @@ This file is part of Unison, see http://unison-code.github.io
 -}
 module Unison.Graphs.BCFG (fromFunction, isLiveIn, isLiveOut,
 immediatePredecessor, immediateSuccessors, toNode, fromNode, eqvNeighborTemps,
-toDot, predecessorIds, successorIds) where
+toDot, predecessorIds, successorIds, edgePairs) where
 
 import Data.String
 import Data.List

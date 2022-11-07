@@ -36,10 +36,18 @@ sep = do {char ';'; skipMany1 (space <|> newline)}
 word :: Parser String
 word = many1 (alphaNum <|> char '_')
 
+memr :: Parser Char
+memr = char ']'
+
+meml :: Parser Char
+meml = char '['
+
+
 
 parsePolicy :: Parser (Policy String)
 parsePolicy =
-  do typ <- parseSecret <|> parseRandom <|> parsePublic
+  do typ <- parseSecret <|> parseRandom <|> parsePublic <|>
+            parseSecretMem <|> parseRandomMem <|> parsePublicMem
      return typ
 
 
@@ -49,11 +57,25 @@ parseSecret =
      id <- word
      return (Secret id) 
 
+parseSecretMem :: Parser (Policy String)
+parseSecretMem =
+  do _ <- string "secMem"; spaces; meml;
+     id <- word; memr
+     return (Secret ("[" ++ id ++ "]")) 
+
+
 parseRandom :: Parser (Policy String)
 parseRandom =
   do _ <- string "Random"; spaces;
      id <- word
      return (Random id)
+
+parseRandomMem :: Parser (Policy String)
+parseRandomMem =
+  do _ <- string "randMem"; spaces; meml
+     id <- word; memr
+     return (Random ("[" ++ id ++ "]"))
+
 
 
 parsePublic :: Parser (Policy String)
@@ -61,3 +83,9 @@ parsePublic =
   do _ <- string "Public"; spaces;
      id <- word
      return (Public id)
+
+parsePublicMem :: Parser (Policy String)
+parsePublicMem =
+  do _ <- string "pubMem"; spaces; meml
+     id <- word; memr
+     return (Public ("[" ++ id ++ "]"))

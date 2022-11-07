@@ -472,6 +472,7 @@ void LocalModel::apply_solution(const GlobalModel * gs) {
 }
 
 bool LocalModel::equal_to(const LocalModel * ls) const {
+
   for (operation o : {input->in[b], input->out[b]}) {
     for (operand p : input->operands[o]) {
       if (ry(p).val() != ls->ry(p).val()) return false;

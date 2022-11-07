@@ -71,7 +71,8 @@ target =
       API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
-      API.tBranchInstruction= const branchInstruction
+      API.tBranchInstruction= const branchInstruction,
+      API.tBranchOverhead   = const branchOverhead
     }
 
 instance Read MinimalInstruction where
@@ -288,3 +289,5 @@ branchInstruction bid oid =
   in mkBranch oid ins ops
 -- | Function Arguments
 funcArgs = [R0, R1, R2, R3]
+
+branchOverhead = (0, 0)

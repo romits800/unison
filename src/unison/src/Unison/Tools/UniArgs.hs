@@ -34,7 +34,7 @@ data Uni =
                policy :: Maybe FilePath, gfMulImpl :: Maybe String,
                clusterNumber :: Maybe Integer,
                kmeansIterations :: Maybe Word32, numberEigenvectors :: Maybe Integer, 
-               reorderInsts :: Bool} |
+               reorderInsts :: Bool, balanceBlcks :: Bool, copyBlcks :: Bool} |
     Linearize {targetName :: String, inFile :: FilePath, targetOption :: [String],
                outFile :: Maybe FilePath, debug :: Bool, intermediate :: Bool,
                lint :: Bool, lintPragma :: Bool} |
@@ -149,7 +149,9 @@ import' = Import {
   clusterNumber   = Nothing &= help "Number of clusters for block spliting",
   kmeansIterations= Nothing &= help "Number of iterations to improve clustering",
   numberEigenvectors= Nothing &= help "Number of eigenvectors for clustering",
-  reorderInsts    = False &= help "Reorder instructions to be near their definitions."
+  reorderInsts    = False &= help "Reorder instructions to be near their definitions.",
+  balanceBlcks    = False &= help "Reorder instructions to be near their definitions.",
+  copyBlcks       = False &= help "Reorder instructions to be near their definitions."
 }
   &= help "Import a MachineIR function into Unison"
 

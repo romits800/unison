@@ -77,6 +77,7 @@ Library
                    Unison.Transformations.RunTargetTransforms
                    Unison.Transformations.SecurityTypeInference
                    Unison.Transformations.BalanceBlocks
+                   Unison.Transformations.CopyBlocks
 
                    Unison.Analysis.FrequencyEstimation
                    Unison.Analysis.TemporaryType
@@ -188,6 +189,7 @@ Library
                   Unison.Tools.Linearize.RemovePhis
                   Unison.Tools.Linearize.NormalizeCongruences
                   Unison.Tools.Linearize.AddReflexiveCongruences
+                  Unison.Tools.Linearize.KeepDeadInstrs
                   Unison.Tools.Extend.ExtendWithCopies
                   Unison.Tools.Extend.CleanCongruences
                   Unison.Tools.Extend.SortCopies

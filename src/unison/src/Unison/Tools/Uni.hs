@@ -52,7 +52,7 @@ mainWithTargets targets = do
                           inFile, debug, intermediate, lint, lintPragma,
                           outFile, policy, gfMulImpl,
                           clusterNumber, kmeansIterations, numberEigenvectors,
-                          reorderInsts)
+                          reorderInsts, balanceBlcks, copyBlcks)
                          input (target, targetOption)
                     return ()
     Linearize{..} ->

@@ -86,6 +86,7 @@ import Unison.Tools.Import.TagRemats
 
 import Unison.Tools.Import.ReorderXorOperations
 import Unison.Transformations.BalanceBlocks
+import Unison.Transformations.CopyBlocks
 
 import qualified Unison.ParseSecurityPolicies as PSP
 
@@ -93,7 +94,8 @@ import qualified Unison.ParseSecurityPolicies as PSP
 run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
      implementFrames, rematType, function, goal, mirVersion, sizeThreshold,
      explicitCallRegs, mirFile, debug, intermediate, lint, lintPragma, uniFile,
-     policy, gfMulImpl, clusterNumber, kmeansIterations, numberEigenvectors, reorderInsts)
+     policy, gfMulImpl, clusterNumber, kmeansIterations, numberEigenvectors, reorderInsts,
+     balanceBlcks, copyBlcks)
     mir target =
   do
     secPolicy <- maybeStrictReadFile policy
@@ -116,7 +118,8 @@ run (estimateFreq, simplifyControlFlow, noCC, noReserved, maxBlockSize,
                                  lintPragma, explicitCallRegs,
                                  policies, gfMulImpl,
                                  clusterNumber, kmeansIterations,
-                                 numberEigenvectors, reorderInsts))
+                                 numberEigenvectors, reorderInsts,
+                                 balanceBlcks, copyBlcks))
             target ff
         baseName = takeBaseName mirFile
       in case selected function mfs of
@@ -156,7 +159,7 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
                     implementFrames, rematType, lintPragma, explicitCallRegs,
                     policy, gfMulImpl,
                     clusterNumber, kmeansIterations, numberEigenvectors,
-                    reorderInsts) =
+                    reorderInsts, balanceBlcks, copyBlcks) =
   --let types = inferSecurityTypes target f policy in
     [(liftGoal goal, "liftGoal", True),
      (addDelimiters, "addDelimiters", True),
@@ -189,7 +192,8 @@ uniTransformations (goal, noCC, noReserved, maxBlockSize, estimateFreq,
       "clusterBlocks", isJust clusterNumber), -- TODO(Romy): add new flag for this
      (splitBlocks (fromJust maxBlockSize), "splitBlocks", isJust maxBlockSize),
      (renameBlocks, "renameBlocks", True),
-     (balanceBlocks policy gfMulImpl, "balanceBlocks", True), --- Sec stuff
+     (balanceBlocks policy gfMulImpl, "balanceBlocks", balanceBlcks), --- Sec stuff
+     (copyBlocks policy gfMulImpl, "copyBlocks", copyBlcks), --- Sec stuff
      (renameBlocks, "renameBlocks", True), -- sec stuff
      (repairCSSA, "repairCSSA", True),
      (advancePhis, "advancePhis", True),

@@ -833,14 +833,14 @@ void SecModel::post_ct_constraints(void) {
   // The paths that should be ct time
   // for every constraint that consists of many paths
   for (unsigned int n = 0; n < input->N; n++) {
-    for (vector<vector<block>> ci: input -> bbs) {
+    for (vector<vector<vector<block> > > ci: input -> bbs) {
       // for every path in a constraint
       IntVarArgs cs;
-      for (vector<block> pi: ci) {
+      for (vector<vector<block> > pi: ci) {
 	IntVarArgs path;
-	for (block bi: pi) {
+	for (vector<block> bi: pi) {
 	  // std::cout << "Bi" << bi;
-	  path << branch_cost(bi, n);
+	  path << var (branch_cost(bi[0], n) + bi[1]);
 	}
 	// std::cout << std::endl;
 	cs << var (sum(path));

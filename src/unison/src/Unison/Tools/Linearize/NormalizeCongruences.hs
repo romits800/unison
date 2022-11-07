@@ -19,6 +19,7 @@ import Unison.Target.API
 import qualified Unison.Graphs.BCFG as BCFG
 import qualified Unison.Graphs.SG as SG
 
+import Data.Graph.Inductive
 normalizeCongruences f @ Function {fCongruences = cs} target =
     let bif     = branchInfo target
         bcfg   = BCFG.fromFunction bif f
@@ -26,4 +27,5 @@ normalizeCongruences f @ Function {fCongruences = cs} target =
         p      = map S.fromList $ SG.sameTempPartitions sg
         cs'    = BCFG.eqvNeighborTemps bcfg p
         cs''   = sort cs'
-    in f {fCongruences = cs''}
+    in f {fCongruences = cs''} 
+--error (show p ++ "\nlala\n" ++ show cs' ++ "\nlalalal\n" ++ show (edges bcfg) ) --f {fCongruences = cs''}

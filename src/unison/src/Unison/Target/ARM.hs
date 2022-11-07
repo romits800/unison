@@ -85,7 +85,8 @@ target =
       API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
-      API.tBranchInstruction= const branchInstruction
+      API.tBranchInstruction= const branchInstruction,
+      API.tBranchOverhead   = const branchOverhead
     }
 
 instance Read ARMInstruction where
@@ -864,6 +865,8 @@ branchInstruction bid oid =
       ops = BlockRef { blockRefId = bid } : defaultUniPred
   in mkBranch oid ins ops
 
+
+branchOverhead = (0,0)
 -- | Custom processor constraints
 
 constraints f =

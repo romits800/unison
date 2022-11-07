@@ -31,14 +31,14 @@ isNotInInmap inmap t = isNothing $ Map.lookup t inmap
 allNotInmap ts inmap =
   all (isNotInInmap inmap) ts 
 
-parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies gfMulImpl =
+parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} types =
   let
-    types' = inferSecurityTypes target f policies gfMulImpl
-    pmap' = fPmap types'
-    inmap = fInmap types'
-    m2o'  = fM2o types'
-    c2o'  = fC2o types'
-    bbs   = fBbs types'
+    --types = inferSecurityTypes target f policies gfMulImpl
+    pmap' = fPmap types
+    inmap = fInmap types
+    m2o'  = fM2o types
+    c2o'  = fC2o types
+    bbs   = fBbs types
     -- nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _,_, bbs, _) = inferSecurityTypes target f policies
     (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
     ran'            = filter (\x -> head x == 't') ran
@@ -48,11 +48,11 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies gfMulImpl =
     ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') ran  -- memory randoms
     pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') pub
     -- Parameters
-    pairs           = findPairs (ran' ++ pub') types' []
-    secdom          = findRandSec sec' ran' types' []
+    pairs           = findPairs (ran' ++ pub') types []
+    secdom          = findRandSec sec' ran' types []
     p2o             = Map.union c2o' m2o'   --- Not the same key
-    mpairs          = findPairsMC (ran'' ++ pub'') types' p2o []
-    secdommem       = findRandSecMC sec'' ran'' types' p2o inmap [] 
+    mpairs          = findPairsMC (ran'' ++ pub'') types p2o []
+    secdommem       = findRandSecMC sec'' ran'' types p2o inmap [] 
     hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
     hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
   in

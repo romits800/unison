@@ -187,6 +187,7 @@ string produce_json(Parameters &input, int presolver_time)
 #define ZEROBASED1 1
 #define ZEROBASED2 2
 #define ZEROBASED3 8
+#define ZEROBASED4 16
 #define MINUSONEBASED1 4
 
 class FDSet {
@@ -540,6 +541,43 @@ string emit_dzn(const vector<vector<vector<int>>> xsss, int opt) {
   s << "])";
   return s.str();
 }
+
+string emit_dzn(const vector<vector<vector<vector<int> > > > xsss, int opt) {
+  stringstream s;
+  int beg1 = 1;
+  int beg2 = 1;
+  int beg3 = 1;
+  int beg4 = 1;
+  int dim1 = xsss.size();
+  int dim2 = dim1==0 ? 0 : xsss[0].size();
+  int dim3 = dim2==0 ? 0 : xsss[0][0].size();
+  int dim4 = dim3==0 ? 0 : xsss[0][0][0].size();
+  if (opt & ZEROBASED1)
+    beg1 = 0;
+  if (opt & ZEROBASED2)
+    beg2 = 0;
+  if (opt & ZEROBASED3)
+    beg3 = 0;
+  if (opt & ZEROBASED4)
+    beg4 = 0;
+
+  int r = 0;
+  s << "array2d(" << beg1 << ".." << dim1+beg1-1 << ", " << beg2 << ".." << dim2+beg2-1 << ", " << beg3 << ".." << dim3+beg3-1 << ", " << beg4 << ".." << dim4+beg4-1 << ", [";
+  for (vector<vector<vector<int> > > xss : xsss) {
+    for (vector<vector<int> > xs : xss) {
+      for (vector<int> x : xs) {
+        for (int xi : x) {
+	  if (r++)
+	    s << ", ";
+	  s << xi;
+        }
+      }
+    }
+  }
+  s << "])";
+  return s.str();
+}
+
 
 
 string emit_dzn(const vector<vector<FDSet>> xss, int opt) {

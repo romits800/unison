@@ -47,7 +47,7 @@ data StateTuple i r = StateTuple {
   fP2p   :: Map Integer [Integer],
   fP2t   :: Map Integer [Operand r],
   fArgs  :: Map String (KnownOperations, [String], [String]),
-  fBbs   :: Map Integer [[Integer]],
+  fBbs   :: Map Integer [[(Integer, Integer)]],  -- bb with posible branch cost
   fFlag  :: FlagsType,
   fBcfg  :: BCFGraph i r,
   fMulImpl :: Maybe String,
@@ -142,9 +142,7 @@ inferSecurityTypes target f @ Function {fCode = _} ipolicies gfMulImpl =
       pp              = map S.fromList congr
       adjacent        = sort $ BCFG.eqvNeighborTemps bcfg pp
       p2p             = createP2p adjacent Map.empty -- adjacent operands
-
       p2t             = Map.empty -- o2t operands to temps
-      
       t               = StateTuple {fPmap = pmap, fInmap = inmap, fSupp = supp, fUnq = unq,
                                     fDom = dom,   fXor = xor,     fM2o = m2o,   fC2o  = c2o,
                                     fP2p = p2p,   fP2t = p2t,     fArgs = args, fBbs = bbs,
@@ -219,8 +217,8 @@ getOid OperandRef {operandRefId = orid}  = orid
 getOid op = error $ "GetOid failed: " ++ show op
 
 
-getOpidTemps MOperand {operandId = oid,
-                       altTemps = ts} = (oid, ts)
+getOpidTemps MOperand {operandId = pid,
+                       altTemps = ts} = (pid, ts)
 getOpidTemps op = error $ "GetOidTemps failed: " ++ show op
 
 
@@ -240,7 +238,8 @@ filterF (Public ('F':_)) = True
 filterF (Random ('F':_)) = True
 filterF _ = False
 
-getPoliciesF:: Show r => Show i => Function i r -> Map String (Policy String) -> [Policy String]
+getPoliciesF:: Show r => Show i => Function i r -> 
+                Map String (Policy String) -> [Policy String]
 getPoliciesF Function {fCode = code} policies =
   let 
     fs = filter filterF $ map snd $ Map.toList policies
@@ -262,15 +261,22 @@ getPoliciesO pols accpol SingleOperation
                                    })
                    )} =
                         let
+                          mem i = "[" ++ i ++ "]"
                           rts = concatMap getRegTemps oins -- returns (t,r)
                           f (t,r) =
                             case r of
                               Just r' ->
-                                case Map.lookup (show r') pols of
-                                  Just (Secret _) -> [Secret t]
-                                  Just (Public _) -> [Public t]
-                                  Just (Random _) -> [Random t]
-                                  Nothing -> []
+                                let vals = case Map.lookup (show r') pols of
+                                              Just (Secret _) -> [Secret t]
+                                              Just (Public _) -> [Public t]
+                                              Just (Random _) -> [Random t]
+                                              Nothing -> []
+                                    mems = case Map.lookup (mem $ show r') pols of
+                                              Just (Secret _) -> [Secret $ mem t]
+                                              Just (Public _) -> [Public $ mem t]
+                                              Just (Random _) -> [Random $ mem t]
+                                              Nothing -> []
+                                in vals ++ mems
                               Nothing -> []
                           nlist = concatMap f rts
                         in nlist ++ accpol
@@ -324,7 +330,7 @@ inferTypesOperation target f bid types (
             typ  = Map.lookup "brtemp" pmap'
             bbs' = 
                if isMaybeSecret typ then
-                 let paths = findPaths bid types --Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
+                 let paths = findPaths bid types target--Map.insert (blid, bid+1) (fromJustSecret typ) (fBbs types)
                  in Map.insert bid paths (fBbs types) --error $ show paths 
                else fBbs types
             types'' = types {fBbs = bbs'} 
@@ -341,7 +347,7 @@ inferTypesOperation target f bid types (
             typ  = Map.lookup "brtemp" pmap'
             bbs' = 
               if isMaybeSecret typ then
-                let paths = findPaths bid types
+                let paths = findPaths bid types target
                 in Map.insert bid paths (fBbs types)
               else fBbs types
             types'' = types {fBbs = bbs'} 
@@ -365,21 +371,23 @@ inferTypesOperation target f bid types (SingleOperation
                       -- TODO(fix): trying to avoid the control register 
                       oDs = d:_ }}}:codes) =
   let
-    isxor = any (isXor target) i
-    isgmul= case fMulImpl types of
-               Nothing -> any (isGMul target) i
-               _ -> False
-    xor' = updateXor (fXor types) ts1 ts2 isxor [d]
-    args' = updateArgs (fArgs types) (knownOp target i types) ts1 ts2 [d]
-    supp' = updateBSupps isxor (fSupp types, xor', args') ts1 ts2 [d]
-    unq' = updateBUnqs (fUnq types, fSupp types) ts1 ts2 [d]
-    -- if is xor
-    dom' = if isxor
-           then updateBDoms (fDom types, unq') ts1 ts2 [d]
-           else updateBDomsEmpty (fDom types) [d]
-    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'} 
-    pmap'   = updatePmaps isxor isgmul types' ts1 ts2 [d]
-    types'' = types' {fPmap = pmap'} 
+    types'  = updateTypes target types i ts1 ts2 [d]
+    types'' = updateMemTypes types' (ts1++ts2) [d]
+--     isxor = any (isXor target) i
+--     isgmul= case fMulImpl types of
+--                Nothing -> any (isGMul target) i
+--                _ -> False
+--     xor' = updateXor (fXor types) ts1 ts2 isxor [d]
+--     args' = updateArgs (fArgs types) (knownOp target i types) ts1 ts2 [d]
+--     supp' = updateBSupps isxor (fSupp types, xor', args') ts1 ts2 [d]
+--     unq' = updateBUnqs (fUnq types, fSupp types) ts1 ts2 [d]
+--     -- if is xor
+--     dom' = if isxor
+--            then updateBDoms (fDom types, unq') ts1 ts2 [d]
+--            else updateBDomsEmpty (fDom types) [d]
+--     types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'} 
+--     pmap'   = updatePmaps isxor isgmul types' ts1 ts2 [d]
+--     types'' = types' {fPmap = pmap'} 
   in inferTypesOperation target f bid types'' codes
 -- Normal Operations with Temps
 inferTypesOperation target f bid types (SingleOperation
@@ -392,87 +400,44 @@ inferTypesOperation target f bid types (SingleOperation
   let
     -- exception for control register???
     -- if is xor
-    isxor = any (isXor target) i
-    isgmul= case fMulImpl types of
-               Nothing -> any (isGMul target) i
-               _ -> False
-    xor' = updateXor (fXor types) [t1] [t2] isxor [d]
-    args' = updateArgs (fArgs types) (knownOp target i types) [t1] [t2] [d]
-    supp' = updateBSupps isxor (fSupp types, xor', args') [t1] [t2] [d]
-    unq' = updateBUnqs (fUnq types, fSupp types) [t1] [t2] [d]
-    dom' = if isxor
-           then updateBDoms (fDom types, unq') [t1] [t2] [d]
-           else updateBDomsEmpty (fDom types) [d]
-    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'} 
-    pmap' = updatePmaps isxor isgmul types' [t1] [t2] [d]
-    types'' = types' {fPmap = pmap'}
-  in inferTypesOperation target f bid types'' codes
--- store operation
--- TODO update xor
--- inferTypesOperation target f bid types (SingleOperation
---   { oId  = oid, 
---     oOpr = Natural {oNatural = Linear {
---                       oIs = i, -- Instruction i
---                       oUs = MOperand {altTemps = ts} :
---                             mfi @ (Bound (MachineFrameIndex {mfiIndex = mf,
---                                                              mfiFixed = isfixed})) : _,
---                       oDs = [] }}}:codes) =
---   let
---     supp' = updateSupps (fSupp types) ts [mfi]
---     unq'  = updateUnqs (fUnq types) ts [mfi]
---     dom'  = updateDoms (fDom types) ts [mfi]
+    types' = updateTypes target types i [t1] [t2] [d]
+    types'' = updateMemTypes types' [t1,t2] [d]
 --     isxor = any (isXor target) i
---     isgmul = any (isGMul target) i
---     m2o' = updateM2o (fM2o types) (addPrefix isfixed ++ show mf) oid ts
---     args' = updateArgsUop (fArgs types)  ts [mfi]
---     types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fM2o = m2o', fArgs = args'} 
---     pmap' = updatePmaps isxor isgmul types' ts [] [mfi]
+--     isgmul= case fMulImpl types of
+--                Nothing -> any (isGMul target) i
+--                _ -> False
+--     xor' = updateXor (fXor types) [t1] [t2] isxor [d]
+--     args' = updateArgs (fArgs types) (knownOp target i types) [t1] [t2] [d]
+--     supp' = updateBSupps isxor (fSupp types, xor', args') [t1] [t2] [d]
+--     unq' = updateBUnqs (fUnq types, fSupp types) [t1] [t2] [d]
+--     dom' = if isxor
+--            then updateBDoms (fDom types, unq') [t1] [t2] [d]
+--            else updateBDomsEmpty (fDom types) [d]
+--     types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'} 
+--     pmap' = updatePmaps isxor isgmul types' [t1] [t2] [d]
 --     types'' = types' {fPmap = pmap'}
---   in inferTypesOperation target f bid types'' codes
---   -- TODO update xor
--- inferTypesOperation target f bid types (SingleOperation
---   { oId  = oid, 
---     oOpr = Natural {oNatural = Linear {
---                       oIs = i, -- Instruction i
---                       oUs = t @ Temporary {} :
---                             mfi @ (Bound (MachineFrameIndex {mfiIndex = mf,
---                                                              mfiFixed = isfixed})) : _,
---                       oDs = [] }}}:codes) =
---   let
---     supp' = updateSupps (fSupp types) [t] [mfi]
---     unq'  = updateUnqs (fUnq types) [t] [mfi]
---     dom'  = updateDoms (fDom types) [t] [mfi]
---     isxor = any (isXor target) i
---     isgmul = any (isGMul target) i
---     m2o' = updateM2o (fM2o types) (addPrefix isfixed ++ show mf) oid []
---     args' = updateArgsUop (fArgs types)  [t] [mfi]
---     types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fM2o = m2o', fArgs = args'} 
---     pmap' = updatePmaps isxor isgmul types' [t] [] [mfi]
---     types'' = types { fPmap = pmap'}
---   in inferTypesOperation target f bid types'' codes
--- operation with one operand
-  -- TODO update xor
--- The type here should be public
+  in inferTypesOperation target f bid types'' codes
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
-                      oIs = _i, -- Instruction i
+                      oIs = i, -- Instruction i
                       oUs = t :
                             Bound(MachineGlobalAddress {mgaAddress = str}):_,
                       oDs = defops }}}:codes) =
   let
-    supp' = updateSupps (fSupp types) [t] defops
-    unq'  = updateUnqs (fUnq types) [t] defops
-    dom'  = updateDoms (fDom types) [t] defops
-    isxor = False
-    isgmul = False
-    xor'  = updateXor (fXor types) [t] [] True defops
-    args' = updateArgsUop (fArgs types)  [t] defops
-    funcs' = updateFuncs (fT2Func types) defops str
-    types'= types { fSupp = supp', fUnq = unq', fDom = dom',
-                    fXor = xor', fArgs = args', fT2Func = funcs'} 
-    pmap' = updatePmaps isxor isgmul types' [t] [] defops
-    types'' = types' {fPmap = pmap'}
-  in inferTypesOperation target f bid types'' codes
+    types' = updateTypesS target types i [t] defops
+    types'' = updateMemTypes types' [t] defops
+--     supp' = updateSupps (fSupp types) [t] defops
+--     unq'  = updateUnqs (fUnq types) [t] defops
+--     dom'  = updateDoms (fDom types) [t] defops
+--     isxor = False
+--     isgmul = False
+--     xor'  = updateXor (fXor types) [t] [] True defops
+--     args' = updateArgsUop (fArgs types)  [t] defops
+    funcs' = updateFuncs (fT2Func types') defops str
+    types''' = types'' { fT2Func = funcs'} 
+--     pmap' = updatePmaps isxor isgmul types' [t] [] defops
+--     types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types''' codes
 -- TODO update xor
 -- operation with one operand
 inferTypesOperation target f bid types (SingleOperation
@@ -483,18 +448,21 @@ inferTypesOperation target f bid types (SingleOperation
   -- if join of uops is...
   -- add defops to the map
   let
-    supp' = updateSupps (fSupp types) ts defops
-    unq'  = updateUnqs (fUnq types) ts defops
-    dom'  = updateDoms (fDom types) ts defops
-    isxor = any (isXor target) i
-    isgmul = case fMulImpl types of
-               Nothing -> any (isGMul target) i
-               _ -> False
-    xor' = updateXor (fXor types) ts [] True defops
-    args' = updateArgsUop (fArgs types)  ts defops
-    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'} 
-    pmap' = updatePmaps isxor isgmul types' ts [] defops 
-    types'' = types' {fPmap = pmap'}
+    types' = updateTypesS target types i ts defops
+    types'' = updateMemTypes types' ts defops
+--     supp' = updateSupps (fSupp types) ts defops
+--     unq'  = updateUnqs (fUnq types) ts defops
+--     dom'  = updateDoms (fDom types) ts defops
+--     isxor = any (isXor target) i
+--     isgmul = case fMulImpl types of
+--                Nothing -> any (isGMul target) i
+--                _ -> False
+--     xor' = updateXor (fXor types) ts [] True defops
+--     args' = updateArgsUop (fArgs types)  ts defops
+--     types'  = types { fSupp = supp', fUnq = unq', fDom = dom', 
+--                         fXor = xor', fArgs = args'} 
+--     pmap' = updatePmaps isxor isgmul types' ts [] defops 
+--     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
@@ -504,18 +472,20 @@ inferTypesOperation target f bid types (SingleOperation
   -- if join of uops is...
   -- add defops to the map
   let
-    supp' = updateSupps (fSupp types) [t] defops
-    unq'  = updateUnqs (fUnq types) [t] defops
-    dom'  = updateDoms (fDom types) [t] defops
-    isxor = any (isXor target) i
-    isgmul = case fMulImpl types of
-               Nothing -> any (isGMul target) i
-               _ -> False
-    xor' = updateXor (fXor types) [t] [] True defops
-    args' = updateArgsUop (fArgs types)  [t] defops
-    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
-    pmap' = updatePmaps isxor isgmul types' [t] [] defops
-    types'' = types' {fPmap = pmap'}
+    types' = updateTypesS target types i [t] defops
+    types'' = updateMemTypes types' [t] defops
+--     supp' = updateSupps (fSupp types) [t] defops
+--     unq'  = updateUnqs (fUnq types) [t] defops
+--     dom'  = updateDoms (fDom types) [t] defops
+--     isxor = any (isXor target) i
+--     isgmul = case fMulImpl types of
+--                Nothing -> any (isGMul target) i
+--                _ -> False
+--     xor' = updateXor (fXor types) [t] [] True defops
+--     args' = updateArgsUop (fArgs types)  [t] defops
+--     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+--     pmap' = updatePmaps isxor isgmul types' [t] [] defops
+--     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
 -- stack operations
 inferTypesOperation target f bid types (SingleOperation
@@ -523,78 +493,22 @@ inferTypesOperation target f bid types (SingleOperation
                       oIs = _, -- Instruction i
                       oUs = (Bound (_)) : [],
                       oDs = [] }}}:codes) =
-  inferTypesOperation target f bid types codes
+    inferTypesOperation target f bid types codes
 -- Special case for some MIPS instruction  
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
                       oUs = [],
-                      oDs = [] }}}:codes) = inferTypesOperation target f bid types codes
+                      oDs = [] }}}:codes) = 
+    inferTypesOperation target f bid types codes
 -- Special case for some MIPS instruction  
 inferTypesOperation target f bid types (SingleOperation
   {oOpr = Natural {oNatural = Linear {
-                      oIs = _, -- Instruction i
+                      oIs = i, -- Instruction i
                       oUs = [],
                       oDs = [d] }}}:codes) =
   let
-    supp'  = updateSupps (fSupp types) [] [d]
-    unq'   = updateUnqs (fUnq types) [] [d]
-    dom'   = updateDoms (fDom types) [] [d]
-    isxor  = False
-    isgmul = False
-    xor'   = updateXor (fXor types) [] [] True [d]
-    args'  = updateArgsUop (fArgs types)  [] [d]
-    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
-    pmap'  = updatePmaps isxor isgmul types' [] [] [d]
-    types'' = types' {fPmap = pmap'}
-  in inferTypesOperation target f bid types'' codes
--- Special case for CM0 - Machine ConstantPoolIndex (cpi)
-inferTypesOperation target f bid types (SingleOperation
-  {
-    oId  = _oid, 
-    oOpr = Natural {oNatural = Linear {
-                      oIs = _, -- Instruction i
---                       oUs = (u @ (Bound (MachineFrameIndex {mfiIndex = mf,
---                                                             mfiFixed = isfixed}))) : _,
---                       oDs = [MOperand {altTemps = d}] }}}:codes) =
---   let
---     supp' = updateSupps (fSupp types) [u] d
---     unq'  = updateUnqs (fUnq types) [u] d
---     dom'  = updateDoms (fDom types) [u] d
---     isxor = False
---     isgmul= False
---     xor' = updateXor (fXor types) d [] True d
---     args' = updateArgsUop (fArgs types)  [u] d
---     m2o' = updateM2o (fM2o types) (addPrefix isfixed ++ show mf) oid d
---     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args', fM2o = m2o'}
---     pmap' = updatePmaps isxor isgmul types' [u] [] d
-                      oUs = (Bound (MachineConstantPoolIndex {})) : _,
-                      oDs = [MOperand {altTemps = d}] }}}:codes) =
-  let
-    supp' = updateSupps (fSupp types) [] d
-    unq'  = updateUnqs (fUnq types) [] d
-    dom'  = updateDoms (fDom types) [] d
-    isxor = False
-    isgmul= False
-    xor' = updateXor (fXor types) d [] True d
-    args' = updateArgsUop (fArgs types)  [] d
-    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
-    pmap' = updatePmaps isxor isgmul types' [] [] d
-    types'' = types' {fPmap = pmap'}
-  in inferTypesOperation target f bid types'' codes
--- Special case for some MIPS instruction  
--- inferTypesOperation target f bid types (SingleOperation
---   {oOpr = Natural {oNatural = Linear {
---                       oIs = _, -- Instruction i
---                       oUs = [],
---                       oDs = [] }}}:codes) = inferTypesOperation target f bid types codes
--- -- Special case for some MIPS instruction  
--- inferTypesOperation target f bid types (SingleOperation
---   {oOpr = Natural {oNatural = Linear {
---                       oIs = _, -- Instruction i
---                       oUs = [],
---                       oDs = [d] }}}:codes) =
---   let
+    types' = updateTypesS target types i [] [d]
 --     supp'  = updateSupps (fSupp types) [] [d]
 --     unq'   = updateUnqs (fUnq types) [] [d]
 --     dom'   = updateDoms (fDom types) [] [d]
@@ -605,52 +519,115 @@ inferTypesOperation target f bid types (SingleOperation
 --     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
 --     pmap'  = updatePmaps isxor isgmul types' [] [] [d]
 --     types'' = types' {fPmap = pmap'}
---   in inferTypesOperation target f bid types'' codes
--- -- Special case for CM0 - Machine ConstantPoolIndex (cpi)
--- inferTypesOperation _ _ _ _ (SingleOperation
+  in inferTypesOperation target f bid types' codes
+-- Special case for CM0 - Bound
+inferTypesOperation target f bid types (SingleOperation
+  {oOpr = Natural {oNatural = Linear {
+                      oIs = i, -- Instruction i
+                      oUs = Bound (MachineImm {}):_,
+                      oDs = d:_ }}}:codes) =
+  let
+    types' = updateTypesS target types i [] [d]
+--     supp'  = updateSupps (fSupp types) [] [d]
+--     unq'   = updateUnqs (fUnq types) [] [d]
+--     dom'   = updateDoms (fDom types) [] [d]
+--     isxor  = False
+--     isgmul = False
+--     xor'   = updateXor (fXor types) [] [] True [d]
+--     args'  = updateArgsUop (fArgs types)  [] [d]
+--     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+--     pmap'  = updatePmaps isxor isgmul types' [] [] [d]
+--     types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types' codes
+-- Special case for CM0 - Machine ConstantPoolIndex (cpi)
 inferTypesOperation target f bid types (SingleOperation
   {
     oId  = _oid, 
     oOpr = Natural {oNatural = Linear {
-                      oIs = _, -- Instruction i
+                      oIs = i,
                       oUs = (Bound (MachineConstantPoolIndex {})) : _,
-                      oDs = [t @ Temporary {}] }}}:codes) =
+                      oDs = [MOperand {altTemps = d}] }}}:codes) =
   let
-    supp' = updateSupps (fSupp types) [] [t]
-    unq'  = updateUnqs (fUnq types) [] [t]
-    dom'  = updateDoms (fDom types) [] [t]
-    isxor = False
-    isgmul= False
-    xor' = updateXor (fXor types) [t] [] True [t]
-    args' = updateArgsUop (fArgs types)  [] [t]
-    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
-    pmap' = updatePmaps isxor isgmul types' [] [] [t]
-    types'' = types' {fPmap = pmap'}
-  in inferTypesOperation target f bid types'' codes
--- tADDframe - not a memory op
-inferTypesOperation target f bid types (o @ SingleOperation
+    types' = updateTypesS target types i [] d
+--     supp' = updateSupps (fSupp types) [] d
+--     unq'  = updateUnqs (fUnq types) [] d
+--     dom'  = updateDoms (fDom types) [] d
+--     isxor = False
+--     isgmul= False
+--     xor' = updateXor (fXor types) d [] True d
+--     args' = updateArgsUop (fArgs types)  [] d
+--     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+--     pmap' = updatePmaps isxor isgmul types' [] [] d
+--     types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types' codes
+inferTypesOperation target f bid types (SingleOperation
   {
     oId  = _oid, 
     oOpr = Natural {oNatural = Linear {
-                      oIs = _, -- Instruction i
+                      oIs = i, -- Instruction i
+                      oUs = (Bound (MachineConstantPoolIndex {})) : _,
+                      oDs = [t @ Temporary {}] }}}:codes) =
+  let
+    types' = updateTypesS target types i [] [t]
+--     supp' = updateSupps (fSupp types) [] [t]
+--     unq'  = updateUnqs (fUnq types) [] [t]
+--     dom'  = updateDoms (fDom types) [] [t]
+--     isxor = False
+--     isgmul= False
+--     xor' = updateXor (fXor types) [t] [] True [t]
+--     args' = updateArgsUop (fArgs types)  [] [t]
+--     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args'}
+--     pmap' = updatePmaps isxor isgmul types' [] [] [t]
+--     types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types' codes
+-- tADDframe - not a memory op
+inferTypesOperation target f bid types (SingleOperation
+  {
+    oId  = _oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = i, -- Instruction i
                       oUs = u @ (Bound (MachineFrameIndex {mfiIndex = mf,
                                                            mfiFixed = isfixed})) : 
                             us @ (Bound(MachineImm {miValue = val})) : _,
                       oDs = d : _ }}}:codes) =
   let
-    supp' = updateSupps (fSupp types) [u,us] [d]
-    unq'  = updateUnqs (fUnq types) [u,us] [d]
-    dom'  = updateDoms (fDom types) [u,us] [d]
-    isxor = False
-    isgmul= False
-    xor' = updateXor (fXor types) [d] [] True [d]
-    args' = updateArgsUop (fArgs types)  [u,us] [d]
+    types' = updateTypesS target types i [u,us] [d]
+--     supp' = updateSupps (fSupp types) [u,us] [d]
+--     unq'  = updateUnqs (fUnq types) [u,us] [d]
+--     dom'  = updateDoms (fDom types) [u,us] [d]
+--     isxor = False
+--     isgmul= False
+--     xor' = updateXor (fXor types) [u,us] [] True [d]
+--     args' = updateArgsUop (fArgs types)  [u,us] [d]
     m2t' = updateM2t (fM2t types) (addPrefix isfixed ++ show mf ++ show val) [d]
-    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args', 
-                     fM2t  = m2t'}
-    pmap' = updatePmaps isxor isgmul types' [u,us] [] [d]
-    types'' = types' {fPmap = pmap'}
+    types''  = types' {fM2t  = m2t'}
+--     pmap' = updatePmaps isxor isgmul types' [u,us] [] [d]
+--     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
+-- Special case for TEQ 
+inferTypesOperation target f bid types (o @ SingleOperation
+  {oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = (u1:u2:_),
+                      oDs = [] }}}:codes) =
+  let d = "brtemp"
+      isxor = False
+      isgmul= False
+      ts1 = getTids [u1] []
+      ts2 = getTids [u2] []
+      xor' = updateXorD (fXor types) ts1 ts2 isxor [d]
+      args' = updateArgsD (fArgs types) KOOther ts1 ts2 [d]
+      supp' = updateBSuppsD isxor (fSupp types, xor', args') ts1 ts2 [d]
+      unq' = updateBUnqsD (fUnq types, fSupp types) ts1 ts2 [d]
+      -- if is xor
+      dom' = updateBDomsEmptyD (fDom types) [d]
+      types' = types { fSupp = supp', fUnq = unq', fDom = dom', 
+                       fXor = xor', fArgs = args'} 
+      pmap' = updatePmapID isxor isgmul types' ts1 ts2 d
+      typ  = Map.lookup "brtemp" pmap'
+  in if isMaybeSecret typ then
+        error ("Operation " ++ show o ++ " is secret")
+      else inferTypesOperation target f bid types codes
 -- Not handled operations
 inferTypesOperation _ _ _ _ (o @ SingleOperation
   {oOpr = Natural {oNatural = Linear {
@@ -680,48 +657,50 @@ inferTypesOperation target f bid types (SingleOperation
 -- copies
 inferTypesOperation target f bid types (SingleOperation
   { oId  = oid, 
-    oOpr = Copy { oCopyIs = _,
+    oOpr = Copy { oCopyIs = i,
                   oCopyS = sop,
                   oCopyUs = uops,
                   oCopyD = dop,
                   oCopyDs = defops }}:codes) =
   let 
-      supp' = updateSupps (fSupp types) (sop:uops) (dop:defops)
-      unq'  = updateUnqs (fUnq types) (sop:uops) (dop:defops)
-      dom'  = updateDoms (fDom types) (sop:uops) (dop:defops)
-      isxor = False
-      isgmul= False
-      xor' = updateXor (fXor types) (sop:uops) [] True (dop:defops)
-      args' = updateArgsUop (fArgs types)  (sop:uops) (dop:defops)
-      m2t' = updateMaybeM2t (fM2t types) (sop:uops) (dop:defops)
+
+      types' = updateTypesS target types i (sop:uops) (dop:defops)
+
+      types'' = updateMemTypes types' (sop:uops) (dop:defops)
+--       supp' = updateSupps (fSupp types) (sop:uops) (dop:defops)
+--       unq'  = updateUnqs (fUnq types) (sop:uops) (dop:defops)
+--       dom'  = updateDoms (fDom types) (sop:uops) (dop:defops)
+--       isxor = False
+--       isgmul= False
+--       xor' = updateXor (fXor types) (sop:uops) [] True (dop:defops)
+--       args' = updateArgsUop (fArgs types)  (sop:uops) (dop:defops)
+      m2t' = updateMaybeM2t (fM2t types'') (sop:uops) (dop:defops)
       -- take only destinations - dests and sources are the same..
-      c2o' = updateC2o (fC2o types) (dop:defops) oid (sop:uops) 
-      types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', fArgs = args', 
-                       fC2o = c2o', fM2t = m2t'}
-      pmap' = updatePmaps isxor isgmul types' (sop:uops) [] (dop:defops)
-      types'' = types' {fPmap = pmap'}
-      -- pmap' = updatePmaps isxor isgmul (pmap, init, supp', unq', dom', xor', m2o, c2o', p2p, p2t, args', bbs, flag) (sop:uops) [] (dop:defops)
-  in inferTypesOperation target f bid types'' codes
+      c2o' = updateC2o (fC2o types'') (dop:defops) oid (sop:uops) 
+      types'''  = types'' {fC2o = c2o', fM2t = m2t'}
+--       pmap' = updatePmaps isxor isgmul types' (sop:uops) [] (dop:defops)
+--       types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types''' codes
 -- virtual copies
 inferTypesOperation target f bid types (SingleOperation
   { oId  = oid, 
     oOpr = Virtual (VirtualCopy { oVirtualCopyS = s,
                                   oVirtualCopyD = d })}:codes) =
   let
-      supp' = updateSupps (fSupp types) [s] [d]
-      unq'  = updateUnqs (fUnq types) [s] [d]
-      dom'  = updateDoms (fDom types) [s] [d]
-      xor'  = updateXor (fXor types) [s] [] True [d]
-      args' = updateArgsUop (fArgs types)  [s] [d]
-      m2t'  = updateMaybeM2t (fM2t types) [s] [d]
+      types' = updateTypesS target types [] [s] [d]
+      types'' = updateMemTypes types' [s] [d]
+--       supp' = updateSupps (fSupp types) [s] [d]
+--       unq'  = updateUnqs (fUnq types) [s] [d]
+--       dom'  = updateDoms (fDom types) [s] [d]
+--       xor'  = updateXor (fXor types) [s] [] True [d]
+--       args' = updateArgsUop (fArgs types)  [s] [d]
+      m2t'  = updateMaybeM2t (fM2t types'') [s] [d]
       -- take only destinations - dests and sources are the same..
-      c2o'  = updateC2o (fC2o types) [d] oid [s]
-      types'  = types {fSupp = supp', fUnq = unq', fDom = dom',
-                       fXor = xor', fArgs = args', fC2o = c2o',
-                       fM2t = m2t'}
-      pmap' = updatePmaps False False types' [s] [] [d]
-      types'' = types' {fPmap = pmap'}
-  in inferTypesOperation target f bid types'' codes
+      c2o'  = updateC2o (fC2o types'') [d] oid [s]
+      types'''  = types'' {fC2o = c2o', fM2t = m2t'}
+--       pmap' = updatePmaps False False types' [s] [] [d]
+--       types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types''' codes
 -- -- TODO(VirtualOperation): Phi/Delimiter/Kill/Define
 inferTypesOperation target f bid types (SingleOperation
   { oId = _,
@@ -751,19 +730,18 @@ inferTypesOperation target f bid types (SingleOperation
         isgmul str = callsite == str
     _ ->
       let 
-        supp' = updateSupps (fSupp types) oFus oFds -- assume no side effects in function
-        -- This will anyways be False
-        xor' = updateXor (fXor types) oFus [] False oFds
-        -- args' = updateArgs args KOOther ts1 ts2 oFds
-        -- supp' = updateBSupps isxor (supp, xor', args') ts1 ts2 [d]
-        unq' = updateLUnqs ((fUnq types), (fSupp types)) oFus oFds
-        -- if is xor
-        dom' = updateBDomsEmpty (fDom types) oFds
-        types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
-        pmap' = updateLPmaps types' oFus oFds
-        types'' = types' {fPmap = pmap'}
+        types' = updateTypesFunc types oFus oFds
+        types'' = updateMemTypes types' oFus oFds
+--         supp' = updateSupps (fSupp types) oFus oFds
+--         xor' = updateXor (fXor types) oFus [] False oFds
+--         -- args' = updateArgs args KOOther ts1 ts2 oFds
+--         unq' = updateLUnqs ((fUnq types), (fSupp types)) oFus oFds
+--         -- if is xor
+--         dom' = updateBDomsEmpty (fDom types) oFds
+--         types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
+--         pmap' = updateLPmaps types' oFus oFds
+--         types'' = types' {fPmap = pmap'}
       in inferTypesOperation target f bid types'' codes
-    -- error (show o ++ show callsite)
 -- Phi (TODO)
 inferTypesOperation target f bid types (SingleOperation
   { oId = _,
@@ -772,18 +750,16 @@ inferTypesOperation target f bid types (SingleOperation
                           }
                    )}:codes) =
   let
-    supp' = updateSupps (fSupp types) oFus [oFd] -- assume no side effects in function
-    -- This will anyways be False
-    xor' = updateXor (fXor types) oFus [] False [oFd]
-    -- args' = updateArgs args KOOther ts1 ts2 [d]
-    -- supp' = updateBSupps isxor (supp, xor', args') ts1 ts2 [d]
-    unq' = updateLUnqs (fUnq types, fSupp types) oFus [oFd]
-    -- if is xor
-    dom' = updateBDomsEmpty (fDom types) [oFd]
-    types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
-    -- pmap' = updateLPmaps (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args, bbs, flag) oFus [oFd]
-    pmap' = updateLPmaps types' oFus [oFd]
-    types'' = types' {fPmap = pmap'}
+-- assume no side effects in function
+    types' = updateTypesFunc types oFus [oFd]
+    types'' = updateMemTypes types' oFus [oFd]
+--     supp' = updateSupps (fSupp types) oFus [oFd] 
+--     xor' = updateXor (fXor types) oFus [] False [oFd]
+--     unq' = updateLUnqs (fUnq types, fSupp types) oFus [oFd]
+--     dom' = updateBDomsEmpty (fDom types) [oFd]
+--     types'  = types {fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'}
+--     pmap' = updateLPmaps types' oFus [oFd]
+--     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
 
 inferTypesOperation target f bid types (SingleOperation
@@ -793,7 +769,6 @@ inferTypesOperation target f bid types (SingleOperation
                                    })
                    )}:codes) | all isMOperand oins = 
   let
-    -- (_, _, _, _, _, _, _, _, p2p, p2t, _, _, _) = types
     ins = map getOpidTemps oins
     types' = foldl (updateNewTemps (fP2t types) (fP2p types)) types ins
   in inferTypesOperation target f bid types' codes
@@ -822,56 +797,80 @@ inferTypesOperation target f bid types (SingleOperation
   { oId = _,
     oOpr = Virtual (_)}:codes) = inferTypesOperation target f bid types codes
 
-foundTerm bid ((bid':_):[]) | bid == bid' = True
-foundTerm bid ((bid':_):rest) | bid == bid' = foundTerm bid rest
+foundTerm bid (((bid',_):_):[]) | bid == bid' = True
+foundTerm bid (((bid',_):_):rest) | bid == bid' = foundTerm bid rest
 foundTerm _ _ = False
 
 filterLast [] acc = acc
-filterLast ((_bid:rest):restall) acc = filterLast restall (rest:acc) 
+filterLast (((_bid):rest):restall) acc = filterLast restall (rest:acc) 
 
-findPaths bid types =
+-- Returns the paths that should be balanced
+findPaths bid types target =
   let bcfg = fBcfg types
       --bids = map (\x -> [x]) $ map BCFG.fromNode $ BCFG.immediateSuccessors bcfg bid
-      paths = findPathsI bcfg [[bid]] []
+      paths = findPathsI target bcfg [[(bid,0)]] []
       -- filter last
       paths'= filterLast paths []
       -- filter first
       paths''= filterLast (map reverse paths') []
   in paths''
     
-findPathsI _ [] acc = acc
-findPathsI bcfg ((bid:rest):allrest) acc =
+checkLast [] _ = True
+checkLast (((bid,_):_):restall) num | num == bid = checkLast restall num
+checkLast _ _ = False
+
+
+findPathsI _target _ [] acc | checkLast acc (fst (head (head acc))) = acc
+findPathsI _target _ [] acc = error ("Not the same final dest." ++ show acc)
+findPathsI target bcfg (((bid,v):rest):allrest) acc =
   let
     is = BCFG.immediateSuccessors bcfg bid
     bids = map BCFG.fromNode is
   in
     case bids of
-      [] -> findPathsI bcfg allrest ((bid:rest):acc)
-      [bid'] | bid' `elem` (bid:rest)-> error ("Cycle Detected! bid:" ++ show bid' ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
-      [bid1,bid2] | bid1 `elem` (bid:rest) || bid2 `elem` (bid:rest) -> error ("Cycle Detected! bid:" ++ show bid1 ++ " bid2:" ++ show bid2 ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
-      [bid'] | bid' <= bid ->
-        let extpath = bid':bid:rest
-        in findPathsI bcfg allrest (extpath:acc)
+      [] -> findPathsI target bcfg allrest (((bid,v):rest):acc)
+      [bid'] | bid' `elem` (bid:map fst rest)-> 
+        let path = (bid,v):rest
+        in findPathsI target bcfg allrest (path:acc)
+
+        -- error ("Cycle Detected! bid:" ++ show bid' ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
+      [bid1,bid2] | bid1 `elem` (bid:map fst rest) || bid2 `elem` (bid:map fst rest) -> 
+        let path = (bid,v):rest
+        in findPathsI target bcfg allrest (path:acc)
+        --error ("Cycle Detected! bid:" ++ show bid1 ++ " bid2:" ++ show bid2 ++ " bids:" ++ show (bid:rest) ++ " rest:" ++ show allrest) 
+      --[bid'] | bid' <= bid ->
+      --  let extpath = bid':bid:rest
+      --  in findPathsI bcfg allrest (extpath:acc)
       [bid'] ->
-        let extpath = bid':bid:rest
+        let extpath = (bid',0):(bid,v):rest
             paths = insertPath extpath allrest [] --allrest ++ [extpath]
         in if foundTerm bid' (paths ++ acc) then (paths ++ acc)
-           else findPathsI bcfg paths acc
+           else findPathsI target bcfg paths acc
       [bid1,bid2] ->
-        let newpath1 = bid1:bid:rest
-            newpath2 = bid2:bid:rest
+        let (ohif,ohelse)  = branchOverhead target
+            (ifb,elseb)    = getIfElse bid1 bid2 bid
+            bid'     = (bid,v)
+            bid1'    = (ifb, ohif)
+            bid2'    = (elseb, ohelse)
+            newpath1 = bid1':bid':rest
+            newpath2 = bid2':bid':rest
             paths = insertPath newpath2 (insertPath newpath1 allrest []) []
-        in findPathsI bcfg paths acc
+        in findPathsI target bcfg paths acc
       _ -> error "findPathsI: Unexpected number of immediateSuccessors"
 
+getIfElse b1 b2 b | b == b1 -1 = (b2, b1)
+getIfElse b1 b2 b | b == b2 -1 = (b1, b2)
+getIfElse _ _ _ = error "Unexpected branches."
 
 insertPath npath [] acc = reverse acc ++ [npath]
-insertPath (n:npath) ((t:tpath):paths) acc | n < t = reverse acc ++ ((n:npath):(t:tpath):paths)
+insertPath ((n,nv):npath) (((t,tv):tpath):paths) acc | n < t = reverse acc ++ (((n,nv):npath):((t,tv):tpath):paths)
 insertPath npath ([]:paths) acc = error ("insertPath: This should not happen." ++ show npath ++ show paths ++ show acc)
 insertPath npath (tpath:paths) acc = insertPath npath paths (tpath:acc)
 
---- Special rules only for store load ops
-inferTypesOperationSL target f bid types (o @SingleOperation
+-----------------------------------------------
+--- Special rules only for store/load ops------
+-----------------------------------------------
+inferTypesOperationSL target f bid types (SingleOperation
   { oId  = oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = i, -- Instruction i
@@ -910,20 +909,130 @@ inferTypesOperationSL target f bid types (SingleOperation
     isgmul = case fMulImpl types of
                Nothing -> any (isGMul target) i
                _ -> False
-    m2o' = updateM2o (fM2o types) (addPrefix isfixed ++ show mf) oid []
+    m2o' = updateM2o (fM2o types) (addPrefix isfixed ++ show mf) oid [t]
     args' = updateArgsUop (fArgs types)  [t] [mfi]
     types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fM2o = m2o',
                       fArgs = args'} 
     pmap' = updatePmaps isxor isgmul types' [t] [] [mfi]
     types'' = types { fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
-
--- store operation 2
-inferTypesOperationSL target f bid types (o @SingleOperation
+-- store operation with two operands
+inferTypesOperationSL target f bid types (SingleOperation
   { oId  = oid, 
     oOpr = Natural {oNatural = Linear {
                       oIs = i, -- Instruction i
-                      oUs = p1 : p2 : _ ,
+                      oUs = p1 : p2 @ Temporary {} : p3 @ (Bound (MachineImm{})):_ ,
+                      oDs = [] }}}:codes) = 
+  let
+    supp' = updateSupps (fSupp types) [p1] [p2,p3]
+    unq'  = updateUnqs (fUnq types) [p1] [p2,p3]
+    dom'  = updateDoms (fDom types) [p1] [p2,p3]
+    isxor = False
+    isgmul = case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
+    names = getTids [p2,p3] []
+    m2o' = foldl (\m2o name -> updateM2o m2o name oid [p1]) (fM2o types) names
+    args' = updateArgsUop (fArgs types)  [p1] [p2,p3]
+    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fM2o = m2o',
+                      fArgs = args'} 
+    pmap' = updatePmaps isxor isgmul types' [p1] [] [p2,p3]
+    types'' = types { fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+-- Same as above but for MOperand
+-- TODO: Check this out again: The idea is that if we write
+--       a public value to a address that contained secrets, it
+--       should not change the policy
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = _, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _i, -- Instruction i
+                      oUs = p1 : p2 @ MOperand {} : p3 @ (Bound (MachineImm{})):_ ,
+                      oDs = [] }}}:codes) | isSecret [p1] (fPmap types) = 
+  let
+    supp' = updateSupps (fSupp types) [p1] [p2,p3]
+    unq'  = updateUnqs (fUnq types) [p1] [p2,p3]
+    dom'  = updateDoms (fDom types) [p1] [p2,p3]
+    isxor = False
+    isgmul = False
+    types'  = types { fSupp = supp', fUnq = unq', fDom = dom'} 
+    pmap' = updatePmaps isxor isgmul types' [p1] [] [p2,p3]
+    types'' = types { fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = _, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _i, -- Instruction i
+                      oUs = _p1 : _p2 @ MOperand {} : _p3 @ (Bound (MachineImm{})):_ ,
+                      oDs = [] }}}:codes) = 
+  inferTypesOperation target f bid types codes
+
+-- Store with two operands
+-- TODO: Add rule if new value is secret -- this we don't want to miss
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = _oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = p1 : p2 @ MOperand {} : p3 @ MOperand {}:_ ,
+                      oDs = [] }}}:codes) | isSecret [p1] (fPmap types) = 
+  let
+    u2    = [p2, mkBound $ mkMachineImm 0]
+    u3    = [p3, mkBound $ mkMachineImm 0]
+    us    = u2 ++ u3
+    supp' = updateSupps (fSupp types) [p1] us
+    unq'  = updateUnqs (fUnq types) [p1] us
+    dom'  = updateDoms (fDom types) [p1] us
+    isxor = False
+    isgmul = False
+    args' = updateArgsUop (fArgs types)  [p1] us
+    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', 
+                      fArgs = args'} 
+    pmap' = updatePmaps isxor isgmul types' [p1] [] us
+    types'' = types { fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = _oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = _p1 : _p2 @ MOperand {} : _p3 @ MOperand {}:_ ,
+                      oDs = [] }}}:codes) = 
+    inferTypesOperation target f bid types codes
+-- Store as above
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = _oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = p1 : p2 @ Temporary {} : p3 @ Temporary {}:_ ,
+                      oDs = [] }}}:codes) | isSecret [p1] (fPmap types) = 
+  let
+    u2    = [p2, mkBound $ mkMachineImm 0]
+    u3    = [p3, mkBound $ mkMachineImm 0]
+    us    = u2 ++ u3
+    supp' = updateSupps (fSupp types) [p1] us
+    unq'  = updateUnqs (fUnq types) [p1] us
+    dom'  = updateDoms (fDom types) [p1] us
+    isxor = False
+    isgmul = False
+    args' = updateArgsUop (fArgs types)  [p1] us
+    types'  = types { fSupp = supp', fUnq = unq', fDom = dom', 
+                      fArgs = args'} 
+    pmap' = updatePmaps isxor isgmul types' [p1] [] us
+    types'' = types { fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = _oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = _p1 : _p2 @ Temporary {} : _p3 @ Temporary {}:_ ,
+                      oDs = [] }}}:codes) = 
+    inferTypesOperation target f bid types codes
+-- Store with one operand
+-- TODO: Check these out
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = p1 : p2 @ MOperand {} : _ ,
                       oDs = [] }}}:codes) = 
   let
     str = getM2t (fM2t types) p2
@@ -939,7 +1048,28 @@ inferTypesOperationSL target f bid types (o @SingleOperation
     pmap' = updatePmapsS isxor isgmul types' [p1] [] str
     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
--- load operation
+-- Store as above
+inferTypesOperationSL target f bid types (SingleOperation
+  { oId  = oid, 
+    oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = p1 : p2 @ Temporary {} : _ ,
+                      oDs = [] }}}:codes) = 
+  let
+    str = getM2t (fM2t types) p2
+    supp' = updateSuppsS (fSupp types) [p1] str
+    unq'  = updateUnqsS (fUnq types) [p1] str
+    dom'  = updateDomsS (fDom types) [p1] str
+    isxor = False
+    isgmul = False
+    m2o' = updateM2o (fM2o types) str oid [p1]
+    args' = updateArgsUopS (fArgs types)  [p1] str
+    types'  = types { fSupp = supp', fUnq = unq', fDom = dom',
+                      fM2o = m2o', fArgs = args'} 
+    pmap' = updatePmapsS isxor isgmul types' [p1] [] str
+    types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+-- load operations
 inferTypesOperationSL target f bid types (SingleOperation
   {
     oId  = oid, 
@@ -1000,19 +1130,140 @@ inferTypesOperationSL target f bid types (SingleOperation
     pmap'  = updatePmaps isxor isgmul types' [] [] [d]
     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
-
+-- address in register
+inferTypesOperationSL target f bid types (SingleOperation
+  {oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = u : ub @ (Bound (MachineImm {})) : _,
+                      oDs = [d] }}}:codes) = 
+  let
+    supp'  = updateSupps (fSupp types) [u,ub] [d]
+    unq'   = updateUnqs (fUnq types) [u,ub] [d]
+    dom'   = updateDoms (fDom types) [u,ub] [d]
+    isxor  = False
+    isgmul = False
+    xor'   = updateXor (fXor types) [u,ub] [] True [d]
+    args'  = updateArgsUop (fArgs types)  [u,ub] [d]
+    --m2t'   = updateM2t (fM2t types) (show u ++ show ub) [u]
+    types' = types {fSupp = supp', fUnq = unq', fDom = dom', 
+                     fXor = xor', fArgs = args'}
+    pmap'  = updatePmaps isxor isgmul types' [u,ub] [] [d]
+    types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
+-- address in two registers
+inferTypesOperationSL target f bid types (SingleOperation
+  {oOpr = Natural {oNatural = Linear {
+                      oIs = _, -- Instruction i
+                      oUs = u1 : u2 : _,
+                      oDs = [d] }}}:codes) = 
+  let
+    u1'    = [u1, mkBound $ mkMachineImm 0]
+    u2'    = [u2, mkBound $ mkMachineImm 0]
+    us     = u1' ++ u2'
+    supp'  = updateSupps (fSupp types) us [d]
+    unq'   = updateUnqs (fUnq types) us [d]
+    dom'   = updateDoms (fDom types) us [d]
+    isxor  = False
+    isgmul = False
+    xor'   = updateXor (fXor types) us [] True [d]
+    args'  = updateArgsUop (fArgs types) us [d]
+    --m2t'   = updateM2t (fM2t types) (show u ++ show ub) [u]
+    types' = types {fSupp = supp', fUnq = unq', fDom = dom', 
+                     fXor = xor', fArgs = args'}
+    pmap'  = updatePmaps isxor isgmul types' us [] [d]
+    types'' = types' {fPmap = pmap'}
+  in inferTypesOperation target f bid types'' codes
 inferTypesOperationSL _ _ _ _ (o:_) = error ("Store/Load operation rule not found: " ++ show o) 
 
 
 
+updateTypesS target types i us ds =
+    let supp' = updateSupps (fSupp types) us ds
+        unq'  = updateUnqs (fUnq types) us ds
+        dom'  = updateDoms (fDom types) us ds
+        isxor = any (isXor target) i
+        isgmul = case fMulImpl types of
+                   Nothing -> any (isGMul target) i
+                   _ -> False
+        xor'  = updateXor (fXor types) us [] True ds
+        args' = updateArgsUop (fArgs types) us ds
+        types'= types { fSupp = supp', fUnq = unq', fDom = dom',
+                        fXor = xor', fArgs = args'} 
+        pmap' = updatePmaps isxor isgmul types' us [] ds
+        types'' = types' {fPmap = pmap'}
+    in types''
 
+updateTypes target types i u1 u2 ds =
+    let isxor = any (isXor target) i
+        isgmul= case fMulImpl types of
+               Nothing -> any (isGMul target) i
+               _ -> False
+        xor' = updateXor (fXor types) u1 u2 isxor ds
+        args' = updateArgs (fArgs types) (knownOp target i types) u1 u2 ds
+        supp' = updateBSupps isxor (fSupp types, xor', args') u1 u2 ds
+        unq' = updateBUnqs (fUnq types, fSupp types) u1 u2 ds
+        -- if is xor
+        dom' = if isxor
+               then updateBDoms (fDom types, unq') u1 u2 ds
+               else updateBDomsEmpty (fDom types) ds
+        types'  = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor', 
+                          fArgs = args'} 
+        pmap'   = updatePmaps isxor isgmul types' u1 u2 ds
+        types'' = types' {fPmap = pmap'} 
+    in types''
+
+updateTypesFunc types us ds =
+    let supp' = updateSupps (fSupp types) us ds
+        xor' = updateXor (fXor types) us [] False ds
+        unq' = updateLUnqs (fUnq types, fSupp types) us ds
+        dom' = updateBDomsEmpty (fDom types) ds
+        types'  = types {fSupp = supp', fUnq = unq', 
+                         fDom = dom', fXor = xor'}
+        pmap' = updateLPmaps types' us ds
+        types'' = types' {fPmap = pmap'}
+    in types''
+
+
+updateMemTypes types us ds =
+    let tss  = getTids us []
+        tds  = getTids ds []
+        xor  = propagateMemStrucs (fXor types) tds tss
+        supp = propagateMemStrucs (fSupp types) tds tss
+        unq  = propagateMemStrucs (fUnq types) tds tss
+        dom  = propagateMemStrucs (fDom types) tds tss
+        pmap = propagateMemTypes (fPmap types) tds tss
+    in types {fSupp = supp, fUnq = unq, fDom = dom, 
+              fXor = xor, fPmap = pmap}
                                      
+
+propagateMemStrucs stc _ [] = stc
+propagateMemStrucs stc tds (t:ts) =
+    let mem t = "[" ++ t ++ "]"
+        mt = mem t
+    in case Map.lookup mt stc of
+        Nothing  -> propagateMemStrucs stc tds ts
+        Just v -> let f pm dtid = Map.insert (mem dtid) v pm    
+                  in foldl f stc tds
+
+
+propagateMemTypes pmap _ [] = pmap
+propagateMemTypes pmap tds (t:ts) =
+    let mem t = "[" ++ t ++ "]"
+        mt = mem t
+    in case Map.lookup mt pmap of
+        Nothing  -> propagateMemTypes pmap tds ts
+        Just typ @ Secret {} -> 
+                let f pm dtid = Map.insert (mem dtid) typ pm    
+                in foldl f pmap tds
+        _ -> propagateMemTypes pmap tds ts
+
+
 updateNewTemps :: Show r => Map Integer [Operand r] ->
                   Map Integer [Integer] -> StateTuple i r ->
                   (Integer, [Operand r]) -> StateTuple i r
-updateNewTemps p2t p2p types (oid, tmps) =
+updateNewTemps p2t p2p types (pid, tmps) =
   let 
-    adj = Map.lookup oid p2p
+    adj = Map.lookup pid p2p
     -- in case of a phi
     f oldtmps isAnyNothing tmps =
       let
@@ -1026,7 +1277,8 @@ updateNewTemps p2t p2p types (oid, tmps) =
         pmap'  = updateLPmaps types' oldtmps tmps
         flag' = (fFlag types) {hasPhis = isAnyNothing}
         types'' = types' {fPmap = pmap', fFlag = flag'}
-      in types''
+        types''' = updateMemTypes types'' oldtmps tmps
+      in types'''
     f2 oldtmps tmps = 
       let 
         supp' = updateSupps (fSupp types) oldtmps tmps
@@ -1041,7 +1293,8 @@ updateNewTemps p2t p2p types (oid, tmps) =
         pmap' = updatePmaps False False types' oldtmps [] tmps
         -- pmap' = updatePmaps False False (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args', bbs, flag) oldtmps [] tmps
         types'' = types' {fPmap = pmap'}
-      in types''
+        types''' = updateMemTypes types'' oldtmps tmps
+      in types'''
   in case adj of
        Just [a] -> 
          case Map.lookup a p2t of
@@ -1067,11 +1320,12 @@ getM2t m2t p =
   let tids = getTids [p] []
   in getM2tI m2t tids
 
-getM2tI _ [] = error ("getM2t: Cannot find memory address")
+getM2tI m2t [] = error ("getM2t: Cannot find memory address: " ++ show m2t)
 getM2tI m2t (tid:tids) = 
     case Map.lookup tid m2t of
         Just str -> str
         Nothing -> getM2tI m2t tids
+
 
 updateMaybeM2t m2t sts dts = 
   let dtids = getTids dts []
@@ -1649,14 +1903,6 @@ updatePmapID isxor isgmul types ts1 ts2 dt =
     (_, _, _, _, _, _, _, _, _, _, _) -> Map.insert dt (Secret dt) pmap
 
 
--- updateNewPmap types pmap' =
---   let (_, init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args) = types
---   in (pmap', init, supp, unq, dom, xor, m2o, c2o, p2p, p2t, args)
--- to complete
-
--- fromJust (Just x) = x
--- fromJust Nothing = error "SecTypeInf: Unexpected Nothing" 
-
 mergeTypes [] = Nothing
 mergeTypes (Nothing:rest) = mergeTypes rest
 mergeTypes ((Just h):rest) = Just (mergeTypes1 rest h) 
@@ -1704,6 +1950,14 @@ isEmpty t mp =
     Nothing             -> error "SecTypeInf: isEmpty - tid should be in dom"
 
 getTids [] tids = tids
+-- Check that this does not affect any other instruction that mems
+getTids ((Temporary {tId = tid}):
+          Bound (MachineImm {miValue = _}):ts) tids = 
+            getTids ts (("[t" ++ show tid ++ "]"):tids)
+getTids ((MOperand {altTemps = temps}):
+          Bound (MachineImm {miValue = val}):ts) tids = 
+            let newids = getTidsBound temps val []
+            in getTids ts (newids ++ tids)
 getTids ((Temporary {tId = tid}):ts) tids = getTids ts (("t" ++ show tid):tids)
 getTids (NullTemporary:ts) tids = getTids ts tids
 getTids ((MOperand {altTemps = temps}):ts) tids = getTids (temps ++ ts) tids
@@ -1716,6 +1970,12 @@ getTids (Bound (MachineFrameIndex {mfiIndex = mi,
          getTids ts ((addPrefix isfixed ++ show mi):tids)
 getTids (_:ts) tids = getTids ts tids
 
+getTidsBound :: [Operand r] -> Integer -> [String] -> [String]
+getTidsBound [] _ acc = reverse acc 
+getTidsBound (Temporary {tId = tid}: ts) val acc = 
+        let str = "[t" ++ show tid ++ "]"
+        in getTidsBound ts val (str:acc)
+getTidsBound _ _ _ = error ("getTidsBound: should not happen")
 
 splitOps_i [] acc = acc
 splitOps_i (t@(Temporary {}):ts) (tbv, tbb) = splitOps_i ts (t:tbv, tbb)
@@ -1765,3 +2025,11 @@ getTwoArgs ops target =
 
 --fJust2 (Just v) = v
 --fJust2 Nothing = error "fJust2: SecurityTypeInference.hs: This should not be Nothing."
+
+
+isSecret p pmap =
+    let tids = getTids p []
+        isSec t = case Map.lookup t pmap of
+           Just (Secret _) -> True
+           _ -> False
+    in any isSec tids

@@ -364,7 +364,7 @@ public:
   vector<int> HR;
 
   // [SEC] pairs of basic blocks that should have the same cycles
-  vector<vector<vector<int>> > bbs;
+  vector<vector<vector<vector<int> > > > bbs;
 
 
   Parameters(Json::Value root);
@@ -737,6 +737,12 @@ protected:
   vector<vector<vector<T> > > get_3d_vector(Json::Value root) {
     return get_vector<vector<vector<T> > >(root);
   }
+
+  template<class T>
+  vector<vector<vector<vector<T>> > > get_4d_vector(Json::Value root) {
+    return get_vector<vector<vector<vector<T> > > >(root);
+  }
+
 
   template<class T>
   void get_element(Json::Value root, vector<T> & vi) {

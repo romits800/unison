@@ -950,6 +950,11 @@ int main(int argc, char* argv[]) {
 	    Gecode::SpaceStatus lss = base_local->status();
 	    assert(lss != SS_FAILED);
 	    bool single_block = base_local->input->B.size() == 1;
+
+            
+            // std::cerr << b << std::endl;
+            // std::cerr << base_local->v_r << std::endl;
+            // std::cerr << base_local->v_y << std::endl;
 	    bool solbool = solved(base_local, local_solutions[b]);
 
 	    solbool = solbool && !single_block;

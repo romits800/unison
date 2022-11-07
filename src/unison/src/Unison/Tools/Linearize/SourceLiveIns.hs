@@ -42,7 +42,7 @@ srcLiveIns icfg (i, codeSame) b @ Block {bLab = l, bCode = code} =
       sameIds     = M.fromList $ map (mapTuple tId) same
       renamedCode = map (mapToModelOperand (applyTempIdMap sameIds)) sCode
   in (i + fromIntegral (length same),
-      codeSame ++ [(b {bCode = renamedCode}, same)])
+        codeSame ++ [(b {bCode = renamedCode}, same)])
 
 congruenceToRematTuple rts (t, t') =
   case M.lookup t rts of

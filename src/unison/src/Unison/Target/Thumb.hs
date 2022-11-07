@@ -85,7 +85,8 @@ target =
       API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
-      API.tBranchInstruction= const branchInstruction
+      API.tBranchInstruction= const branchInstruction,
+      API.tBranchOverhead   = const branchOverhead
     }
 
 instance Read ThumbInstruction where
@@ -242,6 +243,10 @@ fromCopy Copy {oCopyIs = [TargetInstruction i], oCopyS = s, oCopyD = d}
     Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
             oUs = [s] ++ defaultUniPred,
             oDs = [d]}
+  | i `elem` [TMOVr] =
+    Linear {oIs = [TargetInstruction i],
+            oUs = [s] ++ defaultUniPred,
+            oDs = [d]}
   | i `elem` [STORE, STORE_T, STORE_D] =
     Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
             oUs  = [mkOprArmSP, mkBoundMachineFrameObject i d, s] ++
@@ -262,8 +267,8 @@ fromCopy Copy {oCopyIs = [TargetInstruction i], oCopyS = s, oCopyD = d}
     Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
             oUs = [mkOprArmSP] ++ defaultUniPred ++ mkPushRegs i,
             oDs = [mkOprArmSP]}
-  | i `elem` [TPOP2_r4_7, TPOP2_r4_7_RET, TPOP2_r4_11, TPOP2_r4_11_RET] =
-    let w = i `elem` [TPOP2_r4_11, TPOP2_r4_11_RET]
+  | i `elem` [TPOP2_r4_7_RET, TPOP2_r4_11_RET,TPOP2_r4_7, TPOP2_r4_11] =
+    let w = i `elem` [TPOP2_r4_11_RET, TPOP2_r4_11]
     in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
                oUs = [mkOprArmSP | w] ++ defaultUniPred ++ mkPushRegs i,
                oDs = [mkOprArmSP | w]}
@@ -281,6 +286,9 @@ mkOprArmSP = Register $ mkTargetRegister SP
 mkBoundMachineFrameObject i (Register r) =
     let size = stackSize i
     in mkBound (mkMachineFrameObject (infRegPlace r) (Just size) size False)
+mkBoundMachineFrameObject i p = error (show i ++ show p)
+
+
 
 stackSize i
   | i `elem` [STORE, STORE_T, LOAD, LOAD_T] = 1
@@ -710,9 +718,13 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
 expandPseudo _ mi = [[mi]]
 
 pushRegs i
-  | i `elem` [TPUSH2_r4_7, TPOP2_r4_7, TPOP2_r4_7_RET] =
+  | i `elem` [TPOP2_r4_7_RET] =
+      [R4, R5, R6, R7, PC]
+  | i `elem` [TPUSH2_r4_7, TPOP2_r4_7] =
       [R4, R5, R6, R7]
-  | i `elem` [TPUSH2_r4_11, TPOP2_r4_11, TPOP2_r4_11_RET] =
+  | i `elem` [TPOP2_r4_11_RET] =
+      pushRegs TPUSH2_r4_7 ++ [R8, R9, R10, R11, PC]
+  | i `elem` [TPUSH2_r4_11, TPOP2_r4_11] =
       pushRegs TPUSH2_r4_7 ++ [R8, R9, R10, R11]
   | i `elem` [VSTMDDB_UPD_d8_15, VLDMDIA_UPD_d8_15] =
       [D8, D9, D10, D11, D12, D13, D14, D15]
@@ -992,7 +1004,7 @@ isLoad (TargetInstruction i) | i `elem` [TLDRspi, TLDRspi_fi, TLDRBi,
                                          TLDRSB, TLDRSBz, 
                                          TLDRSH, TLDRSHz,
                                          TLDRi,
-                                         TLDRpci, TLDRpci_cpi,
+                                         TLDRpci, 
                                          TLDRpci_pic,
                                          TLDRr, TLDRrz] = True
 isLoad _ = False
@@ -1076,6 +1088,7 @@ branchInstruction bid oid =
       ops = BlockRef { blockRefId = bid }: defaultUniPred
   in mkBranch oid ins ops
 
+branchOverhead = (2,0)
 -- | Custom processor constraints
 
 constraints f =

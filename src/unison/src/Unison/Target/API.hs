@@ -71,6 +71,7 @@ module Unison.Target.API (
   hardwareRegisters,
   addSecurityCopy,
   branchInstruction,
+  branchOverhead
   ) where
 
 import Data.List
@@ -241,6 +242,7 @@ funcArgs (ti, to) = tFuncArgs ti to
 hardwareRegisters (ti, to) = tHardwareRegs ti to
 addSecurityCopy (ti, to) = tAddSecurityCopy ti to
 branchInstruction (ti, to) = tBranchInstruction ti to
+branchOverhead (ti, to) = tBranchOverhead ti to
 
 -- | Container with information about a 'Function' along with the
 -- function itself.
@@ -436,7 +438,9 @@ data TargetDescription i r rc s = TargetDescription {
       tAddSecurityCopy  :: TargetOptions -> Function i r -> Integer ->
                            Function i r,
       -- | Expand with copies of random input values
-      tBranchInstruction :: TargetOptions -> BlockId -> OperationId -> BlockOperation i r
+      tBranchInstruction:: TargetOptions -> BlockId -> OperationId -> BlockOperation i r,
+      -- | Possible overhead when branch is taken or not taken
+      tBranchOverhead   :: TargetOptions -> (Integer, Integer)
  }
 
 -- | Any 'TargetDescription'. Used to support multiple targets without

@@ -81,7 +81,8 @@ target =
       API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
-      API.tBranchInstruction= const branchInstruction
+      API.tBranchInstruction= const branchInstruction,
+      API.tBranchOverhead   = const branchOverhead
     }
 
 instance Read MipsInstruction where
@@ -679,6 +680,8 @@ branchInstruction bid oid =
   let ins = [TargetInstruction { oTargetInstr = B }, TargetInstruction { oTargetInstr = B_NOP}] 
       ops = [BlockRef { blockRefId = bid } ]
   in mkBranch oid ins ops
+
+branchOverhead = (0,0)
 
 -- | Custom processor constraints
 

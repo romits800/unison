@@ -86,7 +86,8 @@ target =
       API.tFuncArgs         = const funcArgs,
       API.tHardwareRegs     = const hardwareRegisters,
       API.tAddSecurityCopy  = const addSecurityCopy,
-      API.tBranchInstruction= const branchInstruction
+      API.tBranchInstruction= const branchInstruction,
+      API.tBranchOverhead   = const branchOverhead
     }
 
 -- | Gives the type of natural operation according to the instruction
@@ -755,6 +756,8 @@ branchInstruction bid oid =
   let ins = [TargetInstruction { oTargetInstr = J2_jump }] 
       ops = [BlockRef { blockRefId = bid } ]
   in mkBranch oid ins ops
+
+branchOverhead = (0,0)
 
 -- | Custom processor constraints
 

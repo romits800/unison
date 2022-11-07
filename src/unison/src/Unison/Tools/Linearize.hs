@@ -32,6 +32,8 @@ import Unison.Tools.Linearize.RemovePhis
 import Unison.Tools.Linearize.NormalizeCongruences
 import Unison.Tools.Linearize.AddReflexiveCongruences
 
+--import Unison.Tools.Linearize.KeepDeadInstrs
+
 run (uniFile, debug, intermediate, lint, lintPragma, lssaUniFile) uni target =
     let f = parse target uni
         (lssaF, partialLssaFs) =
@@ -49,6 +51,7 @@ run (uniFile, debug, intermediate, lint, lintPragma, lssaUniFile) uni target =
 
 linearizerTransformations lintPragma =
     [(propagatePhiCongruences, "propagatePhiCongruences", True),
+     --(keepDeadInstrs, "keepDeadInstrs", True),
      (removePhis, "removePhis", True),
      (sinkLiveOuts, "sinkLiveOuts", True),
      (sourceLiveIns, "sourceLiveIns", True),

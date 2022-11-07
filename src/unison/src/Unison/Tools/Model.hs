@@ -51,6 +51,8 @@ import qualified Unison.Target.API as API
 
 import qualified Unison.ParseSecurityPolicies as PSP
 
+import Unison.Transformations.SecurityTypeInference
+
 run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
      strictlyBetter, unsatisfiable, noCC, mirVersion, jsonFile, policy,
      gfMulImpl)
@@ -59,28 +61,29 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
      secPolicy <- maybeStrictReadFile policy
      let f    = parse target extUni
          -- add random copies
-         base = maybeNothing applyBaseFile baseMir
-         aux  = auxiliarDataStructures target tightPressureBound base f
-         ps   = modeler (scaleFreq, noCC) aux target f
-         ps'  = optimization
-                (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
-                aux target f ps
-         ps'' = presolver oldModel aux target f ps'
-         ps''' = securityModeler aux target f secPolicy gfMulImpl ps''
+         base     = maybeNothing applyBaseFile baseMir
+         aux      = auxiliarDataStructures target tightPressureBound base f
+         policies =  case secPolicy of
+                        (Just pfile) -> PSP.parse pfile
+                        Nothing -> []
+         types    = inferSecurityTypes target f policies gfMulImpl
+         ps       = modeler (scaleFreq, noCC) aux types target f
+         ps'      = optimization
+                    (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
+                    aux target f ps
+         ps''     = presolver oldModel aux target f ps'
+         ps'''    = securityModeler aux target f types ps''
      emitOutput jsonFile ((BSL.unpack (encodePretty ps''')))
 
 
-modeler (scaleFreq, noCC) aux target f =
+modeler (scaleFreq, noCC) aux types target f =
   toJSON (M.fromList (is ++ ra))
-    where is = IS.parameters scaleFreq aux f target
+    where is = IS.parameters scaleFreq aux types f target
           ra = is `seq` RA.parameters noCC aux f target
 
-securityModeler aux target f policyFile gfMulImpl ps = 
+securityModeler aux target f types ps = 
   let
-      policies =  case policyFile of
-        (Just pfile) -> PSP.parse pfile
-        Nothing -> []
-      sec_pars = SM.parameters aux target f policies gfMulImpl
+      sec_pars = SM.parameters aux target f types
       ops = toJSON (M.fromList sec_pars)
   in unionMaps ps ops
   

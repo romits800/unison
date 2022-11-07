@@ -28,7 +28,9 @@ import Unison.Analysis.MakespanBounds
 
 import Unison.Tools.Model.Definitions
 
-parameters scaleFreq (_, _, deps, _, ra, _) f @ Function {fCode = code} target =
+import Unison.Transformations.SecurityTypeInference
+
+parameters scaleFreq (_, _, deps, _, ra, _) types f @ Function {fCode = code} target =
   let oif           = operandInfo target
       cf            = constraints target
       rm            = resourceManager target
@@ -57,7 +59,9 @@ parameters scaleFreq (_, _, deps, _, ra, _) f @ Function {fCode = code} target =
       instructions  = map (oIInstructions im) fCode
       activators    = map (activatorIInstructions im) fCode
       maxc          = map (computeMaxC (rm, oif)) (zip code deps)
-      maxc'         = map (updateMaxC (sum maxc)) (zip code maxc)
+      bbs           = map snd $ M.toList $ fBbs types
+      bbs'          = map (map (map fst)) bbs
+      maxc'         = updateMaxC bbs' maxc
       itype         = map ((M.!) typeNumbers . oType) fCode
       insname       = map (show . ioInstruction) i
       preschedule   = map (\o -> (oId o, (aPrescheduled (oAs o)))) $
