@@ -294,7 +294,7 @@ array[int] of int: mpairs_secrets;
 array[int,int] of int: mpairs_rands;
 
 int: BBSSIZE;
-array[int,int] of int: bbs;
+array[int,int,int,int] of int: bbs;
 %% problem variables
 
 var 0..MAXF: obj;

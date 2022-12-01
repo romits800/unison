@@ -39,7 +39,7 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} types =
     m2o'  = fM2o types
     c2o'  = fC2o types
     bbs   = fBbs types
-    -- nt @ (pmap',inmap,_,_,_,_,m2o',c2o', _, _,_, bbs, _) = inferSecurityTypes target f policies
+    o2t   = fO2t types
     (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
     ran'            = filter (\x -> head x == 't') ran
     pub'            = filter (\x -> head x == 't') pub
@@ -51,8 +51,10 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} types =
     pairs           = findPairs (ran' ++ pub') types []
     secdom          = findRandSec sec' ran' types []
     p2o             = Map.union c2o' m2o'   --- Not the same key
-    mpairs          = findPairsMC (ran'' ++ pub'') types p2o []
-    secdommem       = findRandSecMC sec'' ran'' types p2o inmap [] 
+    -- mpairs          = findPairsMC (ran'' ++ pub'') types p2o []
+    -- secdommem       = findRandSecMC sec'' ran'' types p2o inmap [] 
+    ck               = checkO2t (Map.toList o2t)
+    (mspairs,mmpairs)= ck `seq` findMemPairs types o2t
     hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
     hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
   in
@@ -63,8 +65,8 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} types =
       ("pairs",     toJSON $ map toInt pairs), -- pairs of random vars that should not reside in the same register
       -- todo(Romy): is it enough with random x random or should I check public x random
       ("spairs",    toJSON $ map toInt2 secdom), -- secret vars that should be preceeded by a random variable in the same register.
-      ("mmpairs",    toJSON  mpairs), -- mem to memory leakage
-      ("mspairs",    toJSON secdommem), -- secret memory - operations
+      ("mmpairs",    toJSON  mmpairs), -- mem to memory leakage
+      ("mspairs",    toJSON  mspairs), -- secret memory - operations
       -- ("adj2",      toJSON $ Map.toList p2p), -- secret memory - operations
       -- ("adj25",     toJSON adjacent), -- secret memory - operations
       -- ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
@@ -333,3 +335,110 @@ findPairsMC (p:ps) types t2o res =
 -- lowerConstraintExpr (_, ra) (AllocatedExpr pid rc) =
 --   EAllocatedExpr pid (raIndexedRc ra rc)
 -- lowerConstraintExpr _ e @ AlignedExpr {} = e
+
+findMemPairs types o2t = 
+    let al = Map.toList o2t
+    in findMemPairsI types al al ([],[])
+
+isMaybeRandom (Just (Random _)) = True
+isMaybeRandom _ = False
+
+findMemPairsI _ [] al res = res -- error (show (fst res))
+findMemPairsI types ((oid,[]):_) _ _ = error ("Not expected zero temp operation: " ++ show oid)
+--- When the top is secret
+findMemPairsI types ((oid,t:_):rest) al (mpairs, mmpairs) | isMaybeSecret $ Map.lookup t (fPmap types) = 
+  let
+    rps = filter (\(_,t':_) -> isMaybeRandom (Map.lookup t' (fPmap types))) al
+    f types p res (oid2, p2:_) = --(oid2:res)
+      let
+        supp = fSupp types
+        unq  = fUnq types
+        dom  = fDom types
+        xor  = fXor types
+        
+        s1   = Map.findWithDefault Map.empty p supp
+        s2   = Map.findWithDefault Map.empty p2 supp
+        u1   = Map.findWithDefault Map.empty p unq
+        u2   = Map.findWithDefault Map.empty p2 unq
+        d1   = Map.findWithDefault Map.empty p dom
+        d2   = Map.findWithDefault Map.empty p2 dom
+        x1   = Map.findWithDefault False p xor
+        x2   = Map.findWithDefault False p2 xor
+        x12  = x1 && x2
+
+        s12  = Map.union s1 s2
+        is12 = Map.intersection s1 s2
+        u12  = Map.difference (Map.union u1 u2) is12
+        d12  = Map.intersection (Map.union d1 d2) u12
+        supp' = Map.insert "tmp" s12 supp
+        unq' = Map.insert "tmp" u12 unq
+        dom' = Map.insert "tmp" d12 dom
+        xor' = Map.insert "tmp" x12 xor
+
+        types' = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'} 
+
+        pmap' = updatePmapID True False types' [p] [p2] "tmp"
+        typ  = Map.lookup "tmp" pmap'
+--       in  if isMaybeRandom typ
+--           then (oid2:res)
+--           else res
+      in pmap' `seq` (oid2:res)
+      -- in (p,p2):res
+    np = []
+    np' = foldl (f types t) np rps
+    np'' = ([oid], np')
+    mpairs' = np'':mpairs
+  in findMemPairsI types rest al (mpairs', mmpairs)
+-- Case t is random or public
+findMemPairsI types ((oid,t:_):rest) al (mpairs, mmpairs) = 
+  let
+    rps = filter (\(_,t':_) -> not $ isMaybeSecret (Map.lookup t' (fPmap types))) rest
+    f types p res (oid2, p2:_) =
+      let
+        supp = fSupp types
+        unq  = fUnq types
+        dom  = fDom types
+        xor  = fXor types
+        
+        s1   = Map.findWithDefault Map.empty p supp
+        s2   = Map.findWithDefault Map.empty p2 supp
+        u1   = Map.findWithDefault Map.empty p unq
+        u2   = Map.findWithDefault Map.empty p2 unq
+        d1   = Map.findWithDefault Map.empty p dom
+        d2   = Map.findWithDefault Map.empty p2 dom
+        x1   = Map.findWithDefault False p xor
+        x2   = Map.findWithDefault False p2 xor
+        x12  = x1 && x2
+
+        -- supp'= updateBSupps (supp, xor) [p] [p2] ["tmp"]
+        -- unq' = updateBUnqs (unq, supp) [p] [p2] ["tmp"]
+        -- dom' = updateBDoms (dom, unq') [p] [p2] ["tmp"]
+
+        s12  = Map.union s1 s2
+        is12 = Map.intersection s1 s2
+        u12  = Map.difference (Map.union u1 u2) is12
+        d12  = Map.intersection (Map.union d1 d2) u12
+        supp' = Map.insert "tmp" s12 supp
+        unq' = Map.insert "tmp" u12 unq
+        dom' = Map.insert "tmp" d12 dom
+        xor' = Map.insert "tmp" x12 xor
+
+        -- get operations that correspond to p and p2
+        --ops1 = [oid] -- map fst $ Map.toList $ Map.findWithDefault Map.empty p t2o
+        --ops2 = [oid2] -- map fst $ Map.toList $ Map.findWithDefault Map.empty p2 t2o
+        
+        types' = types { fSupp = supp', fUnq = unq', fDom = dom', fXor = xor'} 
+
+        pmap' = updatePmapID True False types' [p] [p2] "tmp"
+        typ  = Map.lookup "tmp" pmap'
+        pairs = [(oid, oid2)] -- [ (i,j) | i <- ops1, j <- ops2]
+      in  if isMaybeSecret typ
+          then pairs ++ res
+          else res
+      -- in (p,p2):res
+    mmpairs' = foldl (f types t) mmpairs rps
+  in findMemPairsI types rest al (mpairs, mmpairs')
+
+checkO2t ((oid, []):_) = error ("CheckO2t failed: " ++ show oid)
+checkO2t [] = True
+checkO2t (_:rest) = checkO2t rest

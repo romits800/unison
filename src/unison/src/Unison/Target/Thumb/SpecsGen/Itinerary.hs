@@ -796,7 +796,7 @@ itinerary i
   | i `elem` [TPOP, TPOP2_r4_11, TPOP2_r4_7, TPOP_r4_7] = IIC_iPop
   | i `elem`
       [TPOP2_r4_11_RET, TPOP2_r4_7_RET, TPOP_RET, TPOP_RET_4,
-       TPOP_RET_4_5, TPOP_RET_4_6, TPOP_RET_4_7]
+       TPOP_RET_4_5, TPOP_RET_4_6, TPOP_RET_4_7, TPOP_r4_7_RET]
     = IIC_iPop_Br
   | i `elem`
       [T2STRBT, T2STRBi12, T2STRBi12_fi, T2STRBi8, T2STRHT, T2STRHi12,

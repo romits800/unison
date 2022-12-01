@@ -452,30 +452,32 @@ getEquivalentInstruction i = case i of
     o3: [p1{ -, t1}, p3{ -, t3}]  <- { -, tPUSH/POP2_r4_7, tPUSH/POP2_r4_11}  [p0{ -, t0}, p2{ -, t2}]
 -}
 
+{- Change htis function to just change the type to linear fof
+    the following transformations -}
 combinePushPops _ (
   SingleOperation {
      oOpr = Copy {oCopyIs = [General NullInstruction,
                              TargetInstruction i1],
                   oCopyS = p0, oCopyD = p1}}
   :
-  SingleOperation {
-     oOpr = Copy {oCopyIs = [General NullInstruction,
-                             TargetInstruction i2],
-                  oCopyS = p2, oCopyD = p3}}
-  :
-  rest) (_, oid, _) | all isTPush [i1, i2] || all isTPop [i1, i2] =
+--   SingleOperation {
+--      oOpr = Copy {oCopyIs = [General NullInstruction,
+--                              TargetInstruction i2],
+--                   oCopyS = p2, oCopyD = p3}}
+--   :
+  rest) (_, oid, _) | all isTPush [i1] || all isTPop [i1] =
   let is = [General NullInstruction] ++
            map TargetInstruction
-           (if all isTPush [i1, i2]
-            then [TPUSH2_r4_7, TPUSH2_r4_11]
-            else [TPOP2_r4_7,  TPOP2_r4_11])
-      o3 = mkLinear oid is [p0, p2] [p1, p3]
+           (if all isTPush [i1]
+            then [TPUSH_r4_7]
+            else [TPOP_r4_7])
+      o3 = mkLinear oid is [p0] [p1]
   in (rest, [o3])
 
 combinePushPops _ (o : code) _ = (code, [o])
 
-isTPush i = i `elem` [TPUSH_r4_7, TPUSH_r8_11]
-isTPop  i = i `elem` [TPOP_r4_7,  TPOP_r8_11]
+isTPush i = i `elem` [TPUSH_r4_7]
+isTPop  i = i `elem` [TPOP_r4_7]
 
 {-
  Transforms:
@@ -492,15 +494,13 @@ isTPop  i = i `elem` [TPOP_r4_7,  TPOP_r8_11]
 expandRets _ (
   op @ SingleOperation {
      oOpr = Natural Linear {oIs = [General NullInstruction,
-                                   TargetInstruction TPOP2_r4_7,
-                                   TargetInstruction TPOP2_r4_11]}}
+                                   TargetInstruction TPOP_r4_7]}}
   :
   code) _ =
   case find isTRET code of
    Just or ->
      let opis  = [General NullInstruction,
-                  TargetInstruction TPOP2_r4_7_RET,
-                  TargetInstruction TPOP2_r4_11_RET]
+                  TargetInstruction TPOP_r4_7_RET]
          op'   = mapToInstructions (const opis) op
          or'   = makeOptional or
          code' = concatMap (\o -> if isTRET o then [op', or'] else [o]) code
@@ -709,17 +709,17 @@ reorderCalleeSavedSpills f @ Function {fCode = code}
 reoderCalleeSavedStores b = moveOperations isCalleeSavedPrologue after isIn b
 
 isCalleeSavedPrologue o =
-  any (\i -> isInstr i o) [VSTMDDB_UPD_d8_15, TPUSH2_r4_7, TFP]
+  any (\i -> isInstr i o) [VSTMDDB_UPD_d8_15, TPUSH_r4_7, TFP]
 
 moveFP b
   | any isTPushDel (bCode b) = moveOperations (isInstr TFP) after isTPushDel b
   | otherwise = b
 
-isTPushDel = isInstr TPUSH2_r4_7
+isTPushDel = isInstr TPUSH_r4_7
 
 reoderCalleeSavedLoads b =
   foldl (\b0 i -> moveOperations (isInstr i) before isTerm b0)
-  b [VLDMDIA_UPD_d8_15, TPOP2_r4_7, TPOP2_r4_7_RET]
+  b [TPOP_r4_7, TPOP_r4_7_RET]
 
 isInstr i o = (TargetInstruction i) `elem` oInstructions o
 

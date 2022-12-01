@@ -12,6 +12,7 @@ module Unison.Transformations.CopyBlocks (copyBlocks)
        where
 
 -- import Unison.ParseSecurityPolicies
+import Unison.Transformations.RenameBlocks
 import Unison.Transformations.SecurityTypeInference
 
 import qualified Data.Map as Map
@@ -31,7 +32,8 @@ copyBlocks policies gfMulImpl f @ Function {fCode = _} target =
   in case bbsToCopy' of 
     [] -> f
     _  -> let f' = foldl (copyOneBlock target) f bbsToCopy' 
-          in copyBlocks policies gfMulImpl f' target
+              f'' = renameBlocks f' target
+          in copyBlocks policies gfMulImpl f'' target
 
 remOh (v,lst) = (v, map (map fst) lst)
 
@@ -42,19 +44,19 @@ has2Elems _ = False
 -- functions for extending the pattern thing I am using
 -- Check if two sets are one subset of the other
 -- Thought: why not making them Haskell Sets and then check
-isSubset _ [] = True
-isSubset [] _ = True
-isSubset (a:resta) (b:restb) | a == b = isSubset resta restb
-isSubset (_a:_) (_b:_) = False
+-- isSubset _ [] = True
+-- isSubset [] _ = True
+-- isSubset (a:resta) (b:restb) | a == b = isSubset resta restb
+-- isSubset (_a:_) (_b:_) = False
 
 -- get the difference between the subsets
 -- remember to check both sides..
-getSubset bs [] = bs 
-getSubset [] bs = bs
-getSubset (a1:[]) (b1:b2:restb) | a1 == b1 = (b1:b2:restb)
-getSubset (b1:b2:restb) (a1:[]) | a1 == b1 = (b1:b2:restb)
-getSubset (a:resta) (b:restb) | a == b = getSubset resta restb
-getSubset (_a:_) (_b:_) = error "getSubset: this should not happen."
+-- getSubset bs [] = bs 
+-- getSubset [] bs = bs
+-- getSubset (a1:[]) (b1:b2:restb) | a1 == b1 = (b1:b2:restb)
+-- getSubset (b1:b2:restb) (a1:[]) | a1 == b1 = (b1:b2:restb)
+-- getSubset (a:resta) (b:restb) | a == b = getSubset resta restb
+-- getSubset (_a:_) (_b:_) = error "getSubset: this should not happen."
 
 
 
@@ -86,17 +88,21 @@ addCopiedBlock target bblock @ Block {bLab = obid, bCode = bcode} Block {bCode =
   let bid    = newBlockIndex code -- new index for block
       freq   = blockFreq bblock `div` 2  -- TODO(Romy): This need to be fixed
       (tid, oid, _pid) = newIndexes $ flatten code
+      -- Jumping label of the secret-dependent branch block (parent block)
       label  = getBranch bcode
-      -- replace the empty jump loop to jump to the new branch
+      -- replace the branch of the parent block to the new block
       bcode' = replaceBranch bcode bid []
       code'  = replaceBlock code (bblock {bCode = bcode'}) []
-      -- bout = blockOut bcode'
-      oin = mkIn oid []
-      ((_,oid'),os) = copyBlock target tcBcode [] (tid,oid+1)
+      -- Remove stores because they result into sideeffects
+      tcBcode' = filter (\bi -> not (any (isStore target) (oInstructions bi))) tcBcode
+      -- Copy the contents of the block to be copied
+      ((_,oid'),os) = copyBlock target tcBcode' [] (tid,oid+1)
+      oin  = mkIn oid []
       oout = mkOut (oid'+1) []
-      o    = mkBranchInstruction (oid'+2) label target
+      --o    = mkBranchInstruction (oid'+2) label target
       o2   = mkBranchInstruction (oid'+3) label target
-      nbl  = mkNewBlock freq bid $ [oin] ++ os ++ [o, oout]
+      --nbl  = mkNewBlock freq bid $ [oin] ++ os ++ [o,oout]
+      nbl  = mkNewBlock freq bid $ [oin] ++ os ++ [oout]
       code''  = insertBlock code' nbl (label-1) o2 []
       code''' = mapToOperationInBlocks (applyToPhiOps obid bid) code''
   in f {fCode = code'''}
@@ -136,6 +142,26 @@ copyBlock target (SingleOperation {oOpr = opr @ (Virtual (Kill {}))}:bcode) nbco
     in copyBlock target bcode (op':nbcode) (tid,oid+1)
 copyBlock target (SingleOperation {oOpr = Virtual (_)}:bcode) nbcode ids = 
     copyBlock target bcode nbcode ids
+-- copyBlock target (SingleOperation {oId = oldoid,
+--                                    oOpr= Natural {oNatural = Linear {
+--                                                                 oIs = ins,
+--                                                                 oUs = ops,
+--                                                                 oDs = dests
+--                                                                 }}}:bcode) nbcode (tid,oid) | any (isStore target) ins = 
+--     --- TODO: Convert to load
+--     let
+--         (tid',dests') = copyDests tid dests []
+--         -- Update future uses of the replaced dest 
+--         bcode' = foldl (\bc -> \(t1', t1) -> map (mapToModelOperand (replaceTemp t1 t1')) bc) bcode $ zip dests' dests
+--         bcode'' = map (replaceOp oldoid oid) bcode'
+--         nb = mkLinear oid ins ops dests'
+--         -- Find all uses for each of the dests'
+--         us = map (\t -> users t bcode'') dests'
+--         -- Get all replaced tmps that do not have any use
+--         ds = map fst $ filter (\(_t,u) -> null u) $ zip dests' us
+--         -- mk kill ops
+--         (oid',kills) = foldl (\(oid,ops) -> \d -> (oid+1, (mkKill oid [VirtualInstruction] [d]):ops)) (oid+1, []) ds
+--     in copyBlock target bcode'' (kills ++ [nb] ++ nbcode) (tid',oid')
 copyBlock target (SingleOperation {oId = oldoid,
                                    oOpr= Natural {oNatural = Linear {
                                                                 oIs = ins,

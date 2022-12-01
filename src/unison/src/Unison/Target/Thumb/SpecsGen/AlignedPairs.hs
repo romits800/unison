@@ -1241,7 +1241,7 @@ alignedPairs i ([_], [_])
        T2MOVi32imm, T2MOVi32imm_demat, T2MOVi32imm_remat,
        T2MOVi32imm_source, T2MOVi_demat, T2MOVi_remat, T2MVNi_demat,
        T2MVNi_remat, TLDRLIT_ga_abs, TMOVi8s_demat, TMOVi8s_remat,
-       TPOP_r4_7, TPOP_r8_11, TPUSH_r4_7, TPUSH_r8_11]
+       TPOP_r4_7, TPOP_r4_7_RET, TPOP_r8_11, TPUSH_r4_7, TPUSH_r8_11]
     = []
 alignedPairs i ([_], [_, _])
   | i `elem` [ABS, MOVsra_flag, MOVsrl_flag, T2ABS] = []

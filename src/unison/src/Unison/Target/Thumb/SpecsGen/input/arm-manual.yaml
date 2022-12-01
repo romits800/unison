@@ -6,6 +6,7 @@ instruction-set:
   - group: MANUAL
     instructions:
 
+
         - id:                 t2ADDri_fi
           type:               linear
           operands:
@@ -1068,6 +1069,11 @@ instruction-set:
           affected-by:
            - SP:              register
           itinerary:          IIC_iPop
+
+        - id:                 tPOP_r4_7_RET
+          parent:             tPOP_r4_7
+          itinerary:          IIC_iPop_Br
+
 
         - id:                 tPOP_r8_11
           type:               copy

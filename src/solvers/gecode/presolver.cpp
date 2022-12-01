@@ -562,7 +562,7 @@ string emit_dzn(const vector<vector<vector<vector<int> > > > xsss, int opt) {
     beg4 = 0;
 
   int r = 0;
-  s << "array2d(" << beg1 << ".." << dim1+beg1-1 << ", " << beg2 << ".." << dim2+beg2-1 << ", " << beg3 << ".." << dim3+beg3-1 << ", " << beg4 << ".." << dim4+beg4-1 << ", [";
+  s << "array4d(" << beg1 << ".." << dim1+beg1-1 << ", " << beg2 << ".." << dim2+beg2-1 << ", " << beg3 << ".." << dim3+beg3-1 << ", " << beg4 << ".." << dim4+beg4-1 << ", [";
   for (vector<vector<vector<int> > > xss : xsss) {
     for (vector<vector<int> > xs : xss) {
       for (vector<int> x : xs) {

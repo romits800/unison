@@ -3022,6 +3022,7 @@ data ThumbInstruction = ABS
                       | TPUSH2_r4_11
                       | VSTMDDB_UPD_d8_15
                       | TPOP_r4_7
+                      | TPOP_r4_7_RET
                       | TPOP_r8_11
                       | TPOP2_r4_7
                       | TPOP2_r4_11

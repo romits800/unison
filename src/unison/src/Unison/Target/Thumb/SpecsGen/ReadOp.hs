@@ -3021,6 +3021,7 @@ readOp "tPUSH2_r4_7" = TPUSH2_r4_7
 readOp "tPUSH2_r4_11" = TPUSH2_r4_11
 readOp "VSTMDDB_UPD_d8_15" = VSTMDDB_UPD_d8_15
 readOp "tPOP_r4_7" = TPOP_r4_7
+readOp "tPOP_r4_7_RET" = TPOP_r4_7_RET
 readOp "tPOP_r8_11" = TPOP_r8_11
 readOp "tPOP2_r4_7" = TPOP2_r4_7
 readOp "tPOP2_r4_11" = TPOP2_r4_11
