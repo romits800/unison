@@ -73,7 +73,7 @@ public:
 
   vector<int> cost;
 
-  int presolver_time;
+  //int presolver_time;
 
   int solver_time;
 

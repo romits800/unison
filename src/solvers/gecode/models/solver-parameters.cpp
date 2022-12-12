@@ -39,7 +39,7 @@ SolverParameters::SolverParameters(Json::Value root) :
   has_solution               (get_scalar<bool>(getRoot(root, "has_solution"))),
   proven                     (get_scalar<bool>(getRoot(root, "proven"))),
   cost                       (get_vector<int>(getRoot(root, "cost"))),
-  presolver_time             (get_scalar<int>(getRoot(root, "presolver_time"))),
+  //presolver_time             (get_scalar<int>(getRoot(root, "presolver_time"))),
   solver_time                (get_scalar<int>(getRoot(root, "solver_time")))
 
 {
