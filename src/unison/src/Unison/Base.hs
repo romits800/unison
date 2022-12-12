@@ -32,6 +32,7 @@ module Unison.Base
         Latency,
         IssueCycle,
         Frequency,
+        Alignment,
         -- * Program types
         Function (..),
         Block (..),
@@ -136,6 +137,9 @@ type Latency           = Integer
 type IssueCycle        = Integer
 -- | Execution frequency.
 type Frequency         = Integer
+-- | Block alignment.
+type Alignment         = Integer
+
 
 -- | Unison function. This data type and all the data types contained
 -- ('Block', 'BlockOperation', ...) are parameterized over 'i' and 'r',
@@ -462,7 +466,9 @@ data BlockAttributes = BlockAttributes {
   -- | Possibly the block's execution frequency
   aFreq   :: Maybe Frequency,
   -- | Whether the block has been split
-  aSplit  :: Bool
+  aSplit  :: Bool,
+  -- | Possibly the block's alignment
+  aAlign   :: Maybe Alignment
 } deriving (Eq)
 
 -- | Attributes of a Unison 'BlockOperation'.

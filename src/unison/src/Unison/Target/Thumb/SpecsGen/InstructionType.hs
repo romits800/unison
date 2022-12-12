@@ -33,8 +33,8 @@ instructionType i
        T2MOVi32imm_demat, T2MOVi32imm_remat, T2MOVi_demat, T2MOVi_remat,
        T2MVNi_demat, T2MVNi_remat, TMOVi8s_demat, TMOVi8s_remat,
        TPOP2_r4_11, TPOP2_r4_11_RET, TPOP2_r4_7, TPOP2_r4_7_RET,
-       TPOP_r4_7, TPOP_r8_11, TPUSH2_r4_11, TPUSH2_r4_7, TPUSH_r4_7,
-       TPUSH_r8_11]
+       TPOP_r4_7, TPOP_r4_7_RET, TPOP_r8_11, TPUSH2_r4_11, TPUSH2_r4_7,
+       TPUSH_r4_7, TPUSH_r8_11]
     = CopyInstructionType
   | i `elem`
       [ABS, ADCri, ADCrr, ADCrsi, ADCrsr, ADDSri, ADDSrr, ADDSrsi,

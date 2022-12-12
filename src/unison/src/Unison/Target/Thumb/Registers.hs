@@ -27,8 +27,9 @@ import Unison.Target.Thumb.SpecsGen.ThumbRegisterClassDecl
 -- | Register array
 
 registerArray  =
-            [RegisterClass GPR, RegisterClass CCR, InfiniteRegisterClass M32,
-            InfiniteRegisterClass RM32]
+            [RegisterClass GPR, RegisterClass CCR, 
+             InfiniteRegisterClass M32,
+             InfiniteRegisterClass RM32]
 
 -- | Register atoms of 1-width registers
 
@@ -36,21 +37,22 @@ registerAtoms ra | ra `elem` concatMap (registers . RegisterClass)
           [GPR, RGPR, GPRnopc, CCR, TcGPR, GPRsp, TGPR] = (ra, ra)
 registerAtoms R0_3   = (R0, R3)
 registerAtoms R4_7   = (R4, R7)
-registerAtoms R8_11   = (R8, R11)
+-- registerAtoms R8_11   = (R8, R11)
 registerAtoms r = error ("unmatched: registerAtoms (cortex-M0) " ++ show r)
 
 -- | Register classes
 regClasses =
     map RegisterClass
-    [GPR, RGPR, GPRnopc, TcGPR, GPRsp, CCR, TGPR, ALL, CS, CSL, CSH, CRS ] ++
+    [GPR, RGPR, GPRnopc, TcGPR, GPRsp, CCR, TGPR, ALL, CS, CSL, CRS ] ++
     map InfiniteRegisterClass [M32, M32t, M64, M128, M512, RM32, RM64]
 
 
 
 -- | Individual registers of each register class
 registers (RegisterClass GPR) =
-    [R0, R1, R2, R3, R4, R5, R6, R7, R8,
-     R9, R10, R11, R12, SP, LR, PC]
+    [R0, R1, R2, R3, R4, R5, R6, R7, SP, LR, PC]
+    --[R0, R1, R2, R3, R4, R5, R6, R7, R8,
+    -- R9, R10, R11, R12, SP, LR, PC]
 
 registers (RegisterClass TGPR) =
     [R0, R1, R2, R3, R4, R5, R6, R7]
@@ -61,18 +63,18 @@ registers (RegisterClass RGPR) =
 registers (RegisterClass GPRnopc) =
   registers (RegisterClass GPR) \\ [PC]
 
-registers (RegisterClass TcGPR) = [R0, R1, R2, R3, R12]
+registers (RegisterClass TcGPR) = [R0, R1, R2, R3]
 
 registers (RegisterClass GPRsp) = [SP]
 
 registers (RegisterClass ALL) =
   registers (RegisterClass GPR)
 
-registers (RegisterClass CS) = [R4_7, R8_11]
+registers (RegisterClass CS) = [R4_7]
 
 registers (RegisterClass CSL) = [R4_7]
 
-registers (RegisterClass CSH) = [R8_11]
+--registers (RegisterClass CSH) = [R8_11]
 
 registers (RegisterClass CRS) = [R0_3]
 
@@ -109,11 +111,11 @@ reserved = [SP, LR, PC]
 -- | Caller- and callee-saved registers
 
 -- | Registers that are not preserved across calls
-callerSaved = [R0_3, R12]
+callerSaved = [R0_3]
 
 
 -- | Registers that are preserved across calls
-calleeSaved = [R4_7, R8_11]
+calleeSaved = [R4_7]
 
 instance Read ThumbRegister where
   readsPrec _ s = [(readReg s, "")]
@@ -137,18 +139,19 @@ regStrings = M.fromList $
    (R6, "r6"),
    (R7, "r7"),
    (R8, "r8"),
-   (R9, "r9"),
-   (R10, "r10"),
-   (R11, "r11"),
-   (R12, "r12"),
+--   (R9, "r9"),
+--   (R10, "r10"),
+--   (R11, "r11"),
+--   (R12, "r12"),
    (SP, "sp"),
    (LR, "lr"),
    (PC, "pc")] ++
 --  regStringsWithIndex "s" SPR ++
 --  regStringsWithIndex "d" DPR ++
   [(R0_3, "r0_3"),
-   (R4_7, "r4_7"),
-   (R8_11, "r8_11")] ++
+   (R4_7, "r4_7")
+ --  (R8_11, "r8_11")
+    ] ++
  -- [(D0_7, "d0_7"),
  --  (D8_15, "d8_15")] ++
   [(CPSR, "cpsr")]  ++
@@ -163,7 +166,7 @@ regStrings = M.fromList $
 --regStringsWithIndex pre rc =
 --  [(r, pre ++ show idx) | (r, idx) <- zip (registers  (RegisterClass rc)) [0..]]
 
-hardwareRegisters = [R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12]
+hardwareRegisters = [R0, R1, R2, R3, R4, R5, R6, R7]
 
 -- | Function Arguments
 funcArgs = [R0, R1, R2, R3]

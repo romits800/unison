@@ -170,8 +170,8 @@ copies (f, _, cg, ra, bcfg, sg) _ t _rs d us =
 
 pushInstruction [r]
   | r == R4_7  = TPUSH_r4_7
-  | r == R8_11 = TPUSH_r8_11
-  | r == D8_15 = VSTMDDB_UPD_d8_15
+--  | r == R8_11 = TPUSH_r8_11
+--  | r == D8_15 = VSTMDDB_UPD_d8_15
 
 --pushInstruction [r] = error ("unknown push instr " ++ show r)
 
@@ -210,7 +210,7 @@ moveInstrs size 1
   | otherwise = [MOVE_ALL]
 
 -- VMOVD
-moveInstrs _ 2 = [MOVE_D]
+--moveInstrs _ 2 = [MOVE_D]
 
 -- {T2STRi12, tSTRi}
 storeInstrs size 1
@@ -218,7 +218,7 @@ storeInstrs size 1
   | otherwise = [STORE]
 
 -- VSTRD
-storeInstrs _ 2 = [STORE_D]
+--storeInstrs _ 2 = [STORE_D]
 
 -- {T2LDRi12, tLDRi}
 loadInstrs size 1
@@ -226,7 +226,7 @@ loadInstrs size 1
   | otherwise = [LOAD]
 
 -- VLDRD
-loadInstrs _ 2 = [LOAD_D]
+-- loadInstrs _ 2 = [LOAD_D]
 
 isReserved r = r `elem` reserved
 
@@ -241,6 +241,10 @@ fromCopy Copy {oCopyIs = [TargetInstruction i], oCopyS = s, oCopyD = d}
     Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
             oUs = [s] ++ defaultUniPred,
             oDs = [d]}
+  | i `elem` [TMOVr] =
+    Linear {oIs = [TargetInstruction i],
+            oUs = [s] ++ defaultUniPred,
+            oDs = [d]}
   | i `elem` [STORE, STORE_T, STORE_D] =
     Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
             oUs  = [mkOprArmSP, mkBoundMachineFrameObject i d, s] ++
@@ -251,26 +255,20 @@ fromCopy Copy {oCopyIs = [TargetInstruction i], oCopyS = s, oCopyD = d}
             oUs  = [mkOprArmSP, mkBoundMachineFrameObject i s] ++
                    defaultUniPred,
             oDs  = [d]}
-  | i `elem` [TPUSH2_r4_7, TPUSH2_r4_11] =
-    let w = i == TPUSH2_r4_11
+  | i `elem` [TPUSH_r4_7] =
+    let w = False -- i == TPUSH2_r4_11
     in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
                oUs = [mkOprArmSP | w] ++ defaultUniPred ++
                      map (Register . TargetRegister) (pushRegs i ++ [LR]),
                oDs = [mkOprArmSP | w]}
-  | i `elem` [VSTMDDB_UPD_d8_15] =
-    Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
-            oUs = [mkOprArmSP] ++ defaultUniPred ++ mkPushRegs i,
-            oDs = [mkOprArmSP]}
-  | i `elem` [TPOP2_r4_7, TPOP2_r4_7_RET, TPOP2_r4_11, TPOP2_r4_11_RET] =
-    let w = i `elem` [TPOP2_r4_11, TPOP2_r4_11_RET]
+  | i `elem` [TPOP_r4_7_RET, TPOP_r4_7] =
+    let w = False --i `elem` [TPOP2_r4_11_RET, TPOP2_r4_11]
     in Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
                oUs = [mkOprArmSP | w] ++ defaultUniPred ++ mkPushRegs i,
                oDs = [mkOprArmSP | w]}
-  | i `elem` [VLDMDIA_UPD_d8_15] =
-    Linear {oIs = [TargetInstruction (fromCopyInstr i (s, d))],
-            oUs = [mkOprArmSP] ++ defaultUniPred ++ mkPushRegs i,
-            oDs = [mkOprArmSP]}
 fromCopy (Natural o) = o
+fromCopy o@ Copy {oCopyIs = [TargetInstruction TPUSH2_r4_7], oCopyS = s, oCopyD = d} = 
+        error ("unmatched pattern1: fromCopy " ++ show o)
 fromCopy o = error ("unmatched pattern: fromCopy " ++ show o)
 
 mkPushRegs i = map (Register . TargetRegister) (pushRegs i)
@@ -280,6 +278,9 @@ mkOprArmSP = Register $ mkTargetRegister SP
 mkBoundMachineFrameObject i (Register r) =
     let size = stackSize i
     in mkBound (mkMachineFrameObject (infRegPlace r) (Just size) size False)
+mkBoundMachineFrameObject i p = error (show i ++ show p)
+
+
 
 stackSize i
   | i `elem` [STORE, STORE_T, LOAD, LOAD_T] = 1
@@ -288,25 +289,27 @@ stackSize i
 
 -- TODO(Romy): fix the LOAD/STORE instructions for ARM cortex m0
 fromCopyInstr MOVE     _ = TMOVr
-fromCopyInstr MOVE_D   _ = VMOVD
-fromCopyInstr STORE    _ = T2STRi12
+--fromCopyInstr MOVE_D   _ = VMOVD
+fromCopyInstr STORE    _ = TSTRspi --T2STRi12
 fromCopyInstr STORE_T  _ = TSTRi
-fromCopyInstr STORE_D  _ = VSTRD
-fromCopyInstr LOAD     _ = T2LDRi12
+--fromCopyInstr STORE_D  _ = VSTRD
+fromCopyInstr LOAD     _ = TLDRspi -- T2LDRi12
 fromCopyInstr LOAD_T   _ = TLDRi
-fromCopyInstr LOAD_D   _ = VLDRD
+--fromCopyInstr LOAD_D   _ = VLDRD
 fromCopyInstr MOVE_ALL (s, d)
   | isGPR s && isGPR d = TMOVr
 --  | isGPR s && isSPR d = VMOVSR
 --  | isSPR s && isGPR d = VMOVRS
 --  | isSPR s && isSPR d = VMOVS
-fromCopyInstr TPUSH2_r4_7 _  = TPUSH
-fromCopyInstr TPUSH2_r4_11 _ = T2STMDB_UPD
-fromCopyInstr VSTMDDB_UPD_d8_15 _ = VSTMDDB_UPD
-fromCopyInstr TPOP2_r4_7 _      = TPOP
-fromCopyInstr TPOP2_r4_7_RET _  = TPOP_RET
-fromCopyInstr TPOP2_r4_11 _     = T2LDMIA_UPD
-fromCopyInstr TPOP2_r4_11_RET _ = T2LDMIA_RET
+fromCopyInstr TPUSH_r4_7 _  = TPUSH
+--fromCopyInstr TPUSH2_r4_7 _  = TPUSH
+-- fromCopyInstr TPUSH2_r4_11 _ = T2STMDB_UPD
+--fromCopyInstr VSTMDDB_UPD_d8_15 _ = VSTMDDB_UPD
+--fromCopyInstr TPOP2_r4_7 _      = TPOP
+fromCopyInstr TPOP_r4_7 _      = TPOP
+fromCopyInstr TPOP_r4_7_RET _  = TPOP_RET
+--fromCopyInstr TPOP2_r4_11 _     = T2LDMIA_UPD
+--fromCopyInstr TPOP2_r4_11_RET _ = T2LDMIA_RET
 fromCopyInstr VLDMDIA_UPD_d8_15 _ = VLDMDIA_UPD
 
 --isSPR r = rTargetReg (regId r) `elem` registers (RegisterClass SPR)
@@ -402,7 +405,7 @@ addPrologue (_, oid, _) (e:code) =
 
 isFPPush o = TargetInstruction (VSTMDDB_UPD_d8_15) `elem` oInstructions o
 isStoreCopy o = any (\i -> TargetInstruction i `elem` oInstructions o)
-                [STORE, STORE_D, TPUSH2_r4_7, VSTMDDB_UPD_d8_15]
+                [STORE, STORE_D, TPUSH_r4_7]
 
 addEpilogue (_, oid, _) code =
   let addSp = mkAct $ mkOpt oid TADDspi_pseudo [Bound mkMachineFrameSize] []
@@ -413,7 +416,7 @@ addEpilogue (_, oid, _) code =
       os    -> error ("unhandled epilogue: " ++ show os)
 
 isPopRet o = any (\i -> TargetInstruction i `elem` oInstructions o)
-             [TPOP2_r4_7_RET, VLDMDIA_UPD_d8_15]
+             [TPOP_r4_7_RET]
 
 mkOpt oid inst us ds =
   makeOptional $ mkLinear oid [TargetInstruction inst] us ds
@@ -612,7 +615,7 @@ relaxAlignment mf @ MachineFunction {mfProperties = mps} =
 
 isSPStore MachineSingle {msOpcode   = MachineTargetOpc i,
                          msOperands = mos}
-  | i `elem` [T2STRBi12, T2STRDi8, T2STRi12, TSTRspi, VSTRS]
+  | i `elem` [T2STRBi12, T2STRDi8, TSTRi, T2STRi12, TSTRspi, VSTRS]
     && any isSPRegister mos = True
 isSPStore _ = False
 
@@ -631,11 +634,14 @@ isCSRegisterObject _ = False
 
 -- | Target dependent post-processing functions
 
-postProcess to = [expandPseudos to, if keepNops to then replaceNops to else removeAllNops,
+postProcess to = [expandPseudos to,
+                  removeLatencyNops to,
+                  if keepNops to then replaceNops to else removeAllNops,
                   removeFrameIndex,
                   reverseInstruction,
                   cleanLoadMerges,
                   removeEmptyBundles, reorderImplicitOperands,
+                  reorderSPOperands,
                   exposeCPSRRegister,
                   mapToTargetMachineInstruction expandVarOpInstructions,
                   demoteImplicitOperands]
@@ -698,7 +704,8 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
               TSUBspi_pseudo -> TSUBspi
               TADDspi_pseudo -> TADDspi
         sp = mkMachineReg SP
-        off' = mkMachineImm (off `div` 4)
+        off' = mkMachineImm off
+        --off' = mkMachineImm (off `div` 4)
     in [[mi {msOpcode = mkMachineTargetOpc i',
              msOperands = [sp, sp, off'] ++ defaultMIRPred}]]
 
@@ -707,19 +714,49 @@ expandPseudo _ mi @ MachineSingle {msOpcode = MachineTargetOpc i,
 expandPseudo _ mi = [[mi]]
 
 pushRegs i
-  | i `elem` [TPUSH2_r4_7, TPOP2_r4_7, TPOP2_r4_7_RET] =
+  | i `elem` [TPOP_r4_7_RET] =
+      [R4, R5, R6, R7, PC]
+  | i `elem` [TPUSH_r4_7, TPOP_r4_7] =
       [R4, R5, R6, R7]
-  | i `elem` [TPUSH2_r4_11, TPOP2_r4_11, TPOP2_r4_11_RET] =
-      pushRegs TPUSH2_r4_7 ++ [R8, R9, R10, R11]
-  | i `elem` [VSTMDDB_UPD_d8_15, VLDMDIA_UPD_d8_15] =
-      [D8, D9, D10, D11, D12, D13, D14, D15]
+--   | i `elem` [TPOP2_r4_11_RET] =
+--       pushRegs TPUSH2_r4_7 ++ [R8, R9, R10, R11, PC]
+--   | i `elem` [TPUSH2_r4_11, TPOP2_r4_11] =
+--       pushRegs TPUSH2_r4_7 ++ [R8, R9, R10, R11]
+--   | i `elem` [VSTMDDB_UPD_d8_15, VLDMDIA_UPD_d8_15] =
+--       [D8, D9, D10, D11, D12, D13, D14, D15]
 pushRegs i = error ("unmatched: pushRegs " ++ show i)
 
 
+--removeLatencyNops
+removeLatencyNops to mf @ MachineFunction {mfBlocks = mbs} =
+  let mbs' = map (removeLatencyNopsBlock to) mbs
+  in mf {mfBlocks = mbs'}
+
+removeLatencyNopsBlock to mb @ MachineBlock {mbInstructions = mis} = 
+    let mis' = removeLatencyNopsInstr to mis 0 []
+        mis'' = removeBackNopsInstr to (reverse mis') []
+    in mb {mbInstructions = mis''}
+
+
+removeBackNopsInstr _ [] acc = acc
+removeBackNopsInstr to (mi @ MachineSingle {msOpcode = MachineTargetOpc i} : rest) acc
+    | i `elem` [NOP] = removeBackNopsInstr to rest acc
+    | otherwise = (reverse rest) ++ (mi:acc)
+
+
+removeLatencyNopsInstr _ [] _ acc = reverse acc
+removeLatencyNopsInstr to (mi @ MachineSingle {msOpcode = MachineTargetOpc i} : rest) lat acc
+    | i `elem` [NOP] && lat > 0 = removeLatencyNopsInstr to rest (lat-1) acc
+    | i `elem` [NOP] = removeLatencyNopsInstr to rest lat (mi:acc)
+    | otherwise = let lat' = latency i
+                  in removeLatencyNopsInstr to rest (lat'-1) (mi:acc)
+removeLatencyNopsInstr to (mi @ MachineBundle {} : rest) lat acc = removeLatencyNopsInstr to rest lat (mi:acc)
+
+  
 -- Replace NOP operations (llc doesn't recognize them) with
 --   movr %r8 %r8
 replaceNops to = mapToMachineBlock (expandBlockPseudos (replaceNop to))
-                   
+
 replaceNop to mi @ MachineSingle {msOpcode = MachineTargetOpc NOP} | cortex_m0 to =
        let r8 = mkMachineReg R8
            mi' = mi {msOpcode   = mkMachineTargetOpc TMOVr,
@@ -736,13 +773,25 @@ removeAllNops =
   filterMachineInstructions
   (\mi -> not (isMachineTarget mi && mopcTarget (msOpcode mi) == NOP))
 
+
+reorderSPOperands = mapToMachineInstruction reorderSPOperandsInInstr
+
+reorderSPOperandsInInstr
+  mi @ MachineSingle {msOpcode   = MachineTargetOpc TSTRspi,
+                      msOperands = sp @ MachineReg {mrName = SP} : c : r :rest } =
+      mi {msOperands =  r:sp:c:rest}
+
+reorderSPOperandsInInstr mi = mi
+
+
 reorderImplicitOperands = mapToMachineInstruction reorderImplicitOperandsInInstr
 
 reorderImplicitOperandsInInstr
   mi @ MachineSingle {msOpcode   = MachineTargetOpc i,
                       msOperands = MachineReg {mrName = CPSR} : _}
   | i `elem` [T2TSTri_cpsr, T2CMNri_cpsr, T2CMPrr_cpsr, T2TSTrr_cpsr,
-              T2SUBrr_cpsr, TCMPi8_cpsr, FMSTAT_cpsr] =
+              T2SUBrr_cpsr, TCMPi8_cpsr, FMSTAT_cpsr, TTST_cpsr,
+              TCMPr_cpsr] =
       mi {msOpcode = mkMachineTargetOpc $ fromExplicitCpsrDef i}
 
 reorderImplicitOperandsInInstr
@@ -918,6 +967,8 @@ transforms AugmentPreRW = [peephole combinePushPops,
 
 transforms AugmentPostRW = [enforceStackFrame]
 
+transforms ExportPreLow = [addConstantPoolBlock]
+
 transforms _ = []
 
 mapToOperationWithGoals t f @ Function {fCode = code, fGoal = gs} =
@@ -967,7 +1018,7 @@ isLoad (TargetInstruction i) | i `elem` [TLDRspi, TLDRspi_fi, TLDRBi,
                                          TLDRSB, TLDRSBz, 
                                          TLDRSH, TLDRSHz,
                                          TLDRi,
-                                         TLDRpci, TLDRpci_cpi,
+                                         TLDRpci, 
                                          TLDRpci_pic,
                                          TLDRr, TLDRrz] = True
 isLoad _ = False
@@ -987,7 +1038,7 @@ addSecurityCopyBlock t (ids, accCode)
               o1 @ SingleOperation {oOpr = Virtual ( Delimiter (
                                                   In {oIns = oins}))}:
               o2 @ SingleOperation {oOpr = Copy {oCopyIs = ins}}:
-              rest}) | t `elem` (getTemps oins [])  && copyContains ins [TPUSH2_r4_7, TPUSH2_r4_11] =
+              rest}) | t `elem` (getTemps oins [])  && copyContains ins [TPUSH_r4_7] = --, TPUSH2_r4_11] =
   let
     (tid, oid, pid) = ids
     ins = [TargetInstruction TMOVr]
@@ -1034,7 +1085,6 @@ getTemps (_:ts) tids = getTemps ts tids
 -- getTemp ((MOperand {altTemps = temps}):ts) ltid = getTemp (temps ++ ts) ltid
 -- getTemp (_:ts) ltid = getTemp ts ltid
 
-
 updateIndexes (ti, ii, pi) code =
   let ti' = maxIndex ti (newTempIndex code)
       ii' = maxIndex ii (newOprIndex code)
@@ -1047,8 +1097,6 @@ replaceTemp t ts p @ MOperand {altTemps = ats} =
   let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
   in p {altTemps = ats'}
 
-  
-
 -- | Custom processor constraints
 
 constraints f =
@@ -1059,14 +1107,16 @@ constraints f =
 altRetConstraints (
   op @ SingleOperation {oOpr = Copy {
        oCopyIs = [General NullInstruction,
-                  TargetInstruction TPOP2_r4_7_RET,
-                  TargetInstruction TPOP2_r4_11_RET]}}
+                  TargetInstruction TPOP_r4_7_RET]}}
+                  --,
+                  --TargetInstruction TPOP2_r4_11_RET]}}
   :
   or @ SingleOperation {oOpr = Natural Branch {
        oBranchIs = [General NullInstruction, TargetInstruction TBX_RET]}}
   :
   code) constraints =
-  let alt = XorExpr (ActiveExpr (oId op)) (ActiveExpr (oId or))
+  let 
+    alt = XorExpr (ActiveExpr (oId op)) (ActiveExpr (oId or))
   in (code, constraints ++ [alt])
 
 altRetConstraints (_ : code) constraints = (code, constraints)
@@ -1098,7 +1148,11 @@ altRetConstraints (_ : code) constraints = (code, constraints)
 -- getTemporaries acc []  = acc
 -- getTemporaries acc ((Temporary {tId = ts}):tss) = getTemporaries (ts:acc) tss
 -- getTemporaries acc (_:tss) = getTemporaries acc tss
-
+-- equalTemps [] [] = True
+-- equalTemps [] _ = False
+-- equalTemps _ [] = False
+-- equalTemps (t1:ts1) (t2:ts2) | t1 == t2 = equalTemps ts1 ts2
+-- equalTemps (t1:ts1) (t2:ts2) = False
 
 -- equalTemps [] [] = True
 -- equalTemps [] _ = False
@@ -1129,26 +1183,16 @@ altLoadStoreConstraints (
 altLoadStoreConstraints (_ : code) constraints = (code, constraints)
 
 isSingleLoadStore i = i `elem` [TLDRi, T2LDRi12, TSTRi, T2STRi12]
-isDoubleLoadStore i = i `elem` [T2LDRDi8, T2STRDi8]
+isDoubleLoadStore i = i `elem` [T2LDRDi8, T2STRDi8, TLDRi]
 
 latency i = maybeMax 0 $ map occupation (usages [] i)
 
 spillOverhead (i, _, _)
-  | i `elem` [TPUSH, TPUSH_r4_7, TPUSH_r8_11, TPUSH2_r4_7, TPUSH2_r4_11, TPUSH_4, TPUSH_4_5, TPUSH_4_6, TPUSH_4_7] = Just (True, latency i)
+  | i `elem` [TPUSH, TPUSH_r4_7, TPUSH_4, TPUSH_4_5, TPUSH_4_6, TPUSH_4_7] = Just (True, latency i)
 spillOverhead (i, _, _)
-  | i `elem` [TPOP, TPOP_RET, TPOP_r4_7, TPOP_r8_11, TPOP2_r4_7, TPOP2_r4_11, TPOP2_r4_7_RET, TPOP2_r4_11_RET, TPOP_RET_4, TPOP_RET_4_5, TPOP_RET_4_6, TPOP_RET_4_7] = Just (False, latency i)
-spillOverhead (i, _, _)
-  | i `elem` [T2STMDB_UPD, T2STMDB_UPD_4_8, T2STMDB_UPD_4_9, T2STMDB_UPD_4_10, T2STMDB_UPD_4_11] = Just (True, latency i)
-spillOverhead (i, _, _)
-  | i `elem` [T2LDMIA, T2LDMIA_RET, T2LDMIA_UPD, T2LDMIA_4, T2LDMIA_UPD_4, T2LDMIA_UPD_4_4, T2LDMIA_UPD_4_5, T2LDMIA_UPD_4_6, T2LDMIA_UPD_4_7, T2LDMIA_UPD_4_8, T2LDMIA_UPD_4_9, T2LDMIA_UPD_4_10, T2LDMIA_UPD_4_11, T2LDMIA_RET_4_8, T2LDMIA_RET_4_9, T2LDMIA_RET_4_10, T2LDMIA_RET_4_11] = Just (False, latency i)
-spillOverhead (i, sp:_, _)
-  | i `elem` [VLDMDIA_UPD, VLDMDIA_UPD_d8_15] && sp == mkOprArmSP = Just (False, latency i)
-spillOverhead (i, sp:_, _)
-  | i `elem` [VSTMDDB_UPD, VSTMDDB_UPD_d8_15] && sp == mkOprArmSP = Just (True, latency i)
+  | i `elem` [TPOP, TPOP_RET, TPOP_r4_7, TPOP_RET_4, TPOP_RET_4_5, TPOP_RET_4_6, TPOP_RET_4_7] = Just (False, latency i)
 spillOverhead (i, _:sp:_, _)
-  | i `elem` [T2STRBi12, T2STRi12, TSTRspi, VSTRS, TSTRi] && sp == mkOprArmSP = Just (True, latency i)
-spillOverhead (i, _:_:sp:_, _)
-  | i `elem` [T2STRDi8] && sp == mkOprArmSP = Just (True, latency i)
+  | i `elem` [TSTRspi, VSTRS, TSTRi] && sp == mkOprArmSP = Just (True, latency i)
 spillOverhead (i, sp:_, _)
-  | i `elem` [T2LDRBi12, T2LDRi12, TLDRspi, VLDRD, VLDRS, T2LDR_POST, T2LDRDi8, TLDRi] && sp == mkOprArmSP = Just (False, latency i)
+  | i `elem` [TLDRspi, VLDRD, VLDRS, T2LDR_POST, T2LDRDi8, TLDRi] && sp == mkOprArmSP = Just (False, latency i)
 spillOverhead _ = Nothing

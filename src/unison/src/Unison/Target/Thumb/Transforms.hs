@@ -22,7 +22,8 @@ module Unison.Target.Thumb.Transforms
      reorderCalleeSavedSpills,
      enforceStackFrame,
      extendNonSymmetricOperands,
-     isNonSymmetric) where
+     isNonSymmetric,
+     addConstantPoolBlock) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -404,7 +405,6 @@ defineFP f @ Function {fCode = code} =
     o1: [p2{t2},p3{t3}] <- {tEOR, tEOR_r} [p0{t0},p1{t1},14,_] (reads: [control])
 -}
 
-
 extendNonSymmetricOperands _ (
   SingleOperation {
       oOpr = Natural {
@@ -412,13 +412,13 @@ extendNonSymmetricOperands _ (
               oIs = [ TargetInstruction i ],
                 -- oUs = p1:p2:roUs,
                 -- oDs = [p3, p4]
-              oUs = ous @ ((MOperand {altTemps = ts1}):
-                         (MOperand {altTemps = ts2}):roUs),
-              oDs = ods@ [(MOperand {altTemps = [ts3 @ Temporary {tReg = treg3} ]}),
-                          (MOperand {altTemps = [ts4 @ Temporary {tReg = treg4} ]})]
+              oUs = ous @ ((MOperand {altTemps = _ts1}):
+                         (MOperand {altTemps = _ts2}):_roUs),
+              oDs = ods @ [(MOperand {altTemps = [_ts3 @ Temporary {tReg = _treg3} ]}),
+                          (MOperand {altTemps = [_ts4 @ Temporary {tReg = _treg4} ]})]
               }
           }
-      }:rest)  (tid, oid, pid) | isNonSymmetric i =
+      }:rest)  (_tid, oid, _pid) | isNonSymmetric i =
                                  let
                                    is = [TargetInstruction i,
                                          TargetInstruction (getEquivalentInstruction i) ]
@@ -427,9 +427,9 @@ extendNonSymmetricOperands _ (
 
 extendNonSymmetricOperands _ (o : code) _ = (code, [o])
 
-replaceTemp t ts p @ MOperand {altTemps = ats} =
-  let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
-  in p {altTemps = ats'}
+-- replaceTemp t ts p @ MOperand {altTemps = ats} =
+--   let ats' = concatMap (\t' -> if t' == t then ts else [t']) ats
+--   in p {altTemps = ats'}
 
 -- TODO(Romy): Add more instructions similar to tEOR
 isNonSymmetric i = i `elem` [TEOR, TAND, TORR, TBIC, TMUL]
@@ -452,30 +452,32 @@ getEquivalentInstruction i = case i of
     o3: [p1{ -, t1}, p3{ -, t3}]  <- { -, tPUSH/POP2_r4_7, tPUSH/POP2_r4_11}  [p0{ -, t0}, p2{ -, t2}]
 -}
 
+{- Change htis function to just change the type to linear fof
+    the following transformations -}
 combinePushPops _ (
   SingleOperation {
      oOpr = Copy {oCopyIs = [General NullInstruction,
                              TargetInstruction i1],
                   oCopyS = p0, oCopyD = p1}}
   :
-  SingleOperation {
-     oOpr = Copy {oCopyIs = [General NullInstruction,
-                             TargetInstruction i2],
-                  oCopyS = p2, oCopyD = p3}}
-  :
-  rest) (_, oid, _) | all isTPush [i1, i2] || all isTPop [i1, i2] =
+--   SingleOperation {
+--      oOpr = Copy {oCopyIs = [General NullInstruction,
+--                              TargetInstruction i2],
+--                   oCopyS = p2, oCopyD = p3}}
+--   :
+  rest) (_, oid, _) | all isTPush [i1] || all isTPop [i1] =
   let is = [General NullInstruction] ++
            map TargetInstruction
-           (if all isTPush [i1, i2]
-            then [TPUSH2_r4_7, TPUSH2_r4_11]
-            else [TPOP2_r4_7,  TPOP2_r4_11])
-      o3 = mkLinear oid is [p0, p2] [p1, p3]
+           (if all isTPush [i1]
+            then [TPUSH_r4_7]
+            else [TPOP_r4_7])
+      o3 = mkLinear oid is [p0] [p1]
   in (rest, [o3])
 
 combinePushPops _ (o : code) _ = (code, [o])
 
-isTPush i = i `elem` [TPUSH_r4_7, TPUSH_r8_11]
-isTPop  i = i `elem` [TPOP_r4_7,  TPOP_r8_11]
+isTPush i = i `elem` [TPUSH_r4_7]
+isTPop  i = i `elem` [TPOP_r4_7]
 
 {-
  Transforms:
@@ -492,15 +494,13 @@ isTPop  i = i `elem` [TPOP_r4_7,  TPOP_r8_11]
 expandRets _ (
   op @ SingleOperation {
      oOpr = Natural Linear {oIs = [General NullInstruction,
-                                   TargetInstruction TPOP2_r4_7,
-                                   TargetInstruction TPOP2_r4_11]}}
+                                   TargetInstruction TPOP_r4_7]}}
   :
   code) _ =
   case find isTRET code of
    Just or ->
      let opis  = [General NullInstruction,
-                  TargetInstruction TPOP2_r4_7_RET,
-                  TargetInstruction TPOP2_r4_11_RET]
+                  TargetInstruction TPOP_r4_7_RET]
          op'   = mapToInstructions (const opis) op
          or'   = makeOptional or
          code' = concatMap (\o -> if isTRET o then [op', or'] else [o]) code
@@ -709,23 +709,49 @@ reorderCalleeSavedSpills f @ Function {fCode = code}
 reoderCalleeSavedStores b = moveOperations isCalleeSavedPrologue after isIn b
 
 isCalleeSavedPrologue o =
-  any (\i -> isInstr i o) [VSTMDDB_UPD_d8_15, TPUSH2_r4_7, TFP]
+  any (\i -> isInstr i o) [VSTMDDB_UPD_d8_15, TPUSH_r4_7, TFP]
 
 moveFP b
   | any isTPushDel (bCode b) = moveOperations (isInstr TFP) after isTPushDel b
   | otherwise = b
 
-isTPushDel = isInstr TPUSH2_r4_7
+isTPushDel = isInstr TPUSH_r4_7
 
 reoderCalleeSavedLoads b =
   foldl (\b0 i -> moveOperations (isInstr i) before isTerm b0)
-  b [VLDMDIA_UPD_d8_15, TPOP2_r4_7, TPOP2_r4_7_RET]
+  b [TPOP_r4_7, TPOP_r4_7_RET]
 
 isInstr i o = (TargetInstruction i) `elem` oInstructions o
 
 isTerm o = isBranch o || isTailCall o
 
--- Activate the SP adjustment operations if there are non-fixed stack objects or
+-- mkNewExitBlock with ConstantPoolVariables - required
+mkNewBlock :: (Integer, Alignment, [BlockOperation i r]) -> Block i r
+mkNewBlock (bid, align, code) = mkBlock bid (mkBlockAttributes False True False
+                                              Nothing False (Just align)) code
+
+
+mkLinearNaturalOperation id ops us ds = mkLinear id ops us ds
+
+mkConstants [] _ acc = acc
+mkConstants ((id, _, align):consts) oid acc =
+  let
+    ins = [TargetInstruction { oTargetInstr = CONSTPOOL_ENTRY } ]
+    u1  = mkBound (mkMachineImm id)
+    u2  = mkBound (mkMachineConstantPoolIndex (show id))
+    u3  = mkBound (mkMachineImm align)
+    nf  = mkLinearNaturalOperation oid ins [u1,u2,u3] []
+  in mkConstants consts (oid+1) (nf:acc)
+
+addConstantPoolBlock f @ Function {fConstants = []} = f
+addConstantPoolBlock f @ Function {fCode = code, fConstants = consts} =
+  let last  = newBlockIndex code
+      oid = newId code -- new operation id
+      code' = mkConstants consts oid []
+      nblock = mkNewBlock (last, 2, code') -- Not sure how much the alignement should be
+  in f { fCode = code ++ [nblock] }
+
+-- activate the SP adjustment operations if there are non-fixed stack objects or
 --  SP-relative stores (typically to store function call arguments).
 enforceStackFrame f @ Function {fCode = code, fStackFrame = frame} =
   let fcode = flatten code

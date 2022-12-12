@@ -1904,7 +1904,7 @@ operandInfo i
     ([TemporaryInfo (RegisterClass GPRsp) 0 False, BoundInfo,
       BoundInfo, TemporaryInfo (RegisterClass CCR) 0 False],
      [TemporaryInfo (RegisterClass TGPR) 1 False])
-  | i `elem` [TPOP_r4_7, TPOP_r8_11] =
+  | i `elem` [TPOP_r4_7, TPOP_r4_7_RET, TPOP_r8_11] =
     ([TemporaryInfo (InfiniteRegisterClass M128) 0 False],
      [TemporaryInfo (RegisterClass CS) 1 False])
   | i `elem` [TPOP2_r4_7, TPOP2_r4_7_RET] =

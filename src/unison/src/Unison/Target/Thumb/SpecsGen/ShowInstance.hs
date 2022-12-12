@@ -3023,6 +3023,7 @@ instance Show ThumbInstruction where
         show TPUSH2_r4_11 = "tPUSH2_r4_11"
         show VSTMDDB_UPD_d8_15 = "VSTMDDB_UPD_d8_15"
         show TPOP_r4_7 = "tPOP_r4_7"
+        show TPOP_r4_7_RET = "tPOP_r4_7_RET"
         show TPOP_r8_11 = "tPOP_r8_11"
         show TPOP2_r4_7 = "tPOP2_r4_7"
         show TPOP2_r4_11 = "tPOP2_r4_11"
