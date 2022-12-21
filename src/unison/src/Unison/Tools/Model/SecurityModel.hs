@@ -44,11 +44,12 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies gfMulImpl =
     ran'            = filter (\x -> head x == 't') ran
     pub'            = filter (\x -> head x == 't') pub
     sec'            = filter (\x -> head x == 't' && isNotInInmap inmap x) sec
+    secin           = filter (\x -> head x == 't' && not (isNotInInmap inmap x)) sec
     sec''           = filter (\x -> head x == 'F' || head x == 'S') sec  -- memory secrets
     ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') ran  -- memory randoms
     pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') pub
     -- Parameters
-    pairs           = findPairs (ran' ++ pub') types []
+    pairs           = findPairs (ran' ++ pub' ++ secin) types []
     secdom          = findRandSec sec' ran' types []
     p2o             = Map.union c2o' m2o'   --- Not the same key
     -- mpairs          = findPairsMC (ran'' ++ pub'') types p2o []
