@@ -1277,9 +1277,13 @@ int main(int argc, char* argv[]) {
 	if (t.stop() > options.timeout())
           timeout_exit(base, results, gd, go, t.stop());
 
-        // Forbid the current global solution
-        base->post_different_solution(gs.solution, unsat);
-        status_lb(base);
+        // ROMY: Forbid the current global solution - only if we have found
+        //       a solution
+        if (found_all_local || options.enable_always_post_diff_solution()) {
+            cerr << global() << "posting a different solution" << endl;
+            base->post_different_solution(gs.solution, unsat);
+            status_lb(base);
+        }
 
         // All local solutions could be found, combine them and tighten
         // the objective function
@@ -1347,6 +1351,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
+
 
       if (gs.result == UNSATISFIABLE || status_lb(base) == SS_FAILED) {
         // If the global problem is unsatisfiable and there is some solution we

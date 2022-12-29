@@ -169,6 +169,7 @@ protected:
   Driver::BoolOption _disable_sec_mem_constraints;
   Driver::BoolOption _disable_sec_tts;
   Driver::DoubleOption _unassigned_budget; 
+  Driver::BoolOption _enable_always_post_diff_solution;
   
 public:
 
@@ -284,5 +285,7 @@ public:
   bool disable_sec_tts(void) const {return _disable_sec_tts.value();}
 
   double unassigned_budget(void) const {return _unassigned_budget.value();}
+
+  bool enable_always_post_diff_solution(void) const {return _enable_always_post_diff_solution.value();}
 };
 #endif
