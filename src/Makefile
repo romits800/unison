@@ -118,7 +118,7 @@ include $(SECDIVERSIFIERDIR)/secdiversifier.mk
 clean:
 	$(STACKBIN) clean unison
 	$(STACKBIN) clean unison-specsgen
-	$(MAKE) veryclean-diversifier veryclean-solver veryclean-presolver
+	$(MAKE) veryclean-diversifier veryclean-solver veryclean-presolver veryclean-secdiversifier veryclean-secsolver
 
 doc: doc-unison doc-specsgen
 
