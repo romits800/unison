@@ -20,7 +20,7 @@ SecConCG has the following dependencies:
 To get the first three dependencies in Debian-based distributions, just run:
 
 ```
-apt-get install haskell-stack qtbase5-dev libgraphviz-dev libarpack2-dev libopenblas-dev
+apt-get install haskell-stack qtbase5-dev libgraphviz-dev libarpack2-dev libopenblas-dev build-essential
 ```
 
 Upgrade Slack after installing it:
@@ -45,6 +45,21 @@ cd gecode-release-6.2.0
 make
 sudo make install
 ```
+
+| you may need to add the installed path to the `LD_LIBRARY_PATH` environment variable, e.g. `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib` |
+| --- |
+
+
+
+Download Minizinc for the portfolio solver ([MiniZincIDE-2.2.3-bundle-linux](https://github.com/MiniZinc/MiniZincIDE/releases/tag/2.2.3)),
+extract the precompiled version for linux 
+and set the environment variable `$MINIZINC_PATH`:
+
+```bash
+export MINZINC_PATH=/path/to/minzincIDE/bin
+```
+
+
 ## Cloning
 Clone the code from Github:
 
@@ -54,13 +69,8 @@ git clone -b secconcg https://github.com/romits800/divCon.git
 
 ## Building
 
-If it is the first time you run `cabal` run:
 
-```bash
-cabal update
-```
-
-Just go to the `src` directory and run:
+Navigate to the `src` directory and run:
 
 ```
 make build

@@ -4,6 +4,8 @@
 # For advanced use and comprehensive documentation of the format, please see:
 # https://docs.haskellstack.org/en/stable/yaml_configuration/
 
+# A warning or info to be displayed to the user on config load.
+
 # Resolver to choose a 'specific' stackage snapshot or a compiler version.
 # A snapshot resolver dictates the compiler version and the set of packages
 # to be used for project dependencies. For example:
@@ -18,7 +20,7 @@
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
 resolver:
-  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/6/35.yaml
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/7/24.yaml
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -30,13 +32,10 @@ resolver:
 #   - auto-update
 #   - wai
 packages:
-- unison
 - unison-specsgen
-
-# Dependency packages to be pulled from upstream that are not in the resolver.
-# These entries can reference officially published versions as well as
-# forks / in-progress versions pinned to a git hash. For example:
-#
+- unison
+- portfolio
+- secportfolio
 
 extra-deps:
     - git: https://github.com/guaraqe/harpack.git
@@ -46,10 +45,17 @@ extra-deps:
     - matrices-0.5.0@sha256:b2761813f6a61c84224559619cc60a16a858ac671c8436bbac8ec89e85473058,1656
     - fgl-5.5.3.1@sha256:4c73d43ce20d669f54c10a50e2d13184542f686f445773812fc43a321dfa0f73,3736
 
-# - git: https://github.com/kaizhang/clustering.git
-    #   commit: 38f5f0fe0f4158b5af456a4299cd5a45f4d5edd3
-    # - git: https://github.com/kaizhang/matrices.git
-    #   commit: 4d85abd72aecce03284c597497fbe6154d8919bd
+
+# The following packages have been ignored due to incompatibility with the
+# resolver compiler, dependency conflicts with other packages
+# or unsatisfied dependencies.
+#- unison
+
+# Dependency packages to be pulled from upstream that are not in the resolver.
+# These entries can reference officially published versions as well as
+# forks / in-progress versions pinned to a git hash. For example:
+#
+# extra-deps:
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
@@ -65,15 +71,15 @@ extra-deps:
 # Control whether we use the GHC we find on the path
 # system-ghc: true
 #
-# Require a specific version of stack, using version ranges
+# Require a specific version of Stack, using version ranges
 # require-stack-version: -any # Default
-# require-stack-version: ">=2.5"
+# require-stack-version: ">=2.9"
 #
-# Override the architecture used by stack, especially useful on Windows
+# Override the architecture used by Stack, especially useful on Windows
 # arch: i386
 # arch: x86_64
 #
-# Extra directories used by stack for building
+# Extra directories used by Stack for building
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
 #

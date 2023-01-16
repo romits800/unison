@@ -38,8 +38,8 @@ packages:
     hackage: fgl-5.5.3.1@sha256:4c73d43ce20d669f54c10a50e2d13184542f686f445773812fc43a321dfa0f73,3736
 snapshots:
 - completed:
-    size: 428787
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/6/35.yaml
-    sha256: f2ce58e96ad78750c355afc8fcd0bfbd06c8e1381050c59bc5c934577ebef872
+    size: 504292
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/7/24.yaml
+    sha256: 06475226ae77d200ef106e999bfb280cb658f1ebb166b56f6f579890aab66942
   original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/6/35.yaml
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/7/24.yaml

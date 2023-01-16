@@ -1,7 +1,7 @@
 #!/bin/bash
 # Assumes that the environment variable UNISON_DIR is set to the top of the
 # Unison repo
-MULTIBACKEND_DIR=$UNISON_DIR/src/solvers/multi_backend
-# Assume aeson-pretty-0.7.2 which prints integers without decimals
-ghc -O2 --make -threaded $MULTIBACKEND_DIR/secportfolio.hs  -package aeson-pretty-0.7.2
+# MULTIBACKEND_DIR=$UNISON_DIR/src/solvers/multi_backend
+export PATH=$UNISON_DIR/src/solvers/multi_backend:$PATH
+MULTIBACKEND_DIR=$UNISON_DIR/src/secportfolio/build/
 $MULTIBACKEND_DIR/secportfolio "$@" +RTS -N2

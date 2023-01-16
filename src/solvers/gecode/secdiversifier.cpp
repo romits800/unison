@@ -40,7 +40,7 @@
 
 #ifdef GRAPHICS
 #include <QtGui>
-#include <QtScript/QScriptEngine>
+//#include <QtScript/QScriptEngine>
 #endif
 
 #include <gecode/search.hh>
