@@ -128,11 +128,12 @@ LIBS += -lgecodesearch -lgecodeminimodel -lgecodeset -lgecodefloat -lgecodeint \
 TARGET = gecode-secdiversify
 CONFIG -= qt
 CONFIG += warn_on
-QT += script
 
 CONFIG(graphics) {
 
   CONFIG += qt
+
+  QT += widgets
 
   DEFINES += GRAPHICS NEWGV
 

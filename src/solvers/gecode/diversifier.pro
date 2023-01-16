@@ -122,13 +122,14 @@ LIBS += -lgecodesearch -lgecodeminimodel -lgecodeset -lgecodefloat -lgecodeint \
 TARGET = gecode-diversify
 CONFIG -= qt
 CONFIG += warn_on
-QT += script
 
 CONFIG(graphics) {
 
   CONFIG += qt
 
   DEFINES += GRAPHICS NEWGV
+
+  QT += widgets
 
   HEADERS += inspectors/consoleinspector.hpp \
              inspectors/modelgraphicsview.hpp \
