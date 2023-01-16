@@ -36,6 +36,7 @@ PREFIX := /usr/local
 BINDIR := $(PREFIX)/bin
 
 UNISONDIR := unison
+PORTFOLIODIR := solvers/multi_backend/portfolio
 
 PRESOLVERDIR := solvers/gecode
 PRESOLVERBIN := $(PRESOLVERDIR)/gecode-presolver
@@ -49,6 +50,7 @@ UNISON_GHC_CONFIG := -O2
 
 build:
 	$(MAKE) build-unison
+	$(MAKE) build-portfolio
 	$(MAKE) build-presolver build-solver
 
 build-solver: $(SOLVERBIN)
@@ -59,6 +61,12 @@ build-unison:
 	$(STACKBIN) build unison \
 	--ghc-options="$(UNISON_GHC_CONFIG)" \
 	--copy-bins --local-bin-path $(UNISONDIR)/build
+
+build-portfolio:
+	$(STACKBIN) build portfolio \
+	--ghc-options="$(UNISON_GHC_CONFIG)" \
+	--copy-bins --local-bin-path $(PORTFOLIODIR)/build
+
 
 doc-unison:
 	$(STACKBIN) haddock unison
@@ -88,6 +96,7 @@ include $(SOLVERDIR)/solver.mk
 clean:
 	$(STACKBIN) clean unison
 	$(STACKBIN) clean unison-specsgen
+	$(STACKBIN) clean portfolio
 	$(MAKE) veryclean-solver veryclean-presolver
 
 doc: doc-unison doc-specsgen
