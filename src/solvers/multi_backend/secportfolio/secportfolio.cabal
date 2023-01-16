@@ -1,15 +1,15 @@
-Name:           portfolio
+Name:           secportfolio
 Version:        0
 Cabal-Version:  >= 1.8
 License:        BSD3
 License-file:   LICENSE
-Author:         Roberto Castaneda Lozano <rcas@acm.org>
-Maintainer:     Roberto Castaneda Lozano <rcas@acm.org>
+Author:         Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
+Maintainer:     Rodothea Myrsini Tsoupidi <tsoupidi@kth.se>
 Synopsis:       Portfolio solver
 Category:       Language, Compiler, Code generation, Program Transformation
 Build-Type:     Simple
-Description:    This package extends the unison package a tool that generates
-                Unison target files with information from a YAML specification
+Description:    This package is part of  the secconcg package a tool that generates
+                secure target files with information from a YAML specification
                 (typically generated from LLVM's TableGen), see
                 http://unison-code.github.io
 
@@ -17,7 +17,7 @@ Library
 
   Hs-source-dirs:  src
 
-  Exposed-Modules: Portfolio.Portfolio
+  Exposed-Modules: SecPortfolio.SecPortfolio
 
   if impl(ghc <= 7.4.2)
     Build-Depends: transformers-compat == 0.5.*,
@@ -39,14 +39,14 @@ Library
                  async,
                  time,
                  split >= 0.1,
-                 aeson-pretty == 0.8.2
+                 aeson-pretty >= 0.7.2
 
   Ghc-options: -fwarn-dodgy-exports -fwarn-dodgy-imports -fwarn-unused-matches
                -fwarn-unused-imports -fwarn-unused-binds -O2
 
-Executable portfolio
+Executable secportfolio
 
-  Hs-source-dirs: exec/portfolio
+  Hs-source-dirs: exec/secportfolio
   Main-is:        Main.hs
-  Build-depends:  portfolio, base
+  Build-depends:  secportfolio, base
   Ghc-options:    -rtsopts -threaded

@@ -3,5 +3,5 @@
 # Unison repo
 # MULTIBACKEND_DIR=$UNISON_DIR/src/solvers/multi_backend
 export PATH=$UNISON_DIR/src/solvers/multi_backend:$PATH
-MULTIBACKEND_DIR=$UNISON_DIR/src/secportfolio/build/
+MULTIBACKEND_DIR=$UNISON_DIR/src/solvers/multi_backend/secportfolio/build/
 $MULTIBACKEND_DIR/secportfolio "$@" +RTS -N2

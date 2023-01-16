@@ -2,5 +2,5 @@
 # Assumes that the environment variable UNISON_DIR is set to the top of the
 # Unison repo
 export PATH=$UNISON_DIR/src/solvers/multi_backend:$PATH
-MULTIBACKEND_DIR=$UNISON_DIR/src/portfolio/build/
+MULTIBACKEND_DIR=$UNISON_DIR/src/solvers/multi_backend/portfolio/build/
 $MULTIBACKEND_DIR/portfolio "$@" +RTS -N2

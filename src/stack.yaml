@@ -34,8 +34,8 @@ resolver:
 packages:
 - unison-specsgen
 - unison
-- portfolio
-- secportfolio
+- solvers/multi_backend/portfolio
+- solvers/multi_backend/secportfolio
 
 extra-deps:
     - git: https://github.com/guaraqe/harpack.git

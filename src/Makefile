@@ -37,8 +37,8 @@ BINDIR := $(PREFIX)/bin
 
 UNISONDIR := unison
 
-PORTFOLIODIR := portfolio
-SECPORTFOLIODIR := secportfolio
+PORTFOLIODIR := solvers/multi_backend/portfolio
+SECPORTFOLIODIR := solvers/multi_backend/secportfolio
 
 PRESOLVERDIR := solvers/gecode
 PRESOLVERBIN := $(PRESOLVERDIR)/gecode-presolver
