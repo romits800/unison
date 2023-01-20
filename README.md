@@ -56,7 +56,7 @@ extract the precompiled version for linux
 and set the environment variable `$MINIZINC_PATH`:
 
 ```bash
-export MINZINC_PATH=/path/to/minzincIDE/bin
+export MINIZINC_PATH=/path/to/minzincIDE/bin
 ```
 
 
