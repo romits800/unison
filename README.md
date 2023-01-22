@@ -46,7 +46,7 @@ make
 sudo make install
 ```
 
-| you may need to add the installed path to the `LD_LIBRARY_PATH` environment variable, e.g. `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib` |
+| Note: you may need to add the installed path to the `LD_LIBRARY_PATH` environment variable, e.g. `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib` |
 | --- |
 
 
