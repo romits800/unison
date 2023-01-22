@@ -20,7 +20,7 @@ SecConCG has the following dependencies:
 To get the first three dependencies in Debian-based distributions, just run:
 
 ```
-apt-get install haskell-stack qtbase5-dev libgraphviz-dev libarpack2-dev libopenblas-dev build-essential
+apt-get install haskell-stack qtbase5-dev libgraphviz-dev libarpack2-dev libopenblas-dev build-essential qt5-default
 ```
 
 Upgrade Slack after installing it:
