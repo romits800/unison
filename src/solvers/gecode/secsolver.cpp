@@ -939,7 +939,9 @@ int main(int argc, char* argv[]) {
 	// maybe shuffle the blocks?
 	bool found_all_local = true, unsat = false;
 	std::default_random_engine rng(43243);
+        #if 1
 	shuffle(bs.begin(), bs.end(), rng);
+        #endif
 
 	for (block b: bs) {
 	  // std::cout << "Block " << b << std::endl;
@@ -950,11 +952,6 @@ int main(int argc, char* argv[]) {
 	    Gecode::SpaceStatus lss = base_local->status();
 	    assert(lss != SS_FAILED);
 	    bool single_block = base_local->input->B.size() == 1;
-
-            
-            // std::cerr << b << std::endl;
-            // std::cerr << base_local->v_r << std::endl;
-            // std::cerr << base_local->v_y << std::endl;
 	    bool solbool = solved(base_local, local_solutions[b]);
 
 	    solbool = solbool && !single_block;
@@ -1280,9 +1277,13 @@ int main(int argc, char* argv[]) {
 	if (t.stop() > options.timeout())
           timeout_exit(base, results, gd, go, t.stop());
 
-        // Forbid the current global solution
-        base->post_different_solution(gs.solution, unsat);
-        status_lb(base);
+        // ROMY: Forbid the current global solution - only if we have found
+        //       a solution
+        if (found_all_local || options.enable_always_post_diff_solution()) {
+            cerr << global() << "posting a different solution" << endl;
+            base->post_different_solution(gs.solution, unsat);
+            status_lb(base);
+        }
 
         // All local solutions could be found, combine them and tighten
         // the objective function
@@ -1350,6 +1351,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (base->options->solve_global_only()) exit(EXIT_SUCCESS);
+
 
       if (gs.result == UNSATISFIABLE || status_lb(base) == SS_FAILED) {
         // If the global problem is unsatisfiable and there is some solution we

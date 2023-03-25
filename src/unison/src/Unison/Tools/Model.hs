@@ -72,7 +72,7 @@ run (baseFile, scaleFreq, oldModel, applyBaseFile, tightPressureBound,
                     (strictlyBetter, unsatisfiable, scaleFreq, mirVersion)
                     aux target f ps
          ps''     = presolver oldModel aux target f ps'
-         ps'''    = securityModeler aux target f types ps''
+         ps'''    = securityModeler aux target f policies gfMulImpl ps''
      emitOutput jsonFile ((BSL.unpack (encodePretty ps''')))
 
 
@@ -81,9 +81,9 @@ modeler (scaleFreq, noCC) aux types target f =
     where is = IS.parameters scaleFreq aux types f target
           ra = is `seq` RA.parameters noCC aux f target
 
-securityModeler aux target f types ps = 
+securityModeler aux target f policies gfMulImpl ps = 
   let
-      sec_pars = SM.parameters aux target f types
+      sec_pars = SM.parameters aux target f policies gfMulImpl
       ops = toJSON (M.fromList sec_pars)
   in unionMaps ps ops
   

@@ -47,41 +47,17 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 
     // Find mem operations
   
-  vector<string> memstrings = {"tSTRBi", "tLDRBi", "tSTRspi_fi", 
-                                "tLDRspi_fi", "SW_fi", "LW_fi", "SB_fi", "LB_fi"}; 
-  for (operation o : O()) { 
-    for(instruction i : input-> instructions[o]) {
-      if (contains(memstrings, input -> insname[i]) ||
-         contains(memcopies, input -> insname[i]) ) {
-        memops.push_back(o);
-        break;
-      }
+    vector<string> memstrings = {"tSTRBi", "tLDRBi", "tSTRspi_fi", 
+                                    "tLDRspi_fi", "SW_fi", "LW_fi", "SB_fi", "LB_fi"}; 
+    for (operation o : O()) { 
+        for(instruction i : input-> instructions[o]) {
+          if (contains(memstrings, input -> insname[i]) ||
+             contains(memcopies, input -> insname[i]) ) {
+            memops.push_back(o);
+            break;
+          }
+        }
     }
-   // }
-  }
-
-    // for(instruction i1 : input-> instructions[o1]) {
-    // 	  if ( contains(memstrings, (input -> insname[i1]))
-	    
-    // 	  vector<operand> ps = input -> operands[o1];
-    // 	  int cls = input -> rclass[o][i][p];
-    // 	  char * classname = input -> classname[cls];
-    // 	  vector<instruction> ins = input-> instructions[o1];
-    // 	}
-    // 	  // vector<temporaries> temps = input -> temps[ops[0]];
-    // 	for (operation o2 : O()) {
-    // 	  if (o1 != o2) {
-    // 	    BoolVar ifb  = var(a(o2) && (c(o2) <= c(o1)));
-    // 	    IntVar thenb = var( c(o2) );
-    // 	    IntVar elseb = var( -1 ); 
-    // 	    IntVar res = IntVar(*this, -1, maxval);
-    // 	    ite(*this, ifb,  thenb, elseb, res, IPL_BND);
-    // 	    lts <<  res;
-    // 	  }
-    // 	}
-    // 	max(*this, lts, v_ok[instr(o1)]);
-    //   }
-    // }
 
   
     // Implementation 2

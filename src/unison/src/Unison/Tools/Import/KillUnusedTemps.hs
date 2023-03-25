@@ -26,9 +26,9 @@ killUnusedTempsInBB uses (accCode, id) b @ Block {bCode = code} =
     let (code', id')  = foldl (killUnusedDefs uses) ([], id) code
     in (accCode ++ [b {bCode = code'}], id')
 
-killUnusedDefs uses (accCode, id) i
-  | isCopy i  = (accCode ++ [i], id)
-  | otherwise =
+killUnusedDefs uses (accCode, id) i =
+--  | isCopy i  = (accCode ++ [i], id)
+--  | otherwise =
     let widows       = filter isTemporary (oDefs i) \\ uses
         widows'      = map undoPreAssign widows
         (kills, id') = mkKills widows' id

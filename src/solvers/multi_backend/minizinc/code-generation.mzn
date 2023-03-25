@@ -293,8 +293,6 @@ array[int,int] of int: spairs_rands;
 array[int] of int: mpairs_secrets;
 array[int,int] of int: mpairs_rands;
 
-int: BBSSIZE;
-array[int,int,int,int] of int: bbs;
 %% problem variables
 
 var 0..MAXF: obj;

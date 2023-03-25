@@ -1,13 +1,13 @@
 {-|
-Copyright   :  Copyright (c) 2016, RISE SICS AB
+Copyright   :  Copyright (c) 2022
 License     :  BSD3 (see the LICENSE file)
-Maintainer  :  rcas@acm.org
+Maintainer  :  tsoupidi@kth.se
 -}
 {-
 Main authors:
-  Roberto Castaneda Lozano <rcas@acm.org>
+  Rodothea Myrsini Tsoupidi <tsoupidi@tkh.se>
 
-This file is part of Unison, see http://unison-code.github.io
+This file is part of SecDivCon
 -}
 module Unison.Tools.Linearize.KeepDeadInstrs (keepDeadInstrs) where
 

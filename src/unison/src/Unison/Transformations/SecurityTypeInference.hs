@@ -1287,7 +1287,8 @@ updateNewTemps p2t p2p types (pid, tmps) =
                         fT2Func = funcs'}
         pmap'  = updateLPmaps types' oldtmps tmps
         flag' = (fFlag types) {hasPhis = isAnyNothing}
-        types'' = types' {fPmap = pmap', fFlag = flag'}
+        init' = fInmap types --updateInit (fInmap types) pmap' tmps
+        types'' = types' {fPmap = pmap', fFlag = flag', fInmap = init'}
         types''' = updateMemTypes types'' oldtmps tmps
       in types'''
     f2 oldtmps tmps = 
@@ -1303,7 +1304,8 @@ updateNewTemps p2t p2p types (pid, tmps) =
                         fT2Func = funcs'}
         pmap' = updatePmaps False False types' oldtmps [] tmps
         -- pmap' = updatePmaps False False (pmap, init, supp', unq', dom', xor', m2o, c2o, p2p, p2t, args', bbs, flag) oldtmps [] tmps
-        types'' = types' {fPmap = pmap'}
+        init' = fInmap types -- updateInit (fInmap types) pmap' tmps
+        types'' = types' {fPmap = pmap', fInmap = init'}
         types''' = updateMemTypes types'' oldtmps tmps
       in types'''
   in case adj of
@@ -1548,6 +1550,14 @@ updateXorD xor ts1 ts2 val dts =
     f2 s dtid = Map.insert dtid (val && val1 && val2) s
     xor' = foldl f2 xor dts
   in xor'
+
+updateInit init pmap ins =
+ let sins = getTids ins [] -- ins
+     typ m tid = Map.insert tid 
+                   (Map.findWithDefault (Public tid) tid pmap) m
+     init'= foldl typ init sins
+ in init'
+
 
 updateSuppsS supp sts str =
   let stids = getTids sts [] -- sources

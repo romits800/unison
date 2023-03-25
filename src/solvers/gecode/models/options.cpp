@@ -146,7 +146,8 @@ ModelOptions::ModelOptions(void)
     _enable_ct_constraints("enable-ct-constraints", "Disable constant-resource constraints.", false),
     _extra_branch_cost("extra-branch-cost", "Enable extra branch cost for MIPS.", false),
     _disable_sec_tts("disable-sec-tts", "Disable some memory intensive constraints.", false),
-    _unassigned_budget("unassigned-budget", "time budget per operation for solving the unassigned partial solution", 10.0)
+    _unassigned_budget("unassigned-budget", "time budget per operation for solving the unassigned partial solution", 10.0),
+    _enable_always_post_diff_solution("enable-always-post-diff-solution", "Post different solution at every iteration even if you don't have a solution.", false)
 {
   add(_output_file);
   add(_dzn_file);
@@ -295,4 +296,6 @@ ModelOptions::ModelOptions(void)
 
   add(_disable_sec_tts);
   add(_unassigned_budget);
+
+  add(_enable_always_post_diff_solution);
 }

@@ -37,6 +37,9 @@ BINDIR := $(PREFIX)/bin
 
 UNISONDIR := unison
 
+PORTFOLIODIR := solvers/multi_backend/portfolio
+SECPORTFOLIODIR := solvers/multi_backend/secportfolio
+
 PRESOLVERDIR := solvers/gecode
 PRESOLVERBIN := $(PRESOLVERDIR)/gecode-presolver
 
@@ -60,6 +63,8 @@ UNISON_GHC_CONFIG := -O2
 
 build:
 	$(MAKE) build-unison
+	$(MAKE) build-portfolio
+	$(MAKE) build-secportfolio
 	$(MAKE) build-presolver build-solver build-diversifier build-secsolver build-secdiversifier 
 
 build-solver: $(SOLVERBIN)
@@ -77,6 +82,17 @@ build-unison:
 	$(STACKBIN) build unison \
 	--ghc-options="$(UNISON_GHC_CONFIG)" \
 	--copy-bins --local-bin-path $(UNISONDIR)/build
+
+build-portfolio:
+	$(STACKBIN) build portfolio \
+	--ghc-options="$(UNISON_GHC_CONFIG)" \
+	--copy-bins --local-bin-path $(PORTFOLIODIR)/build
+
+build-secportfolio:
+	$(STACKBIN) build secportfolio \
+	--ghc-options="$(UNISON_GHC_CONFIG)" \
+	--copy-bins --local-bin-path $(SECPORTFOLIODIR)/build
+
 
 doc-unison:
 	$(STACKBIN) haddock unison
@@ -118,7 +134,9 @@ include $(SECDIVERSIFIERDIR)/secdiversifier.mk
 clean:
 	$(STACKBIN) clean unison
 	$(STACKBIN) clean unison-specsgen
-	$(MAKE) veryclean-diversifier veryclean-solver veryclean-presolver
+	$(STACKBIN) clean portfolio
+	$(STACKBIN) clean secportfolio
+	$(MAKE) veryclean-diversifier veryclean-solver veryclean-presolver veryclean-secsolver veryclean-secdiversifier
 
 doc: doc-unison doc-specsgen
 

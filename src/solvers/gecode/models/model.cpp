@@ -1493,13 +1493,11 @@ void Model::post_branch_issue_cycle_constraints(block b) {
     int dist = -1;
     for (unsigned int e = 0; e < input->dep[b].size(); e++) {
       operation o1 = input->dep[b][e][0], o2 = input->dep[b][e][1];
-      // std::cout << "inloop: " << bi << ", " << oi << ", " << o1 << ", " << o2 << ", " << std::endl;
       if (o1 == bi && o2 == oi) {
         dist = max_of(input->dist[b][e]);
         break;
       }
     }
-    // std::cout << "operation: " << bi << std::endl;
     assert(dist != -1);
     constraint(a(bi) >> (c(bi) == c(oi) - dist));
   }

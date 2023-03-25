@@ -100,7 +100,9 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
 
     post_r1_constraints();
     post_m1_constraints();
-
+    
+    // check this otu
+    //post_security_constraints(); //???
     //post_connecting_constraints();
 
     for (block b: input -> B) {
@@ -258,57 +260,15 @@ void SecModel::post_branchers(void) {
   // std::cout << "SecModel post branchers" << std::endl;
   GlobalModel::post_branchers();
   
-  // if (!options-> disable_sec_regreg_constraints()) {
-  //   IntVarArgs vtbts, vtats;
-  //   for (t: tbts) vtbts << v_tbt[t];
-  //   for (t: tats) vtats << v_tat[t];
-  //   // Rnd r;
-  //   // r.seed(42);
-  //   if (vtats.size() > 0) {
-  //     std::cout << "TATS: " << tats.size() << std::endl;
-  //     std::cout << "VTATS: " << vtats << std::endl;
-  //     branch(*this, vtats, INT_VAR_NONE(), INT_VAL(select_value_tat),
-  //     	     NULL, NULL);
-  //   }
-
-  //   if (vtbts.size() > 0) {
-  //     std::cout << "TBTS: " << tbts.size() << std::endl;
-  //     std::cout << "VTBTS: " << vtbts << std::endl;
-      
-  //     branch(*this, vtbts, INT_VAR_NONE(), INT_VAL(select_value_tbt),
-  //     	     NULL, NULL);
-  //   }
-  // }
 }
 
-/*void SecModel::post_complete_branchers(unsigned int s) {
-  //
+void SecModel::post_complete_branchers(unsigned int s) {
 
-  branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_global_cost_decision);
+  GlobalModel::post_complete_branchers(s);
 
-  Rnd r;
-  r.seed(s);
-  branch(*this, v_a, BOOL_VAR_NONE(), BOOL_VAL_RND(r),
-         NULL, &print_global_inactive_decision);
-
-  branch(*this, v_i, INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_global_instruction_decision);
-
-  branch(*this, v_y, INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_global_temporary_decision);
-
-  branch(*this, v_c, INT_VAR_NONE(), INT_VAL_MIN(),
-         &schedulable, &print_global_cycle_decision);
-
-  branch(*this, v_r, INT_VAR_NONE(), INT_VAL_RND(r),
-         &global_assignable, &print_global_register_decision);
+}
 
 
-  branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_global_cost_decision);
-
-}*/
 
 void SecModel::post_unassigned_branchers(unsigned int s) {
   Rnd ran;
@@ -1372,34 +1332,6 @@ void SecModel::constrain(const Space & _b) {
     return;
 }
 
-void SecModel::post_complete_branchers(unsigned int s) {
-
-  GlobalModel::post_complete_branchers(s);
-
-/*
-  std::cout << "post secmodel complete branchers: seed: " << s << " secr " << sec_r.seed() << std::endl;
-  branch(*this, cost(), INT_VAR_NONE(), INT_VAL_MIN(),
-         NULL, &print_global_cost_decision);
-
-  Rnd r;
-  r.seed(s);
-  branch(*this, v_a, BOOL_VAR_RND(r), BOOL_VAL_RND(r),
-         NULL, &print_global_inactive_decision);
-
-  branch(*this, v_i, INT_VAR_RND(r), INT_VAL_RND(r),
-         NULL, &print_global_instruction_decision);
-
-  branch(*this, v_y, INT_VAR_RND(r), INT_VAL_MIN(),
-         NULL, &print_global_temporary_decision);
-
-  branch(*this, v_c, INT_VAR_RND(r), INT_VAL_MIN(),
-         &schedulable, &print_global_cycle_decision);
-
-  branch(*this, v_r, INT_VAR_RND(r), INT_VAL_RND(r),
-         &global_assignable, &print_global_register_decision);
-*/
-
-}
 
 
 
