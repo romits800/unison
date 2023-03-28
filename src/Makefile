@@ -118,6 +118,13 @@ SGARMREMATYAML = $(SGARMROOTDIR)/input/arm-remat.yaml
 SGMINIMALROOTDIR   = $(UNISONDIR)/src/Unison/Target/Minimal/SpecsGen
 SGMINIMALINPUTYAML = $(SGMINIMALROOTDIR)/input/minimal.yaml
 
+SGMSP430ROOTDIR   = $(UNISONDIR)/src/Unison/Target/MSP430/SpecsGen
+SGMSP430INPUTYAML = $(SGMSP430ROOTDIR)/input/MSP430.yaml
+SGMSP430AUXYAML   = $(SGMSP430ROOTDIR)/input/MSP430-manual.yaml
+# SGMSP430REMATYAML = $(SGMSP430ROOTDIR)/input/MSP430-remat.yaml
+
+
+
 build-specsgen:
 	$(STACKBIN) build unison-specsgen \
 	--ghc-options="$(UNISON_GHC_CONFIG)" \
@@ -131,7 +138,7 @@ install-specsgen:
 	cp $(UNISONSPECSGENDIR)/build/specsgen $(BINDIR)
 
 run-specsgen: run-specsgen-hexagon run-specsgen-mips run-specsgen-arm \
-	            run-specsgen-minimal
+	            run-specsgen-minimal run-specsgen-msp430
 
 run-specsgen-hexagon:
 	specsgen --targetname=Hexagon $(SGHEXAGONINPUTYAML) $(SGHEXAGONAUXYAML) \
@@ -162,3 +169,8 @@ run-specsgen-minimal:
 	specsgen --targetname=Minimal $(SGMINIMALINPUTYAML) $(SGMINIMALAUXYAML) \
 	         --outputdir=$(SGMINIMALROOTDIR) \
 	         --infiniteregclass M32
+
+run-specsgen-msp430:
+	specsgen --targetname=MSP430 $(SGMSP430INPUTYAML) $(SGMSP430AUXYAML) \
+	         --outputdir=$(SGMSP430ROOTDIR) \
+	         --boundregclass ptr_rc 

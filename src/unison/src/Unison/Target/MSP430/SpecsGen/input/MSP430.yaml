@@ -1,0 +1,2639 @@
+---
+instruction-set:
+
+   - group: allInstructions
+     instructions:
+
+
+        - id:                 ADC16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC16ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC8ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADC8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADD16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD16ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD16rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 ADD16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD8ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADD8rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 ADD8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ADJCALLSTACKDOWN
+          type:               linear
+          operands:
+           - amt:             bound
+          uses:               [amt]
+          defines:            []
+          size:               0
+          affects:
+           - SP:              register
+           - SR:              register
+          affected-by:
+           - SP:              register
+          itinerary:          NoItinerary
+
+        - id:                 ADJCALLSTACKUP
+          type:               linear
+          operands:
+           - amt1:            bound
+           - amt2:            bound
+          uses:               [amt1, amt2]
+          defines:            []
+          size:               0
+          affects:
+           - SP:              register
+           - SR:              register
+          affected-by:
+           - SP:              register
+          itinerary:          NoItinerary
+
+        - id:                 AND16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND16ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND16rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 AND16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND8ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 AND8rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 AND8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIC8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT16mi
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT16mm
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src1, src2, src21, src22]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT16mr
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT16ri
+          type:               linear
+          operands:
+           - src:             [register, use, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT16rm
+          type:               linear
+          operands:
+           - src:             [register, use, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT16rr
+          type:               linear
+          operands:
+           - src:             [register, use, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT8mi
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT8mm
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src1, src2, src21, src22]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT8mr
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT8ri
+          type:               linear
+          operands:
+           - src:             [register, use, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT8rm
+          type:               linear
+          operands:
+           - src:             [register, use, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BIT8rr
+          type:               linear
+          operands:
+           - src:             [register, use, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 BUNDLE
+          type:               linear
+          operands:
+           - unnamed:         bound
+          uses:               [unnamed]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Bi
+          type:               branch
+          operands:
+           - brdst:           bound
+          uses:               [brdst]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Bm
+          type:               branch
+          operands:
+           - brdst1:          [register, use, GR16]
+           - brdst2:          bound
+          uses:               [brdst1, brdst2]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Br
+          type:               branch
+          operands:
+           - brdst:           [register, use, GR16]
+          uses:               [brdst]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CALLi
+          type:               call
+          operands:
+           - dst:             bound
+          uses:               [dst]
+          defines:            []
+          size:               0
+          affects:
+           - R12:             register
+           - R13:             register
+           - R14:             register
+           - R15:             register
+           - SR:              register
+          affected-by:
+           - SP:              register
+          itinerary:          NoItinerary
+
+        - id:                 CALLm
+          type:               call
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+          uses:               [dst1, dst2]
+          defines:            []
+          size:               0
+          affects:
+           - R12:             register
+           - R13:             register
+           - R14:             register
+           - R15:             register
+           - SR:              register
+          affected-by:
+           - SP:              register
+          itinerary:          NoItinerary
+
+        - id:                 CALLr
+          type:               call
+          operands:
+           - dst:             [register, use, GR16]
+          uses:               [dst]
+          defines:            []
+          size:               0
+          affects:
+           - R12:             register
+           - R13:             register
+           - R14:             register
+           - R15:             register
+           - SR:              register
+          affected-by:
+           - SP:              register
+          itinerary:          NoItinerary
+
+        - id:                 CFI_INSTRUCTION
+          type:               linear
+          operands:
+           - id:              bound
+          uses:               [id]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP16mi
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP16mr
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP16ri
+          type:               linear
+          operands:
+           - src:             [register, use, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP16rm
+          type:               linear
+          operands:
+           - src:             [register, use, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP16rr
+          type:               linear
+          operands:
+           - src:             [register, use, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP8mi
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP8mr
+          type:               linear
+          operands:
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP8ri
+          type:               linear
+          operands:
+           - src:             [register, use, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP8rm
+          type:               linear
+          operands:
+           - src:             [register, use, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 CMP8rr
+          type:               linear
+          operands:
+           - src:             [register, use, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 COPY
+          type:               linear
+          operands:
+           - dst:             bound
+           - src:             bound
+          uses:               [src]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 COPY_TO_REGCLASS
+          type:               linear
+          operands:
+           - dst:             bound
+           - src:             bound
+           - regclass:        bound
+          uses:               [src, regclass]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 DBG_VALUE
+          type:               linear
+          operands:
+           - unnamed:         bound
+          uses:               [unnamed]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 EH_LABEL
+          type:               linear
+          operands:
+           - id:              bound
+          uses:               [id]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 EXTRACT_SUBREG
+          type:               linear
+          operands:
+           - dst:             bound
+           - supersrc:        bound
+           - subidx:          bound
+          uses:               [supersrc, subidx]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 FAULTING_LOAD_OP
+          type:               linear
+          operands:
+           - dst:             bound
+           - unnamed:         bound
+          uses:               [unnamed]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 GC_LABEL
+          type:               linear
+          operands:
+           - id:              bound
+          uses:               [id]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 IMPLICIT_DEF
+          type:               linear
+          operands:
+           - dst:             bound
+          uses:               []
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 INLINEASM
+          type:               linear
+          operands:
+           - unnamed:         bound
+          uses:               [unnamed]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 INSERT_SUBREG
+          type:               linear
+          operands:
+           - supersrc:        bound
+           - subsrc:          bound
+           - subidx:          bound
+          uses:               [supersrc, subsrc, subidx]
+          defines:            [supersrc]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 JCC
+          type:               branch
+          operands:
+           - dst:             label
+           - cc:              bound
+          uses:               [dst, cc]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 JMP
+          type:               branch
+          operands:
+           - dst:             label
+          uses:               [dst]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 KILL
+          type:               linear
+          operands:
+           - unnamed:         bound
+          uses:               [unnamed]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 LIFETIME_END
+          type:               linear
+          operands:
+           - id:              bound
+          uses:               [id]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 LIFETIME_START
+          type:               linear
+          operands:
+           - id:              bound
+          uses:               [id]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 LOAD_STACK_GUARD
+          type:               linear
+          operands:
+           - dst:             [register, def, ptr_rc]
+          uses:               []
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 LOCAL_ESCAPE
+          type:               linear
+          operands:
+           - symbol:          [register, use, ptr_rc]
+           - id:              bound
+          uses:               [symbol, id]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV16ri
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             bound
+          uses:               [src]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV16rm
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV16rm_POST
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - base:            [register, usedef, GR16]
+          uses:               [base]
+          defines:            [dst, base]
+          size:               0
+          affects:
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 MOV16rr
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             [register, use, GR16]
+          uses:               [src]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV8ri
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - src:             bound
+          uses:               [src]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV8rm
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOV8rm_POST
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - base:            [register, usedef, GR16]
+          uses:               [base]
+          defines:            [dst, base]
+          size:               0
+          affects:
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 MOV8rr
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - src:             [register, use, GR8]
+          uses:               [src]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOVZX16rm8
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 MOVZX16rr8
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             [register, use, GR8]
+          uses:               [src]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 NOP
+          type:               linear
+          operands:
+          uses:               []
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR16ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR16rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 OR16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR8ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 OR8rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 OR8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 PATCHPOINT
+          type:               call
+          operands:
+           - dst:             bound
+           - id:              bound
+           - nbytes:          bound
+           - callee:          bound
+           - nargs:           bound
+           - cc:              bound
+           - unnamed:         bound
+          uses:               [id, nbytes, callee, nargs, cc, unnamed]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 PHI
+          type:               linear
+          operands:
+           - unnamed:         bound
+          uses:               [unnamed]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 POP16r
+          type:               linear
+          operands:
+           - reg:             [register, def, GR16]
+          uses:               []
+          defines:            [reg]
+          size:               0
+          affects:
+           - SP:              register
+          affected-by:
+           - mem:             memory
+           - SP:              register
+          itinerary:          NoItinerary
+
+        - id:                 PUSH16r
+          type:               linear
+          operands:
+           - reg:             [register, use, GR16]
+          uses:               [reg]
+          defines:            []
+          size:               0
+          affects:
+           - mem:             memory
+           - SP:              register
+          affected-by:
+           - SP:              register
+          itinerary:          NoItinerary
+
+        - id:                 REG_SEQUENCE
+          type:               linear
+          operands:
+           - dst:             bound
+           - supersrc:        bound
+           - unnamed:         bound
+          uses:               [supersrc, unnamed]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 RET
+          type:               branch
+          operands:
+          uses:               []
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 RETI
+          type:               branch
+          operands:
+          uses:               []
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SAR16r1
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SAR16r1c
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SAR8r1
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SAR8r1c
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SBC16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC16ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC8ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SBC8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - SR:              register
+          itinerary:          NoItinerary
+
+        - id:                 SEXT16r
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SHL16r1
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SHL8r1
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 STACKMAP
+          type:               call
+          operands:
+           - id:              bound
+           - nbytes:          bound
+           - unnamed:         bound
+          uses:               [id, nbytes, unnamed]
+          defines:            []
+          size:               0
+          affects:
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 STATEPOINT
+          type:               call
+          operands:
+           - unnamed:         bound
+          uses:               [unnamed]
+          defines:            []
+          size:               0
+          affects:
+           - mem:             memory
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 SUB16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB16ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB16rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 SUB16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB8ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUB8rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 SUB8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SUBREG_TO_REG
+          type:               linear
+          operands:
+           - dst:             bound
+           - implsrc:         bound
+           - subsrc:          bound
+           - subidx:          bound
+          uses:               [implsrc, subsrc, subidx]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 SWPB16r
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Select16
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             [register, use, GR16]
+           - src2:            [register, use, GR16]
+           - cc:              bound
+          uses:               [src, src2, cc]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Select8
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - src:             [register, use, GR8]
+           - src2:            [register, use, GR8]
+           - cc:              bound
+          uses:               [src, src2, cc]
+          defines:            [dst]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Shl16
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             [register, use, GR16]
+           - cnt:             [register, use, GR8]
+          uses:               [src, cnt]
+          defines:            [dst]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Shl8
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - src:             [register, use, GR8]
+           - cnt:             [register, use, GR8]
+          uses:               [src, cnt]
+          defines:            [dst]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Sra16
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             [register, use, GR16]
+           - cnt:             [register, use, GR8]
+          uses:               [src, cnt]
+          defines:            [dst]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Sra8
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - src:             [register, use, GR8]
+           - cnt:             [register, use, GR8]
+          uses:               [src, cnt]
+          defines:            [dst]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Srl16
+          type:               linear
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             [register, use, GR16]
+           - cnt:             [register, use, GR8]
+          uses:               [src, cnt]
+          defines:            [dst]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 Srl8
+          type:               linear
+          operands:
+           - dst:             [register, def, GR8]
+           - src:             [register, use, GR8]
+           - cnt:             [register, use, GR8]
+          uses:               [src, cnt]
+          defines:            [dst]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR16mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR16mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR16mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR16ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR16rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR16rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 XOR16rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+           - src2:            [register, use, GR16]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR8mi
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             bound
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR8mm
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [dst1, dst2, src1, src2]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR8mr
+          type:               linear
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR8]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR8ri
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            bound
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR8rm
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src21:           [register, use, GR16]
+           - src22:           bound
+          uses:               [src, src21, src22]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 XOR8rm_POST
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - base:            [register, usedef, GR16]
+          uses:               [src, base]
+          defines:            [src, base]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+           - mem:             memory
+          itinerary:          NoItinerary
+
+        - id:                 XOR8rr
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR8]
+           - src2:            [register, use, GR8]
+          uses:               [src, src2]
+          defines:            [src]
+          size:               0
+          affects:
+           - SR:              register
+          affected-by:
+          itinerary:          NoItinerary
+
+        - id:                 ZEXT16r
+          type:               linear
+          operands:
+           - src:             [register, usedef, GR16]
+          uses:               [src]
+          defines:            [src]
+          size:               0
+          affects:
+          affected-by:
+          itinerary:          NoItinerary

@@ -1,0 +1,41 @@
+---
+instruction-set:
+
+   - group: allInstructions
+     instructions:
+
+        - id:                 Store
+          parent:             MOV16mr
+          type:               copy
+          operands:
+           - dst1:            [register, use, GR16]
+           - dst2:            bound
+           - src:             [register, use, GR16]
+          uses:               [dst1, dst2, src]
+          defines:            []
+          affects:
+          affected-by:
+           - SP:              register
+
+        - id:                 Load
+          parent:             MOV16rm
+          type:               copy
+          operands:
+           - dst:             [register, def, GR16]
+           - src1:            [register, use, GR16]
+           - src2:            bound
+          uses:               [src1, src2]
+          defines:            [dst]
+          affects:             
+          affected-by:
+           - SP:              register
+
+        - id:                 Move
+          parent:             MOV16rr
+          type:               copy
+          operands:
+           - dst:             [register, def, GR16]
+           - src:             [register, use, GR16]
+          uses:               [src]
+          defines:            [dst]
+

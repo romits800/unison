@@ -35,6 +35,7 @@ Library
                    Unison.Target.ARM
                    Unison.Target.Mips
                    Unison.Target.Minimal
+                   Unison.Target.MSP430
 
                    Unison.Graphs.Util
                    Unison.Graphs.BCFG
@@ -276,6 +277,23 @@ Library
                   Unison.Target.Minimal.SpecsGen.Size
                   Unison.Target.Minimal.SpecsGen.AllInstructions
                   Unison.Target.Minimal.SpecsGen.Parent
+
+                  Unison.Target.MSP430.MSP430RegisterDecl
+                  Unison.Target.MSP430.SpecsGen
+                  Unison.Target.MSP430.SpecsGen.MSP430InstructionDecl
+                  Unison.Target.MSP430.SpecsGen.MSP430ItineraryDecl
+                  Unison.Target.MSP430.SpecsGen.MSP430RegisterClassDecl
+                  Unison.Target.MSP430.SpecsGen.ReadWriteInfo
+                  Unison.Target.MSP430.SpecsGen.OperandInfo
+                  Unison.Target.MSP430.SpecsGen.ReadOp
+                  Unison.Target.MSP430.SpecsGen.ShowInstance
+                  Unison.Target.MSP430.SpecsGen.Itinerary
+                  Unison.Target.MSP430.SpecsGen.InstructionType
+                  Unison.Target.MSP430.SpecsGen.AlignedPairs
+                  Unison.Target.MSP430.SpecsGen.Size
+                  Unison.Target.MSP430.SpecsGen.AllInstructions
+                  Unison.Target.MSP430.SpecsGen.Parent
+
 
   if impl(ghc <= 7.4.2)
     Build-Depends: transformers-compat == 0.5.*,
