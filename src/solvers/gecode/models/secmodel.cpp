@@ -62,7 +62,9 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
     if (!options-> disable_sec_tts())
         init_tts();
   
-    vector<string> memstrings = {"tSTRBi", "tLDRBi", "tSTRspi_fi", 
+    vector<string> memstrings = {"tSTRBi", "tLDRBi", 
+                                    "tSTRi", "tLDRi",
+                                    "tSTRspi_fi", 
                                     "tLDRspi_fi", "SW_fi", "LW_fi", 
                                     "SB_fi", "LB_fi"}; 
 
