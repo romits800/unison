@@ -14,6 +14,8 @@ module Unison.Transformations.SecurityTypeInference (inferSecurityTypes,
                                                      updateBUnqs,
                                                      updateBDoms,
                                                      updatePmapID,
+                                                     mType,
+                                                     mTypeNumbers,
                                                      StateTuple (..))
        where
 
@@ -68,6 +70,30 @@ data FlagsType = FlagsType {
 --                                                  oIs = i, -- Instruction i
 --                                                  oUs = a:b : _,
 --                                                  oDs = [] }}} = oid
+
+data MType = 
+    MCopyType |
+    MMemType  |
+    MOther
+    deriving (Eq, Ord, Show)
+
+mTypeNumbers:: MType -> Int
+mTypeNumbers MOther = 0
+mTypeNumbers MMemType = 1
+mTypeNumbers MCopyType = 2
+
+
+mType :: TargetWithOptions i r rc s -> BlockOperation i r -> MType
+mType target (SingleOperation {oOpr = inst}) = mOprType inst target
+
+mOprType :: Operation i r -> TargetWithOptions i r rc s -> MType
+mOprType (Virtual (VirtualCopy {})) _ = MCopyType
+mOprType (Copy {}) _ = MCopyType
+mOprType (Natural (Linear {oIs = is})) target | any (isLoad target) is || any (isStore target) is = MMemType
+mOprType _ _ = MOther
+
+
+
 
 
 getBoundGlobalAddress (Bound(MachineGlobalAddress {mgaAddress = str}) : _) = str
@@ -1142,11 +1168,12 @@ inferTypesOperationSL target f bid types (SingleOperation
     types'' = types' {fPmap = pmap'}
   in inferTypesOperation target f bid types'' codes
 -- address in register
-inferTypesOperationSL target f bid types (SingleOperation
-  {oOpr = Natural {oNatural = Linear {
+--inferTypesOperationSL target f bid types (op @ SingleOperation { oId  = oid }:codes) | oid == 7 = error (show  op)
+inferTypesOperationSL target f bid types (op@ SingleOperation
+  {oId = oid, oOpr = Natural {oNatural = Linear {
                       oIs = _, -- Instruction i
                       oUs = u : ub @ (Bound (MachineImm {})) : _,
-                      oDs = [d] }}}:codes) = 
+                      oDs = [d] }}}:codes) =  
   let
     supp'  = updateSupps (fSupp types) [u,ub] [d]
     unq'   = updateUnqs (fUnq types) [u,ub] [d]
@@ -1155,8 +1182,10 @@ inferTypesOperationSL target f bid types (SingleOperation
     isgmul = False
     xor'   = updateXor (fXor types) [u,ub] [] True [d]
     args'  = updateArgsUop (fArgs types)  [u,ub] [d]
-    --m2t'   = updateM2t (fM2t types) (show u ++ show ub) [u]
+    m2o'   = updateM2o (fM2o types) (getMemR u ub) oid [d]
+    o2t'   = updateO2t (fO2t types) oid [u, ub]
     types' = types {fSupp = supp', fUnq = unq', fDom = dom', 
+                     fO2t = o2t', fM2o = m2o',
                      fXor = xor', fArgs = args'}
     pmap'  = updatePmaps isxor isgmul types' [u,ub] [] [d]
     types'' = types' {fPmap = pmap'}
@@ -1976,6 +2005,11 @@ isEmpty t mp =
     Just d | Map.null d -> True
     Just _              -> False
     Nothing             -> error "SecTypeInf: isEmpty - tid should be in dom"
+
+-- to fix to be more general
+getMemR (Temporary {tId = tid}) (Bound (MachineImm {miValue = _})) = "[t" ++ show tid ++ "]"
+getMemR (MOperand {altTemps = t:_}) b = getMemR t b
+getMemR (MOperand {altTemps = []}) b = error "getMemR: This should not happen."
 
 getTids [] tids = tids
 -- Check that this does not affect any other instruction that mems

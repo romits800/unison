@@ -366,6 +366,9 @@ public:
   // [SEC] pairs of basic blocks that should have the same cycles
   vector<vector<vector<vector<int> > > > bbs;
 
+  // memory type
+  vector<int > mtype;
+
 
   Parameters(Json::Value root);
 

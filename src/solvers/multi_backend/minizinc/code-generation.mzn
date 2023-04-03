@@ -320,6 +320,8 @@ array[-1..MAXT] of var -1..SUMC: gls;
 array[-1..MAXT] of var -1..SUMC: gle;
 array[1..MAXB] of var -1..SUMC: gb;
 
+array[int] of int: mtype;
+
 %% PREDICATES AND TESTS
 
 test isreal(int: o) = (op_type[o] in
@@ -504,11 +506,10 @@ predicate subseq(int: t1, int: t2) = (samereg(t1,t2) /\ (lk[t2] = gle[t1]));
 predicate is_before(int: t1, int: t2) = (samereg(t1,t2) /\ (gle[t1] <= gls[t2]));
 
 %% TODO: add condition for copies
-predicate is_before_oper(int: o1, int: o2) = (a[o2]  /\ (gc[o2] <= gc[o1]));
+predicate is_before_oper(int: o1, int: o2) = (a[o2]  /\ (gc[o1] < gc[o2]));
 
 predicate is_memory_oper(int: o) =
-      %% Same as gecode but a bit hacky..
-     (ii[o] = op_instructions[o][card(op_instructions[o])]);
+     ( (mtype[o] == 1) \/ (mtype[o] == 2 /\ ii[o] = op_instructions[o][card(op_instructions[o])]));
 
 predicate msubseq(int: o1, int: o2) = (a[o2]  /\ (ok[o2] = gc[o1]));
 
@@ -1355,19 +1356,6 @@ constraint
 %        wcs[ii[o]]
 %      endif endif;
 
-% constraint (r[10] = 1);
-% constraint (r[13] = 0);  
-% constraint(a[9] = true);
-% constraint(a[5] = true);
-
-% constraint(a[15] = true);
-% constraint(a[2] = true);
-
-% constraint (r[16] = 2);
-% constraint (r[23] = 3);
-% constraint (r[30] = 0);
-
-% constraint(a[11] = true);
 
 %% Basic block of temporary t or operation o
 int: bb_of_t(int: t) = min({ti | ti in index_set(bb_temps) where t in bb_temps[ti]});
@@ -1376,7 +1364,9 @@ int: bb_of_o(int: o) = min({oi | oi in index_set(bb_ops) where o in bb_ops[oi]})
 
 
 set of int: PTS = {pairs[pn,i] | pn in 1..PSIZE, i in 1..2} union {i | i in spairs_secrets};
-set of int: POS = {mpairs_rands[i,j] | i in index_set_1of2(mpairs_rands), j in index_set_2of2(mpairs_rands) where mpairs_rands[i,j]!=-1};
+set of int: POS = {mpairs_rands[i,j] | i in index_set_1of2(mpairs_rands), j in index_set_2of2(mpairs_rands) where mpairs_rands[i,j]!=-1} 
+                   union {mpairs_secrets[i] | i in 1.. MSSIZE}
+                   union {mpairs[pn,i] | pn in 1..MSIZE, i in 1..2};
 %% Global variables
 constraint forall (b in 1..MAXB) (
              if b = 1
@@ -1404,7 +1394,7 @@ constraint
    forall(t1 in PTS) (lk[t1] =
    			  max([ite(is_before(t2,t1), gle[t2], -1)  | t2 in 0..MAXT]))  /\
    forall(o1 in POS) (ok[o1] =
-   			  max([ite(is_before_oper(o1,o2) /\ is_memory_oper(o1) /\ is_memory_oper(o2), gc[o2], -1)  | o2 in 0..MAXO]));
+   			  max([ite(is_before_oper(o2,o1) /\ is_memory_oper(o1) /\ is_memory_oper(o2), gc[o2], -1)  | o2 in 0..MAXO]));
 
 %% Random pairs that should not be assigned to the same register
 constraint
@@ -1418,9 +1408,9 @@ constraint
 %% Random memory pairs that should not be assigned to the same register
 constraint
   forall(pn in 1..MSIZE) (
-     let {int: o1 = mpairs[pn,1],
-          int: o2 = mpairs[pn,2]}
-     in a[o1] /\ a[o2] /\ is_memory_oper(o1) /\ is_memory_oper(o2) -> (not msubseq(o1,o2) /\ not msubseq(o2,o1)));
+    let {int: o1 = mpairs[pn,1],
+         int: o2 = mpairs[pn,2]}
+    in a[o1] /\ a[o2] /\ is_memory_oper(o1) /\ is_memory_oper(o2) -> (not msubseq(o1,o2) /\ not msubseq(o2,o1)));
 
 
 %% secret temporaries that should be preceded by a random temporary
@@ -1436,14 +1426,17 @@ constraint
 % array[int,int] of int: mpairs_secrets;
 % array[int,int] of int: mpairs_rands;
 %% Memory instruction that load or store secrets in memory
+
 constraint
   forall(pn in 1..MSSIZE)(
     let {int: os = mpairs_secrets[pn]}
     in (a[os] /\ is_memory_oper(os)) ->
               (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
-	       (let {int: or = mpairs_rands[pn,i]} in a[or] /\ is_memory_oper(or) /\ msubseq(or, os))) /\
+  	       (let {int: or = mpairs_rands[pn,i]} in a[or] /\ is_memory_oper(or) /\ msubseq(or, os))) 
+  /\
               (exists (i in 1..MSWIDTH where mpairs_rands[pn,i] != -1)
-	       (let {int: or = mpairs_rands[pn,i]} in a[or] /\ is_memory_oper(or) /\ msubseq(os, or))));
+               (let {int: or = mpairs_rands[pn,i]} in a[or] /\ is_memory_oper(or) /\ msubseq(os, or)))
+   );
 
 %% IMPLIED Security constraints
 
@@ -1539,6 +1532,9 @@ output
     ["\"live start\": "]   ++ [show([ls[v] | v in 0..MAXT])] ++ ["\n"] ++
     ["\"live duration\": "]   ++ [show([ld[v] | v in 0..MAXT])] ++ ["\n"] ++
     ["\"live end\": "]   ++ [show([le[v] | v in 0..MAXT])] ++ ["\n"] ++
+%    ["\"ok\": "]  ++ [show([ok[o] | o in 0..MAXO])]   ++ ["\n"] ++
+%    ["\"gc\": "]  ++ [show([gc[o] | o in 0..MAXO])]   ++ ["\n"] ++
+%    ["\"pos\": "]   ++ [show(POS)] ++ ["\n"] ++
     % handy for debugging
 %     ["\"active\": "]      ++ [show(a)]   ++ ["\n"] ++
 %     ["\"regs of temporaries\": "] ++ [show(rt)]   ++ ["\n"] ++

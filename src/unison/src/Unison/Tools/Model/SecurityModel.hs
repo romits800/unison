@@ -20,6 +20,9 @@ import Data.Aeson (toJSON)
 import Unison
 import Unison.Target.API
 
+import Data.List
+import Data.Ord
+import Unison.Target.Query
 
 import Unison.Tools.Model.Definitions()
 import Unison.ParseSecurityPolicies
@@ -31,13 +34,13 @@ isNotInInmap inmap t = isNothing $ Map.lookup t inmap
 allNotInmap ts inmap =
   all (isNotInInmap inmap) ts 
 
-parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies gfMulImpl =
+parameters (_,_,_,_,ra,_) target f @ Function {fCode = code} policies gfMulImpl =
   let
     types = inferSecurityTypes target f policies gfMulImpl
     pmap' = fPmap types
     inmap = fInmap types
-    m2o'  = fM2o types
-    c2o'  = fC2o types
+    --m2o'  = fM2o types
+    --c2o'  = fC2o types
     bbs   = fBbs types
     o2t   = fO2t types
     (sec,pub,ran)   = splitTemps (Map.toAscList pmap') ([],[],[])
@@ -45,19 +48,21 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies gfMulImpl =
     pub'            = filter (\x -> head x == 't') pub
     sec'            = filter (\x -> head x == 't' && isNotInInmap inmap x) sec
     secin           = filter (\x -> head x == 't' && not (isNotInInmap inmap x)) sec
-    sec''           = filter (\x -> head x == 'F' || head x == 'S') sec  -- memory secrets
-    ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') ran  -- memory randoms
-    pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == 't') pub
+    --sec''           = filter (\x -> head x == 'F' || head x == 'S' || head x == '[') sec  -- memory secrets
+    --ran''           = filter (\x -> head x == 'F' || head x == 'S' || head x == '[' || head x == 't') ran  -- memory randoms
+    --pub''           = filter (\x -> head x == 'F' || head x == 'S' || head x == '[' || head x == 't') pub
     -- Parameters
     pairs           = findPairs (ran' ++ pub' ++ secin) types []
     secdom          = findRandSec sec' ran' types []
-    p2o             = Map.union c2o' m2o'   --- Not the same key
+    -- p2o             = Map.union c2o' m2o'   --- Not the same key
     -- mpairs          = findPairsMC (ran'' ++ pub'') types p2o []
     -- secdommem       = findRandSecMC sec'' ran'' types p2o inmap [] 
     ck               = checkO2t (Map.toList o2t)
     (mspairs,mmpairs)= ck `seq` findMemPairs types o2t
     hr              = map (mkRegister . mkTargetRegister) $ hardwareRegisters target
     hregs           = concatMap (\x -> Map.findWithDefault [] x $ regAtoms ra) hr
+    fcode           = sortBy (comparing oId) (flatten code)
+    mtype           = map (mTypeNumbers . (mType target)) fcode
   in
     [
       ("Types",     toJSON $ [sec,pub,ran]),
@@ -71,6 +76,7 @@ parameters (_,_,_,_,ra,_) target f @ Function {fCode = _} policies gfMulImpl =
       -- ("adj2",      toJSON $ Map.toList p2p), -- secret memory - operations
       -- ("adj25",     toJSON adjacent), -- secret memory - operations
       -- ("adj3",      toJSON $ Map.toList p2t'), -- secret memory - operations
+      ("mtype",     toJSON mtype),
       ("HR",        toJSON hregs),
       ("bbs",       toJSON $ map snd $ Map.toList bbs)
     ]
