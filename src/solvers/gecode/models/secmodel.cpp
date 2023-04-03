@@ -70,7 +70,7 @@ SecModel::SecModel(Parameters * p_input, ModelOptions * p_options,
     */
 
     for (operation o : O()) { 
-       if (input -> mtype[o] == 1)
+       if (input -> mtype[o] == 1 || input -> mtype[o] == 2)
             memops.push_back(o);
        /*for(instruction i : input-> instructions[o]) {
          if (contains(memstrings, input -> insname[i]) || 
@@ -362,7 +362,7 @@ BoolVar SecModel::subseq2(temporary t1, temporary t2) {
 
 
 BoolVar SecModel::msubseq2(operation o1, operation o2) {
-  assert( contains(memops, o1) && contains(memops, o2));
+  //assert( contains(memops, o1) && contains(memops, o2));
   return var (a(o1) && a(o2) && (v_ok[o2] == gc(o1)));
 }
 

@@ -54,7 +54,7 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
                                     "LW_fi", "SB_fi", "LB_fi"}; 
     */
     for (operation o : O()) { 
-       if (input -> mtype[o] == 1)
+       if (input -> mtype[o] == 1 || input -> mtype[o] == 2)
             memops.push_back(o);
         /*for(instruction i : input-> instructions[o]) {
           if (contains(memstrings, input -> insname[i]) ||
