@@ -47,19 +47,22 @@ SecLocalModel::SecLocalModel(Parameters * p_input, ModelOptions * p_options,
 
     // Find mem operations
   
-    vector<string> memstrings = {"tSTRBi", "tLDRBi", 
+    /*vector<string> memstrings = {"tSTRBi", "tLDRBi", 
                                     "tSTRi", "tLDRi",
                                     "tSTRspi_fi", 
                                     "tLDRspi_fi", "SW_fi", 
                                     "LW_fi", "SB_fi", "LB_fi"}; 
+    */
     for (operation o : O()) { 
-        for(instruction i : input-> instructions[o]) {
+       if (input -> mtype[o] == 1)
+            memops.push_back(o);
+        /*for(instruction i : input-> instructions[o]) {
           if (contains(memstrings, input -> insname[i]) ||
              contains(memcopies, input -> insname[i]) ) {
             memops.push_back(o);
             break;
           }
-        }
+        }*/
     }
 
   
