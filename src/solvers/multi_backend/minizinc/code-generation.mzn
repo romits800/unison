@@ -509,7 +509,8 @@ predicate is_before(int: t1, int: t2) = (samereg(t1,t2) /\ (gle[t1] <= gls[t2]))
 predicate is_before_oper(int: o1, int: o2) = (a[o2]  /\ (gc[o1] < gc[o2]));
 
 predicate is_memory_oper(int: o) =
-     ( (mtype[o] == 1) \/ (mtype[o] == 2 /\ ii[o] = op_instructions[o][card(op_instructions[o])]));
+     ((mtype[o] = 1) \/ 
+      (mtype[o] = 2 /\ (ii[o] = card(op_instructions[o])))); 
 
 predicate msubseq(int: o1, int: o2) = (a[o2]  /\ (ok[o2] = gc[o1]));
 

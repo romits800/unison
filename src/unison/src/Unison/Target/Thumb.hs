@@ -736,14 +736,15 @@ removeLatencyNops to mf @ MachineFunction {mfBlocks = mbs} =
 
 removeLatencyNopsBlock to mb @ MachineBlock {mbInstructions = mis} = 
     let mis' = removeLatencyNopsInstr to mis 0 []
-        mis'' = removeBackNopsInstr to (reverse mis') []
+        mis'' = removeBackNopsInstr to (reverse mis') [] []
     in mb {mbInstructions = mis''}
 
-
-removeBackNopsInstr _ [] acc = acc
-removeBackNopsInstr to (mi @ MachineSingle {msOpcode = MachineTargetOpc i} : rest) acc
-    | i `elem` [NOP] = removeBackNopsInstr to rest acc
-    | otherwise = (reverse rest) ++ (mi:acc)
+--- TODO Romy: here we need to remove nops if they are after branches
+removeBackNopsInstr _ [] _ acc' = acc'
+removeBackNopsInstr to (mi @ MachineSingle {msOpcode = MachineTargetOpc i} : rest) acc acc'
+    | i `elem` [NOP] = removeBackNopsInstr to rest acc (mi:acc')
+    | i `elem` [TB, TBX, TBcc, TBX_RET, TPOP_RET ] = (reverse rest) ++ (mi:acc)
+    | otherwise = (reverse rest) ++ (mi:acc')
 
 
 removeLatencyNopsInstr _ [] _ acc = reverse acc
