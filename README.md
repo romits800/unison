@@ -29,6 +29,8 @@ Upgrade Slack after installing it:
 stack upgrade
 ```
 
+Note: For being able to compile you may need to use version [v2.15.5](https://github.com/commercialhaskell/stack/releases/tag/v2.15.5) of `stack` and not do `upgrade`
+
 The source of Gecode can be fetched with:
 
 ```bash
@@ -102,6 +104,8 @@ uni linearize --target=Mips masked_xor.uni -o masked_xor.lssa.uni
 uni extend --target=Mips  masked_xor.lssa.uni -o masked_xor.ext.uni
 uni augment --target=Mips masked_xor.ext.uni -o masked_xor.alt.uni
 uni model --target=Mips masked_xor.alt.uni -o masked_xor.json --policy input.txt
+# This is not necessary
+uni secaugment --target=Mips --policy input.txt masked_xor.alt.uni -o masked_xor.sec.uni
 gecode-presolver -o masked_xor.ext.json -dzn masked_xor.dzn --verbose masked_xor.json
 ```
 Run the gecode PSC-aware solver:
@@ -122,7 +126,7 @@ ${SECCON_PATH}/src/solvers/multi_backend/portfolio-solver -o masked_xor.out.json
 ```
 Generate the assembly code:
 ```bash
-uni export --target=Mips --keepops masked_xor.alt.uni -o masked_xor.unison.mir --solfile=masked_xor.out.json
+uni export --target=Mips --keepnops masked_xor.sec.uni -o masked_xor.unison.mir --solfile=masked_xor.out.json
 flags="-disable-post-ra -disable-tail-duplicate --disable-branch-fold -disable-block-placement"
 llc masked_xor.unison.mir -march=mipsel -mcpu=mips32 $flags -start-after livedebugvars -o masked_xor.s
 ```
@@ -130,7 +134,7 @@ llc masked_xor.unison.mir -march=mipsel -mcpu=mips32 $flags -start-after livedeb
 ## Contact
 
 For any questions or issues on SecConCG contact:
-[Rodothea Myrsini Tsoupidi](https://www.kth.se/profile/tsoupidi/) [<tsoupidi@kth.se>]
+[Rodothea Myrsini Tsoupidi](https://romits800.github.io/) [<romy.tsoupidi@proton.me>]
 
 
 ## License
